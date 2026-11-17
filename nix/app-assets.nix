@@ -26,7 +26,6 @@
   icons = [
     "U+25F7" # ◷ Start time
     "U+29D7" # ⧗ Goal
-    "U+232B" # ⌫ delete
     "U+2715" # ✕ cancel, close
     "U+25B7" # ▷ start
     "U+2713" # ✓ save
@@ -42,7 +41,6 @@
   noto = [
     "U+23FE" # ⏾ Mocha (the theme button)
     "U+263C" # ☼ Latte
-    "U+270E" # ✎ edit
   ];
   # Android density buckets and their scale over mdpi.
   densities = {
