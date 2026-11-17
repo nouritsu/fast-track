@@ -313,6 +313,20 @@ button.glyph {
   -webkit-user-select: none;
 }
 
+/* A word as a button (On, kg, Export): in the accent on the page like the glyph
+   buttons, no fill or border, with room around it for a finger. */
+button.word {
+  padding: 0.35em 0.6ch;
+  background: none;
+  border: none;
+  color: var(--accent);
+}
+
+/* A word button at the start of its own line, its text in line with the text above. */
+button.word.lead {
+  margin-left: -0.6ch;
+}
+
 /* A gate: plain large text in the accent, no border; the whole area is the button. */
 button.gate {
   width: 100%;

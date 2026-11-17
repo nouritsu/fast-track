@@ -195,14 +195,14 @@
 <Page title="Options">
   <div class="row first">
     <span>Theme</span>
-    <button type="button" class="toggle" aria-label="Theme: {theme === 'mocha' ? 'Mocha' : 'Latte'}" onclick={(e) => onTheme(e.currentTarget)}>
+    <button type="button" class="word" aria-label="Theme: {theme === 'mocha' ? 'Mocha' : 'Latte'}" onclick={(e) => onTheme(e.currentTarget)}>
       <span class="icon" aria-hidden="true">{theme === 'mocha' ? '⏾' : '☼'}</span>{theme === 'mocha' ? 'Mocha' : 'Latte'}
     </button>
   </div>
 
   <div class="row">
     <span>Alerts</span>
-    <button type="button" class="toggle" disabled={busy} aria-pressed={settings.alerts} onclick={toggleAlerts}>
+    <button type="button" class="word" disabled={busy} aria-pressed={settings.alerts} onclick={toggleAlerts}>
       {settings.alerts ? 'On' : 'Off'}
     </button>
   </div>
@@ -210,7 +210,7 @@
 
   <div class="row">
     <span>Status</span>
-    <button type="button" class="toggle" disabled={busy} aria-pressed={settings.status} onclick={toggleStatus}>
+    <button type="button" class="word" disabled={busy} aria-pressed={settings.status} onclick={toggleStatus}>
       {settings.status ? 'On' : 'Off'}
     </button>
   </div>
@@ -220,7 +220,7 @@
     <span>Weight</span>
     <button
       type="button"
-      class="toggle"
+      class="word"
       aria-label="Weight unit: {settings.unit}"
       onclick={() => tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' })}>{settings.unit}</button
     >
@@ -232,29 +232,31 @@
   {:else if scale.granted && settings.scaleUser !== null}
     <div class="row">
       <span>Weights from {scaleUser?.name || 'openScale'}</span>
-      <button type="button" disabled={busy} onclick={disconnect}>Disconnect</button>
+      <button type="button" class="word" disabled={busy} onclick={disconnect}>Disconnect</button>
     </div>
     <p class="muted">
       {tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within
       {WINDOW_HOURS} hours; a weight you type in wins. Sync writes them into past fasts.
     </p>
-    <button type="button" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>Sync weights</button>
+    <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>Sync weights</button>
   {:else if choosing.length}
     <div class="choices">
       {#each choosing as user (user.id)}
-        <button type="button" disabled={busy} onclick={() => run(() => pick(user))}>{user.name || `User ${user.id}`}</button>
+        <button type="button" class="word" disabled={busy} onclick={() => run(() => pick(user))}>{user.name || `User ${user.id}`}</button>
       {/each}
     </div>
   {:else}
     <p class="muted">Take each fast's weight from openScale: the weighing closest to its end, within {WINDOW_HOURS} hours.</p>
-    <button type="button" disabled={busy} onclick={connect}><span class="icon" aria-hidden="true">⚯</span>Connect openScale</button>
+    <button type="button" class="word lead" disabled={busy} onclick={connect}
+      ><span class="icon" aria-hidden="true">⚯</span>Connect openScale</button
+    >
   {/if}
 
   <h3 class="gap">Backup</h3>
   <p class="muted">{last ? `Last export ${last}.` : 'Never exported.'}</p>
   <div class="pair">
-    <button type="button" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>Export</button>
-    <button type="button" disabled={busy} onclick={() => picker?.click()}>
+    <button type="button" class="word lead" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>Export</button>
+    <button type="button" class="word" disabled={busy} onclick={() => picker?.click()}>
       <span class="icon" aria-hidden="true">⤒</span>Import
     </button>
   </div>
@@ -266,7 +268,7 @@
     <span>Regular export</span>
     <button
       type="button"
-      class="toggle"
+      class="word"
       aria-pressed={settings.exportOn}
       onclick={() => tracker.setSettings({ exportOn: !settings.exportOn })}>{settings.exportOn ? 'On' : 'Off'}</button
     >
@@ -307,21 +309,13 @@
     margin-top: 0;
   }
 
-  .toggle {
-    min-width: 9ch;
-  }
-
   .gap {
     margin-top: 1em;
   }
 
   .pair {
     display: flex;
-    gap: 1ch;
-  }
-
-  .pair button {
-    flex: 1;
+    gap: 3ch;
   }
 
   .message {
@@ -331,7 +325,8 @@
   .choices {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5em 1ch;
+    gap: 0 2ch;
+    margin-left: -0.6ch;
   }
 
   .when {
