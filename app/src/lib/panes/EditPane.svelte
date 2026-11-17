@@ -34,12 +34,13 @@
   let end = $state(initial.end)
   let goal = $state(initial.goal)
   let note = $state(initial.note)
-  let weightText = $state(initial.weight === null ? '' : weightNumber(initial.weight, untrack(() => unit)))
+  const initialWeightText = initial.weight === null ? '' : weightNumber(initial.weight, untrack(() => unit))
+  let weightText = $state(initialWeightText)
 
   const latest = $derived(floorMinute(now))
   const weight = $derived(parseWeight(weightText, unit))
   const weightBad = $derived(weightText.trim() !== '' && weight === null)
-  const fromScale = $derived(scaleWeightFor({ end }, scale))
+  const fromScale = $derived(scaleWeightFor({ start, end }, scale))
   const clash = $derived(overlapping(others, start, end, initial.id))
   const problem = $derived(
     invalidTimes(start, end, now) ??
@@ -54,7 +55,9 @@
 
   function save() {
     if (problem) return
-    onSave({ ...initial, start, end, goal, note: note.trim(), weight })
+    // A weight synced from the scale stays marked so while it is left as it was.
+    const fromScale = initial.fromScale === true && weight !== null && weightText === initialWeightText
+    onSave({ ...initial, start, end, goal, note: note.trim(), weight, fromScale: fromScale || undefined })
   }
 </script>
 
@@ -76,6 +79,8 @@
   </label>
   {#if fromScale && !weightText.trim()}
     <p class="muted">From openScale, weighed {dayClock(fromScale.at)}. Type a weight to use your own.</p>
+  {:else if initial.fromScale && weightText === initialWeightText}
+    <p class="muted">Synced from openScale. Type a weight to use your own.</p>
   {/if}
 
   <h3>Start</h3>

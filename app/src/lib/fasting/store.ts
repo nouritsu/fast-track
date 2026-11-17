@@ -49,6 +49,7 @@ export function toFast(v: unknown): Fast | null {
     goal: f.goal,
     note: typeof f.note === 'string' ? f.note : '',
     weight: isNumber(f.weight) && f.weight > 0 ? f.weight : null,
+    ...(f.fromScale === true && isNumber(f.weight) ? { fromScale: true } : {}),
   }
 }
 

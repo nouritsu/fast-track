@@ -4,7 +4,8 @@
 import { STAGES, stageEnd, stageIndex } from './stages'
 import { dayKey, HOUR, MINUTE } from './time'
 
-/** A finished fast. Times are epoch ms; the goal is in hours; weight is in kg. */
+/** A finished fast. Times are epoch ms; the goal is in hours; weight is in kg, typed in
+ *  or, with fromScale, synced from openScale (openscale.ts), which a later sync may update. */
 export interface Fast {
   id: string
   start: number
@@ -12,6 +13,7 @@ export interface Fast {
   goal: number
   note: string
   weight: number | null
+  fromScale?: boolean
 }
 
 /** The fast in progress. */

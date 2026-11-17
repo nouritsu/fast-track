@@ -5,8 +5,8 @@
   import { lastResult, type ExportResult } from '../fasting/autoexport'
   import { askScale, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
   import { backupName, makeBackup, parseBackup, saveBackupFile } from '../fasting/backup'
-  import { describeSchedule, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
-  import { dayClock } from '../fasting/time'
+  import { describeSchedule, listed, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
+  import { dayClock, shortDate } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
   import Page from '../ui/Page.svelte'
   import type { Theme } from '../theme'
@@ -84,6 +84,23 @@
     scaleUser = user
     await tracker.setSettings({ scaleUser: user.id })
     return `Connected to ${user.name || 'openScale'}: ${tracker.scale.length} weighings.`
+  }
+
+  // Writes the scale's weights into past fasts, and says what it found.
+  function sync() {
+    run(async () => {
+      const r = await tracker.syncScale()
+      const w = tracker.scale
+      if (!w.length) return 'openScale gave no weighings for this user.'
+      const span = `${w.length} weighings, ${shortDate(w[0].at)} to ${shortDate(w.at(-1)!.at)}`
+      const did = [
+        r.filled && `filled ${r.filled}`,
+        r.updated && `updated ${r.updated}`,
+        r.typed && `kept ${r.typed} typed in`,
+        r.unmatched && `${r.unmatched} without a weighing during the fast or within ${WINDOW_HOURS} hours of its end`,
+      ].filter(Boolean)
+      return `${span}: ${did.length ? listed(did as string[]) : 'every fast was up to date'}.`
+    })
   }
 
   function disconnect() {
@@ -206,9 +223,10 @@
       <button type="button" disabled={busy} onclick={disconnect}>Disconnect</button>
     </div>
     <p class="muted">
-      {tracker.scale.length} weighings. A fast takes the one closest to its end, within {WINDOW_HOURS} hours; a weight you
-      type in wins.
+      {tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within
+      {WINDOW_HOURS} hours; a weight you type in wins. Sync writes them into past fasts.
     </p>
+    <button type="button" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>Sync weights</button>
   {:else if choosing.length}
     <div class="choices">
       {#each choosing as user (user.id)}
