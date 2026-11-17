@@ -50,12 +50,12 @@ export function drag(node: HTMLElement, options: DragOptions) {
   let dragged = false
 
   const down = (event: PointerEvent) => {
+    dragged = false
     if (event.button !== 0 || (opts.enabled && !opts.enabled())) return
     if (opts.claim) event.stopPropagation()
     start = { x: event.clientX, y: event.clientY, id: event.pointerId }
     axis = null
     offset = velocity = 0
-    dragged = false
   }
 
   const move = (event: PointerEvent) => {
@@ -87,7 +87,10 @@ export function drag(node: HTMLElement, options: DragOptions) {
     if (!start || event.pointerId !== start.id) return
     start = null
     if (axis !== opts.axis) return
+    // Only the click this drag ends in, if any: it comes right after pointerup. A
+    // touch swipe ends in none, and a later click (a key, a screen reader) must go through.
     dragged = true
+    setTimeout(() => (dragged = false))
     opts.onEnd(offset, velocity)
   }
 
