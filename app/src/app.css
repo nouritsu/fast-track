@@ -313,18 +313,47 @@ button.glyph {
   -webkit-user-select: none;
 }
 
-/* A word as a button (On, kg, Export): in the accent on the page like the glyph
-   buttons, no fill or border, with room around it for a finger. */
+/* A word as a button, TUI style: [ on ], [ ⤓ export ]. The brackets muted, the
+   word in the accent, no fill or border; a press lights it all in the accent and the
+   light fades once released, so a tap is seen landing. */
 button.word {
-  padding: 0.35em 0.6ch;
+  padding: 0.35em 0.3ch;
   background: none;
   border: none;
+  border-radius: 0.3em;
   color: var(--accent);
+  white-space: nowrap;
+  transition:
+    background-color 0.3s ease-out,
+    color 0.3s ease-out;
 }
 
-/* A word button at the start of its own line, its text in line with the text above. */
+button.word::before,
+button.word::after {
+  color: var(--muted);
+  white-space: pre;
+  transition: color 0.3s ease-out;
+}
+
+button.word::before {
+  content: '[ ';
+}
+
+button.word::after {
+  content: ' ]';
+}
+
+button.word:active:not(:disabled),
+button.word:active:not(:disabled)::before,
+button.word:active:not(:disabled)::after {
+  background: var(--accent);
+  color: var(--bg);
+  transition: none;
+}
+
+/* A word button at the start of its own line, its bracket in line with the text above. */
 button.word.lead {
-  margin-left: -0.6ch;
+  margin-left: -0.3ch;
 }
 
 /* A gate: plain large text in the accent, no border; the whole area is the button. */

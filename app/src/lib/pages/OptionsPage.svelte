@@ -203,7 +203,7 @@
   <div class="row">
     <span>Alerts</span>
     <button type="button" class="word" disabled={busy} aria-pressed={settings.alerts} onclick={toggleAlerts}>
-      {settings.alerts ? 'On' : 'Off'}
+      {settings.alerts ? 'on' : 'off'}
     </button>
   </div>
   <p class="muted">A notification when a stage begins and at the goal.</p>
@@ -211,7 +211,7 @@
   <div class="row">
     <span>Status</span>
     <button type="button" class="word" disabled={busy} aria-pressed={settings.status} onclick={toggleStatus}>
-      {settings.status ? 'On' : 'Off'}
+      {settings.status ? 'on' : 'off'}
     </button>
   </div>
   <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer.</p>
@@ -232,13 +232,13 @@
   {:else if scale.granted && settings.scaleUser !== null}
     <div class="row">
       <span>Weights from {scaleUser?.name || 'openScale'}</span>
-      <button type="button" class="word" disabled={busy} onclick={disconnect}>Disconnect</button>
+      <button type="button" class="word" disabled={busy} onclick={disconnect}>disconnect</button>
     </div>
     <p class="muted">
       {tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within
       {WINDOW_HOURS} hours; a weight you type in wins. Sync writes them into past fasts.
     </p>
-    <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>Sync weights</button>
+    <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>sync weights</button>
   {:else if choosing.length}
     <div class="choices">
       {#each choosing as user (user.id)}
@@ -248,16 +248,16 @@
   {:else}
     <p class="muted">Take each fast's weight from openScale: the weighing closest to its end, within {WINDOW_HOURS} hours.</p>
     <button type="button" class="word lead" disabled={busy} onclick={connect}
-      ><span class="icon" aria-hidden="true">⚯</span>Connect openScale</button
+      ><span class="icon" aria-hidden="true">⚯</span>connect openScale</button
     >
   {/if}
 
   <h3 class="gap">Backup</h3>
   <p class="muted">{last ? `Last export ${last}.` : 'Never exported.'}</p>
   <div class="pair">
-    <button type="button" class="word lead" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>Export</button>
+    <button type="button" class="word lead" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>export</button>
     <button type="button" class="word" disabled={busy} onclick={() => picker?.click()}>
-      <span class="icon" aria-hidden="true">⤒</span>Import
+      <span class="icon" aria-hidden="true">⤒</span>import
     </button>
   </div>
   <input bind:this={picker} type="file" accept="application/json,.json" hidden onchange={importFile} />
@@ -270,7 +270,7 @@
       type="button"
       class="word"
       aria-pressed={settings.exportOn}
-      onclick={() => tracker.setSettings({ exportOn: !settings.exportOn })}>{settings.exportOn ? 'On' : 'Off'}</button
+      onclick={() => tracker.setSettings({ exportOn: !settings.exportOn })}>{settings.exportOn ? 'on' : 'off'}</button
     >
   </div>
   <label class="when">
@@ -326,7 +326,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0 2ch;
-    margin-left: -0.6ch;
+    margin-left: -0.3ch;
   }
 
   .when {
