@@ -3,6 +3,7 @@
   import { untrack } from 'svelte'
   import { askAlerts } from '../fasting/alerts'
   import { lastResult, type ExportResult } from '../fasting/autoexport'
+  import { askScale, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
   import { backupName, makeBackup, parseBackup, saveBackupFile } from '../fasting/backup'
   import { describeSchedule, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
   import { dayClock } from '../fasting/time'
@@ -10,8 +11,8 @@
   import Page from '../ui/Page.svelte'
   import type { Theme } from '../theme'
 
-  // The theme, alerts, the status notification, the weight unit, and the backup with
-  // its regular exports. Toggles show the current state.
+  // The theme, alerts, the status notification, the weight unit, weights from openScale,
+  // and the backup with its regular exports. Toggles show the current state.
   let {
     tracker,
     theme,
@@ -49,6 +50,48 @@
     const expression = every.trim()
     if (!reading.ok || expression === settings.exportEvery) return
     saveTimer = window.setTimeout(() => void tracker.setSettings({ exportEvery: expression }), SAVE_MS)
+  }
+
+  // openScale: connect asks Android for access, then which of its users is this one.
+  let scale = $state<ScaleStatus>({ installed: false, granted: false })
+  let scaleUser = $state<ScaleUser | null>(null)
+  let choosing = $state<ScaleUser[]>([])
+
+  $effect(() => {
+    void scaleStatus().then(async (status) => {
+      scale = status
+      const id = untrack(() => settings.scaleUser)
+      if (status.granted && id !== null) scaleUser = (await scaleUsers().catch(() => [])).find((u) => u.id === id) ?? null
+    })
+  })
+
+  function connect() {
+    run(async () => {
+      scale = await askScale()
+      if (!scale.granted) return 'Not allowed. Android settings → Apps → Fast Track → Permissions can allow openScale later.'
+      const users = await scaleUsers()
+      if (!users.length) return 'openScale has no users yet.'
+      if (users.length > 1) {
+        choosing = users
+        return 'Which openScale user are you?'
+      }
+      return pick(users[0])
+    })
+  }
+
+  async function pick(user: ScaleUser): Promise<string> {
+    choosing = []
+    scaleUser = user
+    await tracker.setSettings({ scaleUser: user.id })
+    return `Connected to ${user.name || 'openScale'}: ${tracker.scale.length} weighings.`
+  }
+
+  function disconnect() {
+    run(async () => {
+      await tracker.setSettings({ scaleUser: null })
+      scaleUser = null
+      return 'openScale disconnected; weights you typed in stay.'
+    })
   }
 
   const autoLine = $derived(
@@ -154,6 +197,29 @@
     >
   </div>
 
+  <h3 class="gap">openScale</h3>
+  {#if !scale.installed}
+    <p class="muted">openScale is not installed. With it, each fast takes its weight from your scale.</p>
+  {:else if scale.granted && settings.scaleUser !== null}
+    <div class="row">
+      <span>Weights from {scaleUser?.name || 'openScale'}</span>
+      <button type="button" disabled={busy} onclick={disconnect}>Disconnect</button>
+    </div>
+    <p class="muted">
+      {tracker.scale.length} weighings. A fast takes the one closest to its end, within {WINDOW_HOURS} hours; a weight you
+      type in wins.
+    </p>
+  {:else if choosing.length}
+    <div class="choices">
+      {#each choosing as user (user.id)}
+        <button type="button" disabled={busy} onclick={() => run(() => pick(user))}>{user.name || `User ${user.id}`}</button>
+      {/each}
+    </div>
+  {:else}
+    <p class="muted">Take each fast's weight from openScale: the weighing closest to its end, within {WINDOW_HOURS} hours.</p>
+    <button type="button" disabled={busy} onclick={connect}><span class="icon" aria-hidden="true">⚯</span>Connect openScale</button>
+  {/if}
+
   <h3 class="gap">Backup</h3>
   <p class="muted">{last ? `Last export ${last}.` : 'Never exported.'}</p>
   <div class="pair">
@@ -229,6 +295,12 @@
 
   .message {
     overflow-wrap: anywhere;
+  }
+
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 1ch;
   }
 
   .when {

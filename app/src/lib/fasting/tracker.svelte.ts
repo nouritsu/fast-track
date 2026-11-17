@@ -6,6 +6,7 @@ import { syncAlerts } from './alerts'
 import { exportRuns, savePlan } from './autoexport'
 import { mergeFasts } from './backup'
 import { newestFirst, type Active, type Fast } from './fasts'
+import { scaleStatus, scaleWeights, type ScaleWeight } from './openscale'
 import { refreshStatus } from './status'
 import { DEFAULT_SETTINGS, load, saveActive, saveFasts, saveSettings, type Settings } from './store'
 
@@ -14,6 +15,7 @@ export class Tracker {
   active = $state<Active | null>(null)
   settings = $state<Settings>({ ...DEFAULT_SETTINGS })
   loaded = $state(false)
+  scale = $state<ScaleWeight[]>([]) // weighings from openScale, oldest first
 
   async load(): Promise<void> {
     const saved = await load()
@@ -22,6 +24,13 @@ export class Tracker {
     this.settings = saved.settings
     this.loaded = true
     await this.#planExports()
+    await this.loadScale()
+  }
+
+  /** Reads the chosen openScale user's weighings, or none when not connected. */
+  async loadScale(): Promise<void> {
+    const user = this.settings.scaleUser
+    this.scale = user !== null && (await scaleStatus()).granted ? await scaleWeights(user) : []
   }
 
   async start(at: number): Promise<void> {
@@ -88,6 +97,7 @@ export class Tracker {
     if (alertsChanged) await syncAlerts(this.active, this.settings.alerts)
     if ('exportOn' in patch || 'exportEvery' in patch) await this.#planExports()
     else if ('status' in patch) await refreshStatus()
+    if ('scaleUser' in patch) await this.loadScale()
   }
 
   /** Saves the regular exports' next run times; the native side schedules the first. */

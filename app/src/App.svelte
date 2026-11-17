@@ -128,7 +128,13 @@
       // Storage that fails to load still leaves a working gate; the alert says why.
       if (phase === 'loading') phase = 'ready'
     })
-    return () => clearInterval(timer)
+    // Back in front, read openScale again: a weighing may have come in meanwhile.
+    const back = () => document.visibilityState === 'visible' && void tracker.loadScale()
+    document.addEventListener('visibilitychange', back)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', back)
+    }
   })
 
   /** Runs something that reads or writes storage; a failure shows as an alert. */
@@ -372,6 +378,7 @@
       <EditPane
         fast={editing.fast}
         others={tracker.fasts}
+        scale={tracker.scale}
         isNew={editing.isNew}
         unit={settings.unit}
         {now}
@@ -504,6 +511,7 @@
         <div class="page-main" inert={pane !== null && paneHost === 1}>
         <CalendarPage
           fasts={tracker.fasts}
+          scale={tracker.scale}
           unit={settings.unit}
           {now}
           shown={page === 1}
@@ -517,7 +525,7 @@
       </div>
 
       <div class="page" id="page-stats" role="tabpanel" aria-labelledby="tab-stats" inert={page !== 2}>
-        <StatsPage fasts={tracker.fasts} unit={settings.unit} {now} />
+        <StatsPage fasts={tracker.fasts} scale={tracker.scale} unit={settings.unit} {now} />
       </div>
 
       <div class="page" id="page-options" role="tabpanel" aria-labelledby="tab-options" inert={page !== 3}>

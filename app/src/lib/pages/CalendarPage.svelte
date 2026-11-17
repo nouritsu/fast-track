@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import { deepestByDay, deepestStage, fastLength, percentOf, showWeight, type Fast } from '../fasting/fasts'
+  import { weightOf, type ScaleWeight } from '../fasting/openscale'
   import { STAGES } from '../fasting/stages'
   import { dayKey, longDate, monthGrid, monthTitle, nearClock } from '../fasting/time'
   import { carries, drag, type DragOptions } from '../ui/drag'
@@ -12,6 +13,7 @@
   // takes effect at once; the entry turns into an Undo line until the page is left.
   let {
     fasts,
+    scale,
     unit,
     now,
     shown: visible,
@@ -21,6 +23,7 @@
     onRestore,
   }: {
     fasts: Fast[]
+    scale: ScaleWeight[] // openScale's weighings, for fasts without a weight typed in
     unit: 'kg' | 'lb'
     now: number
     shown: boolean // the page is in view; leaving it clears the Undo lines
@@ -162,6 +165,7 @@
       </div>
     {:else}
       {@const stage = STAGES[deepestStage(fast)]}
+      {@const weight = weightOf(fast, scale)}
       <div class="swipe row" use:drag={entryDrag(fast)}>
       <span class="reveal" aria-hidden="true">⌫ Delete</span>
       <div class="entry" style:transform="translateX({swiping?.id === fast.id ? swiping.dx : 0}px)" class:moving={swiping?.id === fast.id}>
@@ -172,9 +176,8 @@
         </div>
         <p class="fields">{nearClock(fast.start, fast.end)} → {clock(new Date(fast.end))} · {duration(fastLength(fast))}</p>
         <p class="fields">
-          <span style:color="var(--{stage.id})">{stage.name}</span> · {percentOf(fastLength(fast), fast.goal)}% of {fast.goal}h{fast.weight !==
-          null
-            ? ` · ${showWeight(fast.weight, unit)}`
+          <span style:color="var(--{stage.id})">{stage.name}</span> · {percentOf(fastLength(fast), fast.goal)}% of {fast.goal}h{weight
+            ? ` · ${showWeight(weight.kg, unit)}${weight.scale ? ' (scale)' : ''}`
             : ''}
         </p>
         {#if fast.note}<p class="note"><span class="icon" aria-hidden="true">¶</span>{fast.note}</p>{/if}

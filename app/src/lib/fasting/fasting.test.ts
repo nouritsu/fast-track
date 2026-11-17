@@ -3,9 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 // The pure logic never touches Capacitor, but alerts.ts and backup.ts import it.
 vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: {} }))
 vi.mock('@capacitor/filesystem', () => ({ Directory: {}, Encoding: {}, Filesystem: {} }))
+vi.mock('@capacitor/core', () => ({ registerPlugin: () => ({}), Capacitor: { isNativePlatform: () => false } }))
 
 import { plannedAlerts } from './alerts'
 import { BackupError, makeBackup, mergeFasts, parseBackup } from './backup'
+import { scaleWeightFor, weightOf } from './openscale'
 import {
   deepestByDay,
   earliestStart,
@@ -141,6 +143,27 @@ describe('history', () => {
   })
 })
 
+describe('openScale weights', () => {
+  const f = fast('2026-11-16T20:00', '2026-11-17T12:00')
+  const weights = [
+    { at: at('2026-11-16T07:00'), kg: 72.9 }, // 29h before the end: too far
+    { at: at('2026-11-17T07:30'), kg: 72.1 }, // 4.5h before
+    { at: at('2026-11-17T13:00'), kg: 71.8 }, // 1h after: closest
+  ]
+
+  it('takes the weighing closest to the end of the fast, within the window', () => {
+    expect(scaleWeightFor(f, weights)?.kg).toBe(71.8)
+    expect(scaleWeightFor(f, weights.slice(0, 1))).toBeNull()
+    expect(scaleWeightFor(f, [])).toBeNull()
+  })
+
+  it('lets a typed-in weight win over the scale', () => {
+    expect(weightOf(f, weights)).toEqual({ kg: 71.8, scale: true })
+    expect(weightOf({ ...f, weight: 70 }, weights)).toEqual({ kg: 70, scale: false })
+    expect(weightOf(f, [])).toBeNull()
+  })
+})
+
 describe('checks', () => {
   const now = at('2026-11-17T12:00')
 
@@ -194,6 +217,8 @@ describe('storage and backup', () => {
     expect(toSettings({ unit: 'lb', goal: 18 })).toMatchObject({ unit: 'lb', goal: 18, alerts: true, status: true })
     expect(toSettings({ status: false }).status).toBe(false)
     expect(toSettings({ exportOn: true, exportEvery: ' ' })).toMatchObject({ exportOn: true, exportEvery: 'daily' })
+    expect(toSettings({ scaleUser: 2 }).scaleUser).toBe(2)
+    expect(toSettings({ scaleUser: 'me' }).scaleUser).toBeNull()
   })
 
   it('round-trips a backup and merges by id', () => {
