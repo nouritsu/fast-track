@@ -7,7 +7,7 @@ vi.mock('@capacitor/core', () => ({ registerPlugin: () => ({}), Capacitor: { isN
 
 import { plannedAlerts } from './alerts'
 import { BackupError, makeBackup, mergeFasts, parseBackup } from './backup'
-import { scaleWeightFor, weightOf } from './openscale'
+import { scaleWeightFor, syncWeights, weightOf } from './openscale'
 import {
   deepestByDay,
   earliestStart,
@@ -144,23 +144,43 @@ describe('history', () => {
 })
 
 describe('openScale weights', () => {
-  const f = fast('2026-11-16T20:00', '2026-11-17T12:00')
+  const f = fast('2026-11-16T20:00', '2026-11-17T17:30') // ends in the evening
   const weights = [
-    { at: at('2026-11-16T07:00'), kg: 72.9 }, // 29h before the end: too far
-    { at: at('2026-11-17T07:30'), kg: 72.1 }, // 4.5h before
-    { at: at('2026-11-17T13:00'), kg: 71.8 }, // 1h after: closest
+    { at: at('2026-11-16T07:00'), kg: 72.9 }, // the morning before: neither during nor near
+    { at: at('2026-11-17T07:00'), kg: 72.1 }, // during the fast, 10.5h before its end
+    { at: at('2026-11-17T18:00'), kg: 72.6 }, // half an hour after it ended, eaten since
   ]
 
-  it('takes the weighing closest to the end of the fast, within the window', () => {
-    expect(scaleWeightFor(f, weights)?.kg).toBe(71.8)
-    expect(scaleWeightFor(f, weights.slice(0, 1))).toBeNull()
+  it('takes the last weighing during the fast, over one nearer its end', () => {
+    expect(scaleWeightFor(f, weights)?.kg).toBe(72.1)
+  })
+
+  it('falls back to the weighing closest to the end, within 12 hours', () => {
+    const short = fast('2026-11-17T08:00', '2026-11-17T17:30')
+    expect(scaleWeightFor(short, weights)?.kg).toBe(72.6)
+    expect(scaleWeightFor(short, weights.slice(0, 1))).toBeNull()
     expect(scaleWeightFor(f, [])).toBeNull()
   })
 
   it('lets a typed-in weight win over the scale', () => {
-    expect(weightOf(f, weights)).toEqual({ kg: 71.8, scale: true })
+    expect(weightOf(f, weights)).toEqual({ kg: 72.1, scale: true })
     expect(weightOf({ ...f, weight: 70 }, weights)).toEqual({ kg: 70, scale: false })
+    expect(weightOf({ ...f, weight: 72.1, fromScale: true }, [])).toEqual({ kg: 72.1, scale: true })
     expect(weightOf(f, [])).toBeNull()
+  })
+
+  it('syncs the scale into fasts without a typed weight, and only those', () => {
+    const typed = { ...f, id: 'typed', weight: 70 }
+    const synced = { ...f, id: 'synced', weight: 73, fromScale: true }
+    const empty = { ...f, id: 'empty' }
+    const lonely = fast('2026-10-01T20:00', '2026-10-02T12:00')
+    const report = syncWeights([typed, synced, empty, lonely], weights)
+    expect([report.filled, report.updated, report.typed, report.unmatched]).toEqual([1, 1, 1, 1])
+    expect(report.changed.map((c) => [c.id, c.weight, c.fromScale])).toEqual([
+      ['synced', 72.1, true],
+      ['empty', 72.1, true],
+    ])
+    expect(syncWeights(report.changed, weights).changed).toEqual([]) // nothing left to do
   })
 })
 
@@ -213,6 +233,8 @@ describe('storage and backup', () => {
     expect(toFast(JSON.parse(JSON.stringify(f)))).toEqual(f)
     expect(toFast({ ...f, end: f.start - 1 })).toBeNull()
     expect(toFast({ id: 'x' })).toBeNull()
+    expect(toFast({ ...f, fromScale: true })).toEqual({ ...f, fromScale: true })
+    expect(toFast({ ...f, weight: null, fromScale: true })).not.toHaveProperty('fromScale')
     expect(toSettings(null)).toEqual(DEFAULT_SETTINGS)
     expect(toSettings({ unit: 'lb', goal: 18 })).toMatchObject({ unit: 'lb', goal: 18, alerts: true, status: true })
     expect(toSettings({ status: false }).status).toBe(false)

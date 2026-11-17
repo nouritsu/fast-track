@@ -6,7 +6,7 @@ import { syncAlerts } from './alerts'
 import { exportRuns, savePlan } from './autoexport'
 import { mergeFasts } from './backup'
 import { newestFirst, type Active, type Fast } from './fasts'
-import { scaleStatus, scaleWeights, type ScaleWeight } from './openscale'
+import { scaleStatus, scaleWeights, syncWeights, type ScaleWeight, type SyncReport } from './openscale'
 import { refreshStatus } from './status'
 import { DEFAULT_SETTINGS, load, saveActive, saveFasts, saveSettings, type Settings } from './store'
 
@@ -73,6 +73,18 @@ export class Tracker {
     this.fasts = newestFirst([...this.fasts.filter((f) => f.id !== fast.id), fast])
     await saveFasts(this.fasts)
     await refreshStatus()
+  }
+
+  /** Writes openScale's weights into the fasts without a typed one (openscale.ts). */
+  async syncScale(): Promise<SyncReport> {
+    await this.loadScale()
+    const report = syncWeights(this.fasts, this.scale)
+    if (report.changed.length) {
+      const changed = new Map(report.changed.map((f) => [f.id, f]))
+      this.fasts = this.fasts.map((f) => changed.get(f.id) ?? f)
+      await saveFasts(this.fasts)
+    }
+    return report
   }
 
   async remove(id: string): Promise<void> {
