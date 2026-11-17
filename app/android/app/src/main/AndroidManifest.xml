@@ -55,6 +55,13 @@
     <!-- Export writes Documents/FastTrack/. Android 11 and newer need no permission
          for files the app creates; 10 and older ask for this one. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <!-- Weights from openScale (OpenScalePlugin): its own permission, which the user
+         grants once, and visibility of its provider on Android 11 and newer. -->
+    <uses-permission android:name="com.health.openscale.READ_WRITE_DATA" />
+    <queries>
+        <package android:name="com.health.openscale" />
+        <provider android:authorities="com.health.openscale.provider" />
+    </queries>
     <!-- The status notification rebuilds itself after a reboot (FastStatusReceiver). -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 </manifest>

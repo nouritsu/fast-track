@@ -1,7 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import { GOALS, invalidTimes, overlapping, parseWeight, stepGoal, weightNumber, type Fast } from '../fasting/fasts'
-  import { floorMinute, longDate, shortDate, stepDay, stepHour, stepMinute } from '../fasting/time'
+  import { scaleWeightFor, type ScaleWeight } from '../fasting/openscale'
+  import { dayClock, floorMinute, longDate, shortDate, stepDay, stepHour, stepMinute } from '../fasting/time'
   import { duration } from '../ui/fields'
   import Pane from '../ui/Pane.svelte'
   import Stepper from '../ui/Stepper.svelte'
@@ -11,6 +12,7 @@
   let {
     fast,
     others,
+    scale,
     isNew,
     unit,
     now,
@@ -19,6 +21,7 @@
   }: {
     fast: Fast
     others: Fast[] // the rest of the history, which it must not overlap
+    scale: ScaleWeight[] // openScale's weighings: the one nearest the end fills an empty weight
     isNew: boolean
     unit: 'kg' | 'lb'
     now: number
@@ -36,6 +39,7 @@
   const latest = $derived(floorMinute(now))
   const weight = $derived(parseWeight(weightText, unit))
   const weightBad = $derived(weightText.trim() !== '' && weight === null)
+  const fromScale = $derived(scaleWeightFor({ end }, scale))
   const clash = $derived(overlapping(others, start, end, initial.id))
   const problem = $derived(
     invalidTimes(start, end, now) ??
@@ -61,9 +65,18 @@
   </label>
   <label class="field">
     <span class="muted">Weight</span>
-    <input type="text" class="weight" inputmode="decimal" bind:value={weightText} placeholder="--.-" />
+    <input
+      type="text"
+      class="weight"
+      inputmode="decimal"
+      bind:value={weightText}
+      placeholder={fromScale ? weightNumber(fromScale.kg, unit) : '--.-'}
+    />
     <span>{unit}</span>
   </label>
+  {#if fromScale && !weightText.trim()}
+    <p class="muted">From openScale, weighed {dayClock(fromScale.at)}. Type a weight to use your own.</p>
+  {/if}
 
   <h3>Start</h3>
   <Stepper label="Day" value={shortDate(start)} onStep={stepStart(stepDay)} atEnd={stepDay(start, 1) > latest} />

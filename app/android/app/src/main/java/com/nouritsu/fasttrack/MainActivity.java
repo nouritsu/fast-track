@@ -10,8 +10,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // The status notification (FastStatus); registered before the bridge starts.
+        // The status notification and exports (FastStatus, FastExport), and weights from
+        // openScale; registered before the bridge starts.
         registerPlugin(FastStatusPlugin.class);
+        registerPlugin(OpenScalePlugin.class);
         super.onCreate(savedInstanceState);
         preferFastestRefreshRate();
     }

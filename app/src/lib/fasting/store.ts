@@ -13,6 +13,7 @@ export interface Settings {
   lastExport: string | null // ISO time of the last backup
   exportOn: boolean // regular exports (autoexport.ts)
   exportEvery: string // when, as a systemd calendar expression (schedule.ts)
+  scaleUser: number | null // the openScale user whose weights to read (openscale.ts), or none
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lastExport: null,
   exportOn: false,
   exportEvery: 'daily',
+  scaleUser: null,
 }
 
 export interface Saved {
@@ -65,6 +67,7 @@ export function toSettings(v: unknown): Settings {
     lastExport: typeof s.lastExport === 'string' ? s.lastExport : null,
     exportOn: typeof s.exportOn === 'boolean' ? s.exportOn : DEFAULT_SETTINGS.exportOn,
     exportEvery: typeof s.exportEvery === 'string' && s.exportEvery.trim() ? s.exportEvery : DEFAULT_SETTINGS.exportEvery,
+    scaleUser: isNumber(s.scaleUser) ? s.scaleUser : null,
   }
 }
 

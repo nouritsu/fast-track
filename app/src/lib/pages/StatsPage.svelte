@@ -1,27 +1,30 @@
 <script lang="ts">
   import { fastLength, newestFirst, showWeight, stageHours, streak, summarize, type Fast } from '../fasting/fasts'
+  import { weightOf, type ScaleWeight } from '../fasting/openscale'
   import { NAME_WIDTH, STAGES } from '../fasting/stages'
   import { bar, duration, pad, sparkline } from '../ui/fields'
   import Page from '../ui/Page.svelte'
 
   // The history at a glance: counts, lengths, how often the goal was met, the last
   // fortnight of fasts, the hours spent in each stage, and the weight's trend.
-  let { fasts, unit, now }: { fasts: Fast[]; unit: 'kg' | 'lb'; now: number } = $props()
+  let { fasts, scale, unit, now }: { fasts: Fast[]; scale: ScaleWeight[]; unit: 'kg' | 'lb'; now: number } = $props()
 
   const RECENT = 14
   const sum = $derived(summarize(fasts))
   const recent = $derived(newestFirst(fasts).slice(0, RECENT).reverse())
   const hours = $derived(stageHours(fasts))
   const most = $derived(Math.max(1, ...hours))
+  // Each fast's weight, typed in or from openScale.
   const weighed = $derived(
     newestFirst(fasts)
-      .filter((f) => f.weight !== null)
+      .map((f) => weightOf(f, scale)?.kg ?? null)
+      .filter((kg) => kg !== null)
       .slice(0, RECENT)
       .reverse(),
   )
-  const lowest = $derived(Math.min(...weighed.map((f) => f.weight ?? 0)))
-  const firstWeight = $derived(weighed[0]?.weight ?? 0)
-  const lastWeight = $derived(weighed.at(-1)?.weight ?? 0)
+  const lowest = $derived(Math.min(...weighed))
+  const firstWeight = $derived(weighed[0] ?? 0)
+  const lastWeight = $derived(weighed.at(-1) ?? 0)
   const change = $derived.by(() => {
     const kg = lastWeight - firstWeight
     const shown = showWeight(Math.abs(kg), unit)
@@ -50,10 +53,10 @@
     <h3 class="gap">Weight</h3>
     {#if weighed.length}
       <!-- Above the lowest weight, so the line shows the change rather than the weight. -->
-      <p class="fields spark">{sparkline(weighed.map((f) => (f.weight ?? 0) - lowest + 0.1))}</p>
+      <p class="fields spark">{sparkline(weighed.map((kg) => kg - lowest + 0.1))}</p>
       <p class="fields">Now {showWeight(lastWeight, unit)} · {change} over {weighed.length === 1 ? '1 fast' : `${weighed.length} fasts`}</p>
     {:else}
-      <p class="muted">Add a weight when you end a fast.</p>
+      <p class="muted">Add a weight when you end a fast, or connect openScale in Options.</p>
     {/if}
   {:else}
     <p class="muted">No fasts yet.</p>
