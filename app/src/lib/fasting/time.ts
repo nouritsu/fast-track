@@ -62,11 +62,12 @@ export function stepMinute(at: number, steps: number, size = 5): number {
   return d.getTime()
 }
 
-/** The weeks of a month, Monday first, with null for days outside it. */
+/** Six weeks for every month, Monday first, with null for days outside it: always six,
+ *  so the calendar keeps its height from month to month. */
 export function monthGrid(year: number, month: number): (number | null)[][] {
   const first = (new Date(year, month, 1).getDay() + 6) % 7 // Monday is 0
   const days = new Date(year, month + 1, 0).getDate()
   const cells: (number | null)[] = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)]
-  while (cells.length % 7) cells.push(null)
+  while (cells.length < 6 * 7) cells.push(null)
   return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7))
 }
