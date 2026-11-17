@@ -29,6 +29,14 @@
   const SAVE_MS = 600
   let every = $state(untrack(() => tracker.settings.exportEvery)) // the field; the setting follows once it reads
   let saveTimer = 0
+  let typing = false // between a keystroke and its save
+
+  // The page exists before the settings load: the field follows the saved schedule,
+  // except while it is being typed into.
+  $effect(() => {
+    const saved = settings.exportEvery
+    if (!untrack(() => typing)) every = saved
+  })
   let auto = $state<ExportResult | null>(null)
 
   const reading = $derived.by(() => {
@@ -47,9 +55,13 @@
 
   function typed() {
     clearTimeout(saveTimer)
+    typing = true
     const expression = every.trim()
     if (!reading.ok || expression === settings.exportEvery) return
-    saveTimer = window.setTimeout(() => void tracker.setSettings({ exportEvery: expression }), SAVE_MS)
+    saveTimer = window.setTimeout(() => {
+      typing = false
+      void tracker.setSettings({ exportEvery: expression })
+    }, SAVE_MS)
   }
 
   // openScale: connect asks Android for access, then which of its users is this one.
@@ -265,6 +277,7 @@
       type="text"
       bind:value={every}
       oninput={typed}
+      onblur={() => (typing = false)}
       autocapitalize="off"
       autocomplete="off"
       spellcheck="false"
