@@ -1,0 +1,488 @@
+/* Iosevka (Regular, Bold) subset to the characters the app draws, and the icons
+   Iosevka lacks or draws too small from Noto Sans Symbols 2. Built by Nix:
+   nix build .#app-assets -o app/public/generated */
+@font-face {
+  font-family: 'Iosevka';
+  src: url('/generated/fonts/iosevka-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Iosevka';
+  src: url('/generated/fonts/iosevka-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* Keep unicode-range equal to the Noto code points in nix/app-assets.nix. */
+@font-face {
+  font-family: 'Noto Symbols';
+  src: url('/generated/fonts/symbols.woff2') format('woff2');
+  unicode-range: U+23FE, U+263C, U+270E;
+  font-display: swap;
+}
+
+/* Catppuccin (catppuccin.com/palette): Latte (light) and Mocha (dark). Any element
+   can carry its own theme: the theme button takes the new one a beat before the
+   page does (src/lib/theme.ts). */
+[data-theme='latte'] {
+  color-scheme: light;
+  --ctp-rosewater: #dc8a78;
+  --ctp-flamingo: #dd7878;
+  --ctp-pink: #ea76cb;
+  --ctp-mauve: #8839ef;
+  --ctp-red: #d20f39;
+  --ctp-maroon: #e64553;
+  --ctp-peach: #fe640b;
+  --ctp-yellow: #df8e1d;
+  --ctp-green: #40a02b;
+  --ctp-teal: #179299;
+  --ctp-sky: #04a5e5;
+  --ctp-sapphire: #209fb5;
+  --ctp-blue: #1e66f5;
+  --ctp-lavender: #7287fd;
+  --ctp-text: #4c4f69;
+  --ctp-subtext1: #5c5f77;
+  --ctp-subtext0: #6c6f85;
+  --ctp-overlay2: #7c7f93;
+  --ctp-overlay1: #8c8fa1;
+  --ctp-overlay0: #9ca0b0;
+  --ctp-surface2: #acb0be;
+  --ctp-surface1: #bcc0cc;
+  --ctp-surface0: #ccd0da;
+  --ctp-base: #eff1f5;
+  --ctp-mantle: #e6e9ef;
+  --ctp-crust: #dce0e8;
+}
+
+/* The default; :where keeps it below [data-theme='latte'] on the root. */
+:where(:root),
+[data-theme='mocha'] {
+  color-scheme: dark;
+  --ctp-rosewater: #f5e0dc;
+  --ctp-flamingo: #f2cdcd;
+  --ctp-pink: #f5c2e7;
+  --ctp-mauve: #cba6f7;
+  --ctp-red: #f38ba8;
+  --ctp-maroon: #eba0ac;
+  --ctp-peach: #fab387;
+  --ctp-yellow: #f9e2af;
+  --ctp-green: #a6e3a1;
+  --ctp-teal: #94e2d5;
+  --ctp-sky: #89dceb;
+  --ctp-sapphire: #74c7ec;
+  --ctp-blue: #89b4fa;
+  --ctp-lavender: #b4befe;
+  --ctp-text: #cdd6f4;
+  --ctp-subtext1: #bac2de;
+  --ctp-subtext0: #a6adc8;
+  --ctp-overlay2: #9399b2;
+  --ctp-overlay1: #7f849c;
+  --ctp-overlay0: #6c7086;
+  --ctp-surface2: #585b70;
+  --ctp-surface1: #45475a;
+  --ctp-surface0: #313244;
+  --ctp-base: #1e1e2e;
+  --ctp-mantle: #181825;
+  --ctp-crust: #11111b;
+}
+
+/* What the app draws with; components use these, never --ctp-* or hex. Mauve is
+   the one accent. --ok/--warn/--bad colour live values and their block's border.
+   Declared with the palette, so an element with its own theme resolves them in it. */
+:root,
+[data-theme] {
+  --bg: var(--ctp-base);
+  --fg: var(--ctp-text);
+  --muted: var(--ctp-subtext0);
+  --border: var(--ctp-overlay0);
+  --button: var(--ctp-surface0);
+  --button-border: var(--ctp-surface2);
+  --accent: var(--ctp-mauve);
+  --ok: var(--ctp-green);
+  --warn: var(--ctp-yellow);
+  --bad: var(--ctp-red);
+  /* The stages of a fast (src/lib/fasting/stages.ts), each named by its id. */
+  --glucose: var(--ctp-blue);
+  --fat: var(--ctp-peach); /* Catppuccin's orange */
+  --ketosis: var(--ctp-red);
+  --autophagy: var(--ctp-mauve);
+  color: var(--fg);
+}
+
+:root {
+  --radius: 0.6em;
+  --column: 30rem; /* the shell's width on screens wider than a phone */
+  /* The app draws under the system bars. Capacitor's SystemBars sets
+     --safe-area-inset-* where the WebView's env() values are wrong. */
+  --inset-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --inset-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  font-family: 'Iosevka', 'Noto Symbols', ui-monospace, monospace;
+  font-size: 16px;
+  line-height: 1.3;
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overscroll-behavior: none;
+}
+
+/* The theme reveal (theme.ts): a circle of the new theme grows from the button (to
+   Latte), or the old Latte view shrinks into it (to Mocha). While it runs, the root
+   stays out of the view transition and the body is captured under its theme's name,
+   so each view gets its own group; the body takes the background so both views are
+   opaque. The Latte view's image pair is the circle: centred on the button, with a
+   radius that covers the page, and the view inside it pinned to the page. theme.ts
+   scales the circle and the view in opposite directions: transforms run on the
+   compositor, where an animated clip-path repaints every frame. Colour transitions
+   are held so nothing fades inside the circle. */
+:root[data-reveal] {
+  view-transition-name: none;
+}
+
+:root[data-reveal] body {
+  background: var(--bg);
+}
+
+:root[data-reveal][data-theme='latte'] body {
+  view-transition-name: latte;
+}
+
+:root[data-reveal][data-theme='mocha'] body {
+  view-transition-name: mocha;
+}
+
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation: none;
+}
+
+::view-transition-group(latte) {
+  z-index: 1;
+}
+
+::view-transition-image-pair(latte) {
+  inset: auto;
+  left: calc(var(--reveal-x) - var(--reveal-r));
+  top: calc(var(--reveal-y) - var(--reveal-r));
+  width: calc(2 * var(--reveal-r));
+  height: calc(2 * var(--reveal-r));
+  border-radius: 50%;
+  overflow: clip;
+}
+
+::view-transition-old(latte),
+::view-transition-new(latte) {
+  left: calc(var(--reveal-r) - var(--reveal-x));
+  top: calc(var(--reveal-r) - var(--reveal-y));
+  width: var(--reveal-w);
+  height: var(--reveal-h);
+  transform-origin: var(--reveal-x) var(--reveal-y);
+}
+
+:root[data-reveal] *,
+:root[data-reveal] *::before,
+:root[data-reveal] *::after {
+  transition: none !important;
+}
+
+/* Buttons: surface fill, rounded 1px border, a 1px press. */
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--button);
+  border: 1px solid var(--button-border);
+  border-radius: var(--radius);
+  padding: 0.3em 1ch;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.3s ease;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.45;
+}
+
+/* A link that does what a button does (Info's source link). */
+a.button {
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+  background: var(--button);
+  border: 1px solid var(--button-border);
+  border-radius: var(--radius);
+  padding: 0.3em 1ch;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Text fields: the page's background inside a button's border, in the app font. */
+input {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--button-border);
+  border-radius: var(--radius);
+  padding: 0.3em 1ch;
+  box-sizing: border-box;
+}
+
+input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* Keyboard focus only (a tap shows none): a thin accent ring. */
+a.button:focus-visible,
+input:focus-visible,
+button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The one action the screen is for. */
+button.primary {
+  border-color: var(--accent);
+}
+
+/* Already used this round (a hint taken, a filter on). */
+button.used {
+  border-style: dashed;
+}
+
+/* Shows a change on the pressed button for a moment (src/lib/ui/flash.svelte.ts):
+   a cost in the bad colour, a plain count (.plain) in the accent. */
+button.flash {
+  color: var(--bad);
+}
+
+button.flash.plain {
+  color: var(--accent);
+}
+
+/* Buttons set into a block's bottom edge (Block's `actions`): words on the border
+   line, cut out of it by the page's background like a title, with a tap area
+   reaching above and below the line. The primary one is bold in the accent. */
+button.edge {
+  background: var(--bg);
+  border: none;
+  border-radius: 0;
+  padding: 0.6em 0.7ch;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+button.edge.primary {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Opacity would let the border show through; a disabled one turns muted instead. */
+button.edge:disabled {
+  opacity: 1;
+  color: var(--muted);
+}
+
+button.edge:disabled .icon {
+  color: inherit;
+}
+
+/* A gate: plain large text in the accent, no border; the whole area is the button. */
+button.gate {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  font-size: 2.5em;
+  color: var(--accent);
+  background: none;
+  border: none;
+}
+
+/* Icon-only square buttons (the Menu); the name goes in aria-label and title. */
+button.square {
+  aspect-ratio: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.3em;
+  white-space: nowrap;
+}
+
+/* Icons are Unicode symbols from the app font, in the accent colour. */
+.icon {
+  color: var(--accent);
+  margin-right: 0.6ch;
+}
+
+button.square .icon {
+  margin: 0;
+}
+
+/* A rule across a block, border to border, like a ratatui split. */
+hr.split {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 0.4em -1ch 0;
+}
+
+/* The main block's face: three rows, the outer two always equal, so the hero in
+   the middle stays put whatever opens below it. Past the bottom edge it scrolls. */
+.stage {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  container-type: inline-size;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.stage > .center {
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stage > .below {
+  grid-row: 3;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  padding-top: 0.6em;
+  text-align: center;
+}
+
+.stage > .fill {
+  grid-row: 1 / -1;
+  align-self: center;
+  text-align: center;
+}
+
+.stage p {
+  margin: 0;
+}
+
+/* Secondary detail under the hero fades in once the hero has locked. */
+.settle {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.settle.visible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settle {
+    transition: none;
+  }
+}
+
+/* Large accent text for a gate or an ending ("Ready!", "Done!"). */
+.headline {
+  margin: 0;
+  font-size: 2.5em;
+  color: var(--accent);
+}
+
+/* A live value set into a block's title: bold, in its block's tone. */
+.value {
+  font-weight: 700;
+  color: var(--block-border, var(--accent));
+  transition: color 0.8s ease;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Status lines: fixed-width fields, never wrapped. No ligatures, so a dashed
+   placeholder shows every dash, where Iosevka would join three into a line. */
+.fields {
+  margin: 0;
+  white-space: pre;
+  font-variant-ligatures: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+/* Section headings inside a sheet. */
+h3 {
+  margin: 0 0 0.3em;
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+table {
+  border-collapse: collapse;
+  margin-top: 0.8em;
+}
+
+caption {
+  text-align: left;
+  color: var(--muted);
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.1em 1ch 0.1em 0;
+  font-weight: normal;
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+}
+
+/* ASCII art in a Catppuccin rainbow, top left to bottom right. Set --cols to its
+   widest line; it fits the width of its container (Iosevka's ch is half an em). */
+.rainbow {
+  margin: 0;
+  font: inherit;
+  font-size: min(1em, calc(100cqi / (var(--cols) * 0.522)));
+  line-height: 1.15;
+  background: linear-gradient(
+    to bottom right,
+    var(--ctp-red),
+    var(--ctp-peach),
+    var(--ctp-yellow),
+    var(--ctp-green),
+    var(--ctp-sapphire),
+    var(--ctp-blue),
+    var(--ctp-mauve)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* A failure that must be seen: pinned above the bottom edge. */
+.alert {
+  position: fixed;
+  inset: auto 0.6em calc(0.6em + var(--inset-bottom));
+  max-width: calc(var(--column) - 1.2em);
+  margin: 0 auto;
+  padding: 0.4em 1ch;
+  background: var(--bg);
+  border: 1px solid var(--bad);
+  border-radius: var(--radius);
+  color: var(--bad);
+}
