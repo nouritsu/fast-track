@@ -11,8 +11,10 @@
   import Page from '../ui/Page.svelte'
   import type { Theme } from '../theme'
 
-  // The theme, alerts, the status notification, the weight unit, weights from openScale,
-  // and the backup with its regular exports. Toggles show the current state.
+  // Options in btop's manner: categories along the top, then each option as its name
+  // with its value under it, ← value →, the selected one lit, and a box at the foot
+  // that explains it and says how the last action went. Values cycle with the arrows;
+  // actions show as [ action ]; the export schedule is typed in place.
   let {
     tracker,
     theme,
@@ -29,6 +31,14 @@
   const SAVE_MS = 600
   let every = $state(untrack(() => tracker.settings.exportEvery)) // the field; the setting follows once it reads
   let saveTimer = 0
+  let typing = false // between a keystroke and its save
+
+  // The page exists before the settings load: the field follows the saved schedule,
+  // except while it is being typed into.
+  $effect(() => {
+    const saved = settings.exportEvery
+    if (!untrack(() => typing)) every = saved
+  })
   let auto = $state<ExportResult | null>(null)
 
   const reading = $derived.by(() => {
@@ -47,21 +57,27 @@
 
   function typed() {
     clearTimeout(saveTimer)
+    typing = true
     const expression = every.trim()
     if (!reading.ok || expression === settings.exportEvery) return
-    saveTimer = window.setTimeout(() => void tracker.setSettings({ exportEvery: expression }), SAVE_MS)
+    saveTimer = window.setTimeout(() => {
+      typing = false
+      void tracker.setSettings({ exportEvery: expression })
+    }, SAVE_MS)
   }
 
   // openScale: connect asks Android for access, then which of its users is this one.
   let scale = $state<ScaleStatus>({ installed: false, granted: false })
   let scaleUser = $state<ScaleUser | null>(null)
-  let choosing = $state<ScaleUser[]>([])
+  let users = $state<ScaleUser[]>([]) // openScale's users, once it may be read
 
   $effect(() => {
     void scaleStatus().then(async (status) => {
       scale = status
       const id = untrack(() => settings.scaleUser)
-      if (status.granted && id !== null) scaleUser = (await scaleUsers().catch(() => [])).find((u) => u.id === id) ?? null
+      if (!status.granted) return
+      users = await scaleUsers().catch(() => [])
+      scaleUser = users.find((u) => u.id === id) ?? null
     })
   })
 
@@ -69,18 +85,14 @@
     run(async () => {
       scale = await askScale()
       if (!scale.granted) return 'Not allowed. Android settings → Apps → Fast Track → Permissions can allow openScale later.'
-      const users = await scaleUsers()
+      users = await scaleUsers()
       if (!users.length) return 'openScale has no users yet.'
-      if (users.length > 1) {
-        choosing = users
-        return 'Which openScale user are you?'
-      }
-      return pick(users[0])
+      const picked = await pick(users[0])
+      return users.length > 1 ? `${picked} Not you? Switch users with the arrows.` : picked
     })
   }
 
   async function pick(user: ScaleUser): Promise<string> {
-    choosing = []
     scaleUser = user
     await tracker.setSettings({ scaleUser: user.id })
     return `Connected to ${user.name || 'openScale'}: ${tracker.scale.length} weighings.`
@@ -101,6 +113,14 @@
       ].filter(Boolean)
       return `${span}: ${did.length ? listed(did as string[]) : 'every fast was up to date'}.`
     })
+  }
+
+  /** The next or previous openScale user. */
+  function switchUser(by: -1 | 1) {
+    if (!users.length) return
+    const at = users.findIndex((u) => u.id === scaleUser?.id)
+    const user = users[(at + by + users.length) % users.length]
+    run(() => pick(user))
   }
 
   function disconnect() {
@@ -178,159 +198,318 @@
       return `Imported ${added} of ${backup.fasts.length} fasts; the rest were already here.`
     })
   }
+
+  // The options, by category ------------------------------------------------------
+
+  type Category = 'general' | 'weight' | 'backup'
+  const CATEGORIES: Category[] = ['general', 'weight', 'backup']
+
+  interface Option {
+    id: string
+    name: string
+    kind: 'cycle' | 'action' | 'text' | 'note'
+    value: string
+    about: string
+    step?: (by: -1 | 1, button: HTMLElement) => void // cycle
+    act?: () => void // action
+    off?: boolean // an action not available now
+  }
+
+  const onOff = (on: boolean) => (on ? 'on' : 'off')
+  const connected = $derived(scale.granted && settings.scaleUser !== null)
+
+  const options = $derived<Record<Category, Option[]>>({
+    general: [
+      {
+        id: 'theme',
+        name: 'Theme',
+        kind: 'cycle',
+        value: theme === 'mocha' ? 'Mocha' : 'Latte',
+        about: 'Catppuccin Mocha, dark, or Latte, light. The new one grows from the arrow you pressed.',
+        step: (_, button) => onTheme(button),
+      },
+      {
+        id: 'alerts',
+        name: 'Stage alerts',
+        kind: 'cycle',
+        value: onOff(settings.alerts),
+        about: 'A notification when a stage begins and when the goal is reached.',
+        step: toggleAlerts,
+      },
+      {
+        id: 'status',
+        name: 'Status notification',
+        kind: 'cycle',
+        value: onOff(settings.status),
+        about: 'A notification that stays while you fast or eat: the stage, a running timer, and when the next stage and the goal come.',
+        step: toggleStatus,
+      },
+    ],
+    weight: [
+      {
+        id: 'unit',
+        name: 'Unit',
+        kind: 'cycle',
+        value: settings.unit,
+        about: 'Weights shown and typed in kilograms or pounds; they are kept in kilograms either way.',
+        step: () => void tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' }),
+      },
+      !scale.installed
+        ? { id: 'openscale', name: 'openScale', kind: 'note', value: 'not installed', about: 'Install openScale to take each fast\'s weight from your scale.' }
+        : connected && users.length
+          ? {
+              id: 'openscale',
+              name: 'openScale user',
+              kind: 'cycle',
+              value: scaleUser?.name || `user ${settings.scaleUser}`,
+              about: `Weights come from this openScale user: ${tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within ${WINDOW_HOURS} hours; a weight you type in wins.`,
+              step: switchUser,
+            }
+          : {
+              id: 'openscale',
+              name: 'openScale',
+              kind: 'action',
+              value: 'connect',
+              about: `Take each fast's weight from openScale: the last weighing during the fast, else the closest to its end within ${WINDOW_HOURS} hours. Android asks you once to allow it.`,
+              act: connect,
+            },
+      {
+        id: 'sync',
+        name: 'Sync weights',
+        kind: 'action',
+        value: 'sync now',
+        about: `Writes openScale's weights into past fasts that have none typed in, so backups and stats keep them. Run it again after weighing in.${connected ? '' : ' Connect openScale first.'}`,
+        act: sync,
+        off: !connected,
+      },
+      ...(connected
+        ? [
+            {
+              id: 'disconnect',
+              name: 'Disconnect',
+              kind: 'action' as const,
+              value: 'disconnect',
+              about: 'Stop reading openScale. Weights already synced into fasts stay.',
+              act: disconnect,
+            },
+          ]
+        : []),
+    ],
+    backup: [
+      {
+        id: 'export',
+        name: 'Export',
+        kind: 'action',
+        value: 'export now',
+        about: `Saves every fast and the settings to Documents/FastTrack/. ${last ? `Last export ${last}.` : 'Never exported.'}`,
+        act: exportNow,
+      },
+      {
+        id: 'import',
+        name: 'Import',
+        kind: 'action',
+        value: 'choose file',
+        about: 'Adds the fasts from a backup file. Fasts already here are not changed.',
+        act: () => picker?.click(),
+      },
+      {
+        id: 'regular',
+        name: 'Regular export',
+        kind: 'cycle',
+        value: onOff(settings.exportOn),
+        about: `Exports on a schedule, with the app closed too: one file a day in Documents/FastTrack/.${autoLine ? ` ${autoLine}` : ''}`,
+        step: () => void tracker.setSettings({ exportOn: !settings.exportOn }),
+      },
+      {
+        id: 'every',
+        name: 'Export every',
+        kind: 'text',
+        value: every,
+        about: "In calendar event notation (systemd's OnCalendar format): daily, weekly, Mon..Fri 08:00, *-*-01 09:00, *:0/30.",
+      },
+    ],
+  })
+
+  let category = $state<Category>('general')
+  let selected = $state('theme')
+  const shown = $derived(options[category].find((o) => o.id === selected) ?? options[category][0])
+
+  function choose(next: Category) {
+    category = next
+    selected = options[next][0].id
+    message = ''
+  }
+
+  function select(id: string) {
+    if (id !== selected) message = ''
+    selected = id
+  }
 </script>
 
 <Page title="Options">
-  <div class="row first">
-    <span>Theme</span>
-    <button type="button" class="toggle" aria-label="Theme: {theme === 'mocha' ? 'Mocha' : 'Latte'}" onclick={(e) => onTheme(e.currentTarget)}>
-      <span class="icon" aria-hidden="true">{theme === 'mocha' ? '⏾' : '☼'}</span>{theme === 'mocha' ? 'Mocha' : 'Latte'}
-    </button>
-  </div>
-
-  <div class="row">
-    <span>Alerts</span>
-    <button type="button" class="toggle" disabled={busy} aria-pressed={settings.alerts} onclick={toggleAlerts}>
-      {settings.alerts ? 'On' : 'Off'}
-    </button>
-  </div>
-  <p class="muted">A notification when a stage begins and at the goal.</p>
-
-  <div class="row">
-    <span>Status</span>
-    <button type="button" class="toggle" disabled={busy} aria-pressed={settings.status} onclick={toggleStatus}>
-      {settings.status ? 'On' : 'Off'}
-    </button>
-  </div>
-  <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer.</p>
-
-  <div class="row">
-    <span>Weight</span>
-    <button
-      type="button"
-      class="toggle"
-      aria-label="Weight unit: {settings.unit}"
-      onclick={() => tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' })}>{settings.unit}</button
-    >
-  </div>
-
-  <h3 class="gap">openScale</h3>
-  {#if !scale.installed}
-    <p class="muted">openScale is not installed. With it, each fast takes its weight from your scale.</p>
-  {:else if scale.granted && settings.scaleUser !== null}
-    <div class="row">
-      <span>Weights from {scaleUser?.name || 'openScale'}</span>
-      <button type="button" disabled={busy} onclick={disconnect}>Disconnect</button>
-    </div>
-    <p class="muted">
-      {tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within
-      {WINDOW_HOURS} hours; a weight you type in wins. Sync writes them into past fasts.
-    </p>
-    <button type="button" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>Sync weights</button>
-  {:else if choosing.length}
-    <div class="choices">
-      {#each choosing as user (user.id)}
-        <button type="button" disabled={busy} onclick={() => run(() => pick(user))}>{user.name || `User ${user.id}`}</button>
+  <div class="layout">
+    <div class="categories" role="tablist" aria-label="Option categories">
+      {#each CATEGORIES as c (c)}
+        <button type="button" role="tab" aria-selected={category === c} class:current={category === c} onclick={() => choose(c)}
+          >{c}</button
+        >
       {/each}
     </div>
-  {:else}
-    <p class="muted">Take each fast's weight from openScale: the weighing closest to its end, within {WINDOW_HOURS} hours.</p>
-    <button type="button" disabled={busy} onclick={connect}><span class="icon" aria-hidden="true">⚯</span>Connect openScale</button>
-  {/if}
+    <hr class="split" />
 
-  <h3 class="gap">Backup</h3>
-  <p class="muted">{last ? `Last export ${last}.` : 'Never exported.'}</p>
-  <div class="pair">
-    <button type="button" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>Export</button>
-    <button type="button" disabled={busy} onclick={() => picker?.click()}>
-      <span class="icon" aria-hidden="true">⤒</span>Import
-    </button>
+    <div class="list">
+      {#each options[category] as o (o.id)}
+        <div class="option" class:selected={shown.id === o.id}>
+          <button type="button" class="name" aria-pressed={shown.id === o.id} onclick={() => select(o.id)}>{o.name}</button>
+          <div class="value">
+            {#if o.kind === 'cycle'}
+              <button
+                type="button"
+                class="glyph"
+                aria-label="Previous {o.name}"
+                disabled={busy}
+                onclick={(e) => (select(o.id), o.step?.(-1, e.currentTarget))}>←</button
+              >
+              <span class="shown">{o.value}</span>
+              <button
+                type="button"
+                class="glyph"
+                aria-label="Next {o.name}"
+                disabled={busy}
+                onclick={(e) => (select(o.id), o.step?.(1, e.currentTarget))}>→</button
+              >
+            {:else if o.kind === 'action'}
+              <button type="button" class="run" disabled={busy || o.off} onclick={() => (select(o.id), o.act?.())}>[ {o.value} ]</button>
+            {:else if o.kind === 'text'}
+              <input
+                type="text"
+                bind:value={every}
+                oninput={typed}
+                onfocus={() => select(o.id)}
+                onblur={() => (typing = false)}
+                autocapitalize="off"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="daily"
+                aria-label={o.name}
+              />
+            {:else}
+              <span class="muted">{o.value}</span>
+            {/if}
+          </div>
+        </div>
+      {/each}
+    </div>
+
+    <hr class="split" />
+    <div class="about" role="status">
+      <p>{shown.about}</p>
+      {#if shown.id === 'every'}
+        <p class:problem={!reading.ok}>
+          {reading.text}{#if reading.ok}{' '}<span class="muted">{settings.exportOn ? reading.next : 'Regular export is off.'}</span>{/if}
+        </p>
+      {/if}
+      {#if message}<p class="message">{message}</p>{/if}
+    </div>
   </div>
   <input bind:this={picker} type="file" accept="application/json,.json" hidden onchange={importFile} />
-  {#if message}<p class="message" role="status">{message}</p>{/if}
-  <p class="muted">Import adds fasts the app does not have yet and changes none.</p>
-
-  <div class="row">
-    <span>Regular export</span>
-    <button
-      type="button"
-      class="toggle"
-      aria-pressed={settings.exportOn}
-      onclick={() => tracker.setSettings({ exportOn: !settings.exportOn })}>{settings.exportOn ? 'On' : 'Off'}</button
-    >
-  </div>
-  <label class="when">
-    <span class="muted">Every</span>
-    <input
-      type="text"
-      bind:value={every}
-      oninput={typed}
-      autocapitalize="off"
-      autocomplete="off"
-      spellcheck="false"
-      placeholder="daily"
-      aria-describedby="when-reads"
-    />
-  </label>
-  <p id="when-reads" class:problem={!reading.ok} role="status">
-    {reading.text}{#if reading.ok && settings.exportOn}{' '}<span class="muted">{reading.next}</span>{/if}
-  </p>
-  <p class="muted">
-    In calendar event notation (systemd's OnCalendar format): daily, weekly, Mon..Fri 08:00, *-*-01 09:00, *:0/30.
-    Files go to Documents/FastTrack/, one a day.
-  </p>
-  {#if autoLine}<p class="muted message">{autoLine}</p>{/if}
 </Page>
 
 <style>
-  .row {
+  .layout {
+    height: 100%;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 0.4em;
+    flex-direction: column;
   }
 
-  .row.first {
-    margin-top: 0;
+  /* Inside the page's content, a split stays within it. */
+  hr.split {
+    margin: 0.4em 0;
   }
 
-  .toggle {
-    min-width: 9ch;
-  }
-
-  .gap {
-    margin-top: 1em;
-  }
-
-  .pair {
+  /* btop's category tabs: words, the current one lit. */
+  .categories {
     display: flex;
     gap: 1ch;
   }
 
-  .pair button {
+  .categories button {
+    padding: 0.15em 1ch;
+    background: none;
+    border: none;
+    color: var(--muted);
+  }
+
+  .categories button.current {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .list {
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* An option: its name, then its value centred under it. The selected name is lit
+     across the width, as btop does. */
+  .option {
+    margin-bottom: 0.35em;
+  }
+
+  .name {
+    display: block;
+    width: 100%;
+    padding: 0.1em 1ch;
+    background: none;
+    border: none;
+    border-radius: 0.3em;
+    text-align: left;
+  }
+
+  .selected .name {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1ch;
+    min-height: 2em;
+  }
+
+  .shown {
+    min-width: 12ch;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .run {
+    padding: 0.2em 1ch;
+    background: none;
+    border: none;
+    color: var(--accent);
+  }
+
+  .value input {
+    width: 80%;
+    text-align: center;
+  }
+
+  /* The foot: what the selected option does, and how the last action went. */
+  .about {
+    min-height: 6.5em;
+  }
+
+  .about p {
+    margin: 0.2em 0;
   }
 
   .message {
     overflow-wrap: anywhere;
-  }
-
-  .choices {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em 1ch;
-  }
-
-  .when {
-    display: flex;
-    align-items: center;
-    gap: 1ch;
-    margin-top: 0.4em;
-  }
-
-  .when input {
-    flex: 1;
-    min-width: 0;
+    color: var(--accent);
   }
 
   .problem {

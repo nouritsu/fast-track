@@ -35,7 +35,8 @@
     "U+2913" # ⤓ export
     "U+2912" # ⤒ import
     "U+25A0" # ■ a stage's colour
-    "U+2192" # → from start to end
+    "U+2190" # ← an option's previous value
+    "U+2192" # → from start to end, an option's next value
   ];
   # From Noto Sans Symbols 2; keep equal to unicode-range in app/src/app.css.
   noto = [
