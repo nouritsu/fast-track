@@ -90,11 +90,13 @@ public class OpenScalePlugin extends Plugin {
     @PluginMethod
     public void weights(PluginCall call) {
         if (!readable(call)) return;
-        Long user = call.getLong("userId");
-        if (user == null) {
+        // Read as any number: a small one comes over from the web as an Integer, which
+        // PluginCall.getLong turns into null.
+        if (!call.getData().has("userId")) {
             call.reject("userId is missing");
             return;
         }
+        long user = call.getData().optLong("userId");
         Uri uri = PROVIDER.buildUpon().appendPath("measurements").appendPath(String.valueOf(user)).build();
         JSArray weights = new JSArray();
         java.util.Set<String> seen = new java.util.TreeSet<>();
