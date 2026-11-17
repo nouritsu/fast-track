@@ -1,0 +1,22 @@
+# Nix
+result
+result-*
+.direnv/
+
+# devenv (the house template generates these)
+.devenv*
+.pre-commit-config.yaml
+.claude/settings.json
+.mcp.json
+
+# App
+node_modules/
+/app/dist/
+# Generated: nix build .#app-assets -o app/public/generated
+/app/public/generated
+
+# Signed APKs: nix run .#apk
+/out/
+
+# Local preview server for the desktop app
+.claude/launch.json
