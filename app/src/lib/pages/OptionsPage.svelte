@@ -104,7 +104,7 @@
       {settings.status ? 'On' : 'Off'}
     </button>
   </div>
-  <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer. Android only.</p>
+  <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer.</p>
 
   <div class="row">
     <span>Weight</span>
