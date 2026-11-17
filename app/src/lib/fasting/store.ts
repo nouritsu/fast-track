@@ -11,9 +11,19 @@ export interface Settings {
   status: boolean // keep a notification showing the fast or eating window and the stage
   unit: 'kg' | 'lb'
   lastExport: string | null // ISO time of the last backup
+  exportOn: boolean // regular exports (autoexport.ts)
+  exportEvery: string // when, as a systemd calendar expression (schedule.ts)
 }
 
-export const DEFAULT_SETTINGS: Settings = { goal: DEFAULT_GOAL, alerts: true, status: true, unit: 'kg', lastExport: null }
+export const DEFAULT_SETTINGS: Settings = {
+  goal: DEFAULT_GOAL,
+  alerts: true,
+  status: true,
+  unit: 'kg',
+  lastExport: null,
+  exportOn: false,
+  exportEvery: 'daily',
+}
 
 export interface Saved {
   fasts: Fast[]
@@ -53,6 +63,8 @@ export function toSettings(v: unknown): Settings {
     status: typeof s.status === 'boolean' ? s.status : DEFAULT_SETTINGS.status,
     unit: s.unit === 'lb' ? 'lb' : 'kg',
     lastExport: typeof s.lastExport === 'string' ? s.lastExport : null,
+    exportOn: typeof s.exportOn === 'boolean' ? s.exportOn : DEFAULT_SETTINGS.exportOn,
+    exportEvery: typeof s.exportEvery === 'string' && s.exportEvery.trim() ? s.exportEvery : DEFAULT_SETTINGS.exportEvery,
   }
 }
 

@@ -33,11 +33,12 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
-        <!-- Rebuilds the status notification at its next change, and after a reboot, an
-             update or a clock change, which drop or shift its alarm. -->
+        <!-- The status notification's next change and the regular exports (FastExport),
+             and the reboots, updates and clock changes that drop or shift their alarms. -->
         <receiver android:name=".FastStatusReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="com.nouritsu.fasttrack.REFRESH_STATUS" />
+                <action android:name="com.nouritsu.fasttrack.RUN_EXPORT" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.TIME_SET" />

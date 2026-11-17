@@ -1,13 +1,17 @@
 <script lang="ts">
   import { Capacitor } from '@capacitor/core'
+  import { untrack } from 'svelte'
   import { askAlerts } from '../fasting/alerts'
+  import { lastResult, type ExportResult } from '../fasting/autoexport'
   import { backupName, makeBackup, parseBackup, saveBackupFile } from '../fasting/backup'
+  import { describeSchedule, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
+  import { dayClock } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
   import Page from '../ui/Page.svelte'
   import type { Theme } from '../theme'
 
-  // The theme, alerts, the status notification, the weight unit, and the backup.
-  // Toggles show the current state.
+  // The theme, alerts, the status notification, the weight unit, and the backup with
+  // its regular exports. Toggles show the current state.
   let {
     tracker,
     theme,
@@ -19,6 +23,40 @@
   let picker = $state<HTMLInputElement>()
 
   const settings = $derived(tracker.settings)
+
+  // Regular exports: the expression is read as it is typed, and saved once it reads.
+  const SAVE_MS = 600
+  let every = $state(untrack(() => tracker.settings.exportEvery)) // the field; the setting follows once it reads
+  let saveTimer = 0
+  let auto = $state<ExportResult | null>(null)
+
+  const reading = $derived.by(() => {
+    try {
+      const cal = parseSchedule(every)
+      const next = nextRun(cal, new Date())
+      return { ok: true as const, text: `${describeSchedule(cal)}.`, next: next ? `Next ${dayClock(next.getTime())}.` : 'It never comes round.' }
+    } catch (error) {
+      return { ok: false as const, text: error instanceof ScheduleError ? `Not a time: ${error.message}.` : String(error) }
+    }
+  })
+
+  $effect(() => {
+    void lastResult().then((result) => (auto = result))
+  })
+
+  function typed() {
+    clearTimeout(saveTimer)
+    const expression = every.trim()
+    if (!reading.ok || expression === settings.exportEvery) return
+    saveTimer = window.setTimeout(() => void tracker.setSettings({ exportEvery: expression }), SAVE_MS)
+  }
+
+  const autoLine = $derived(
+    auto &&
+      `Last regular export ${new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(auto.at))}${
+        auto.error ? ` failed: ${auto.error}` : ` to ${auto.path}`
+      }.`,
+  )
   const last = $derived(
     settings.lastExport
       ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(settings.lastExport))
@@ -127,6 +165,37 @@
   <input bind:this={picker} type="file" accept="application/json,.json" hidden onchange={importFile} />
   {#if message}<p class="message" role="status">{message}</p>{/if}
   <p class="muted">Import adds fasts the app does not have yet and changes none.</p>
+
+  <div class="row">
+    <span>Regular export</span>
+    <button
+      type="button"
+      class="toggle"
+      aria-pressed={settings.exportOn}
+      onclick={() => tracker.setSettings({ exportOn: !settings.exportOn })}>{settings.exportOn ? 'On' : 'Off'}</button
+    >
+  </div>
+  <label class="when">
+    <span class="muted">Every</span>
+    <input
+      type="text"
+      bind:value={every}
+      oninput={typed}
+      autocapitalize="off"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="daily"
+      aria-describedby="when-reads"
+    />
+  </label>
+  <p id="when-reads" class:problem={!reading.ok} role="status">
+    {reading.text}{#if reading.ok && settings.exportOn}{' '}<span class="muted">{reading.next}</span>{/if}
+  </p>
+  <p class="muted">
+    In calendar event notation (systemd's OnCalendar format): daily, weekly, Mon..Fri 08:00, *-*-01 09:00, *:0/30.
+    Files go to Documents/FastTrack/, one a day.
+  </p>
+  {#if autoLine}<p class="muted message">{autoLine}</p>{/if}
 </Page>
 
 <style>
@@ -160,5 +229,21 @@
 
   .message {
     overflow-wrap: anywhere;
+  }
+
+  .when {
+    display: flex;
+    align-items: center;
+    gap: 1ch;
+    margin-top: 0.4em;
+  }
+
+  .when input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .problem {
+    color: var(--bad);
   }
 </style>
