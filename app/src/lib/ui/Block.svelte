@@ -8,13 +8,11 @@
   // A ratatui-style block: a rounded 1px border with titles set into its top edge.
   // `heading` replaces the left title when it needs markup (a live value), and
   // `headingRight` the right one. `tone` fades the border, and a .value in the
-  // title, to ok, warn or bad. `titleEnd` slides the left title to the right edge
-  // (FlipBlock), and the right title steps aside meanwhile. `actions` are buttons
-  // set into the bottom edge, the way the titles sit in the top one.
+  // title, to ok, warn or bad. `actions` are buttons set into the bottom edge, the
+  // way the titles sit in the top one.
   let {
     title = '',
     titleRight = '',
-    titleEnd = false,
     tone = '',
     heading,
     headingRight,
@@ -24,7 +22,6 @@
   }: {
     title?: string
     titleRight?: string
-    titleEnd?: boolean
     tone?: Tone
     heading?: Snippet
     headingRight?: Snippet
@@ -40,14 +37,14 @@
   style:--block-border={tone ? `var(--${tone})` : undefined}
 >
   {#if heading}
-    <h2 class="title left" class:end={titleEnd}>{@render heading()}</h2>
+    <h2 class="title left">{@render heading()}</h2>
   {:else if title}
-    <h2 class="title left" class:end={titleEnd}>{title}</h2>
+    <h2 class="title left">{title}</h2>
   {/if}
   {#if headingRight}
-    <span class="title right" class:aside={titleEnd}>{@render headingRight()}</span>
+    <span class="title right">{@render headingRight()}</span>
   {:else if titleRight}
-    <span class="title right" class:aside={titleEnd}>{titleRight}</span>
+    <span class="title right">{titleRight}</span>
   {/if}
   {@render children()}
   {#if actions}<div class="actions">{@render actions()}</div>{/if}
@@ -82,26 +79,12 @@
     white-space: nowrap;
   }
 
-  /* Linear and 0.4 s, so the title moves with FlipBlock's scan line (SWEEP_MS). */
   .left {
     left: 1ch;
-    transition:
-      left 0.4s linear,
-      transform 0.4s linear;
-  }
-
-  .left.end {
-    left: calc(100% - 1ch);
-    transform: translateX(-100%);
   }
 
   .right {
     right: 1ch;
-    transition: opacity 0.2s ease;
-  }
-
-  .right.aside {
-    opacity: 0;
   }
 
   /* The bottom edge's buttons: a row centred on the border line, each cutting the

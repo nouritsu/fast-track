@@ -6,7 +6,6 @@
 const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const LOWER = 'abcdefghijklmnopqrstuvwxyz'
 const DIGITS = '0123456789'
-const MARKS = "_|/\\()',.-`" // what ASCII art is drawn with
 
 export const FRAME_MS = 40 // glyphs change at most this often: a terminal's pace, not the display's
 export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -23,11 +22,6 @@ export function pool(ch: string): string | null {
   return ch === ch.toLowerCase() ? LOWER : UPPER
 }
 
-/** What a character scrambles through as a scan line passes it: letters and
- *  digits as in the shuffle, ASCII-art marks among themselves. */
-export function sweepPool(ch: string): string | null {
-  return pool(ch) ?? (MARKS.includes(ch) ? MARKS : null)
-}
 
 /** Characters lock `staggerMs` apart, compressed so the whole text takes at most `maxMs`. */
 export function plan(text: string, staggerMs = 50, maxMs = 700): ShufflePlan {
