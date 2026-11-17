@@ -3,7 +3,7 @@
   import { untrack } from 'svelte'
   import { askAlerts } from '../fasting/alerts'
   import { lastResult, type ExportResult } from '../fasting/autoexport'
-  import { askScale, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
+  import { askScale, emptyReason, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
   import { backupName, makeBackup, parseBackup, saveBackupFile } from '../fasting/backup'
   import { describeSchedule, listed, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
   import { dayClock, shortDate } from '../fasting/time'
@@ -21,6 +21,7 @@
 
   let busy = $state(false)
   let message = $state('')
+  let messageAt = $state<'scale' | 'backup' | 'notify'>('backup') // the section the message belongs to
   let picker = $state<HTMLInputElement>()
 
   const settings = $derived(tracker.settings)
@@ -88,7 +89,7 @@
         return 'Which openScale user are you?'
       }
       return pick(users[0])
-    })
+    }, 'scale')
   }
 
   async function pick(user: ScaleUser): Promise<string> {
@@ -103,7 +104,7 @@
     run(async () => {
       const r = await tracker.syncScale()
       const w = tracker.scale
-      if (!w.length) return 'openScale gave no weighings for this user.'
+      if (!w.length) return reason ?? 'openScale gave no weighings for this user.'
       const span = `${w.length} weighings, ${shortDate(w[0].at)} to ${shortDate(w.at(-1)!.at)}`
       const did = [
         r.filled && `filled ${r.filled}`,
@@ -112,7 +113,22 @@
         r.unmatched && `${r.unmatched} without a weighing during the fast or within ${WINDOW_HOURS} hours of its end`,
       ].filter(Boolean)
       return `${span}: ${did.length ? listed(did as string[]) : 'every fast was up to date'}.`
-    })
+    }, 'scale')
+  }
+
+  // Why a connected openScale gave no weighings, if it did not.
+  const reason = $derived(
+    tracker.scaleRead && settings.scaleUser !== null ? emptyReason(tracker.scaleRead, settings.scaleUser) : null,
+  )
+
+  /** Offers openScale's users again, to pick another. */
+  function changeUser() {
+    run(async () => {
+      const users = await scaleUsers()
+      if (users.length < 2) return `openScale has ${users.length === 1 ? 'only this user' : 'no users'}.`
+      choosing = users
+      return 'Which openScale user are you?'
+    }, 'scale')
   }
 
   function disconnect() {
@@ -120,7 +136,7 @@
       await tracker.setSettings({ scaleUser: null })
       scaleUser = null
       return 'openScale disconnected; weights you typed in stay.'
-    })
+    }, 'scale')
   }
 
   const autoLine = $derived(
@@ -135,8 +151,9 @@
       : null,
   )
 
-  async function run(task: () => Promise<string>) {
+  async function run(task: () => Promise<string>, at: typeof messageAt = 'backup') {
     busy = true
+    messageAt = at
     try {
       message = await task()
     } catch (error) {
@@ -155,7 +172,7 @@
       if (Capacitor.isNativePlatform() && !(await askAlerts())) return 'Notifications are blocked in Android settings.'
       await tracker.setSettings({ alerts: true })
       return 'Alerts on.'
-    })
+    }, 'notify')
   }
 
   function toggleStatus() {
@@ -167,7 +184,7 @@
       if (Capacitor.isNativePlatform() && !(await askAlerts())) return 'Notifications are blocked in Android settings.'
       await tracker.setSettings({ status: true })
       return 'Status notification on.'
-    })
+    }, 'notify')
   }
 
   function exportNow() {
@@ -199,6 +216,7 @@
       <span class="icon" aria-hidden="true">{theme === 'mocha' ? '⏾' : '☼'}</span>{theme === 'mocha' ? 'Mocha' : 'Latte'}
     </button>
   </div>
+  <hr class="split" />
 
   <div class="row">
     <span>Alerts</span>
@@ -207,6 +225,7 @@
     </button>
   </div>
   <p class="muted">A notification when a stage begins and at the goal.</p>
+  <hr class="split" />
 
   <div class="row">
     <span>Status</span>
@@ -215,6 +234,8 @@
     </button>
   </div>
   <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer.</p>
+  {#if message && messageAt === 'notify'}<p class="message" role="status">{message}</p>{/if}
+  <hr class="split" />
 
   <div class="row">
     <span>Weight</span>
@@ -225,24 +246,29 @@
       onclick={() => tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' })}>{settings.unit}</button
     >
   </div>
+  <hr class="split" />
 
-  <h3 class="gap">openScale</h3>
+  <h3>openScale</h3>
   {#if !scale.installed}
     <p class="muted">openScale is not installed. With it, each fast takes its weight from your scale.</p>
   {:else if scale.granted && settings.scaleUser !== null}
     <div class="row">
-      <span>Weights from {scaleUser?.name || 'openScale'}</span>
+      <span>Weights from {scaleUser?.name || `user ${settings.scaleUser}`}</span>
       <button type="button" class="word" disabled={busy} onclick={disconnect}>disconnect</button>
     </div>
     <p class="muted">
       {tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within
       {WINDOW_HOURS} hours; a weight you type in wins. Sync writes them into past fasts.
     </p>
-    <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>sync weights</button>
+    {#if reason}<p class="problem">{reason}</p>{/if}
+    <div class="pair">
+      <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>sync weights</button>
+      <button type="button" class="word" disabled={busy} onclick={changeUser}>change user</button>
+    </div>
   {:else if choosing.length}
     <div class="choices">
       {#each choosing as user (user.id)}
-        <button type="button" class="word" disabled={busy} onclick={() => run(() => pick(user))}>{user.name || `User ${user.id}`}</button>
+        <button type="button" class="word" disabled={busy} onclick={() => run(() => pick(user), 'scale')}>{user.name || `user ${user.id}`}</button>
       {/each}
     </div>
   {:else}
@@ -251,8 +277,10 @@
       ><span class="icon" aria-hidden="true">⚯</span>connect openScale</button
     >
   {/if}
+  {#if message && messageAt === 'scale'}<p class="message" role="status">{message}</p>{/if}
+  <hr class="split" />
 
-  <h3 class="gap">Backup</h3>
+  <h3>Backup</h3>
   <p class="muted">{last ? `Last export ${last}.` : 'Never exported.'}</p>
   <div class="pair">
     <button type="button" class="word lead" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>export</button>
@@ -261,8 +289,9 @@
     </button>
   </div>
   <input bind:this={picker} type="file" accept="application/json,.json" hidden onchange={importFile} />
-  {#if message}<p class="message" role="status">{message}</p>{/if}
+  {#if message && messageAt === 'backup'}<p class="message" role="status">{message}</p>{/if}
   <p class="muted">Import adds fasts the app does not have yet and changes none.</p>
+  <hr class="split" />
 
   <div class="row">
     <span>Regular export</span>
@@ -309,8 +338,9 @@
     margin-top: 0;
   }
 
-  .gap {
-    margin-top: 1em;
+  /* Between options, across the content (inside it, so nothing scrolls sideways). */
+  hr.split {
+    margin: 0.6em 0;
   }
 
   .pair {

@@ -28,7 +28,7 @@ interface OpenScalePlugin {
   status(): Promise<ScaleStatus>
   requestAccess(): Promise<ScaleStatus>
   users(): Promise<{ users: ScaleUser[] }>
-  weights(options: { userId: number }): Promise<{ weights: ScaleWeight[] }>
+  weights(options: { userId: number }): Promise<{ weights: ScaleWeight[]; rows: number; seen: string[] }>
 }
 
 const absent: ScaleStatus = { installed: false, granted: false }
@@ -38,7 +38,7 @@ const OpenScale = registerPlugin<OpenScalePlugin>('OpenScale', {
     status: async () => absent,
     requestAccess: async () => absent,
     users: async () => ({ users: [] }),
-    weights: async () => ({ weights: [] }),
+    weights: async () => ({ weights: [], rows: 0, seen: [] }),
   },
 })
 
@@ -46,14 +46,31 @@ export const scaleStatus = (): Promise<ScaleStatus> => OpenScale.status().catch(
 export const askScale = (): Promise<ScaleStatus> => OpenScale.requestAccess().catch(() => absent)
 export const scaleUsers = async (): Promise<ScaleUser[]> => (await OpenScale.users()).users
 
-/** The user's weighings, oldest first; none when openScale cannot be read. */
-export async function scaleWeights(userId: number): Promise<ScaleWeight[]> {
+/** What a read of openScale gave: the weighings, oldest first, and how it went. */
+export interface ScaleRead {
+  weights: ScaleWeight[]
+  rows: number // measurements openScale returned; -1 when it did not answer
+  seen: string[] // the identities of their values
+  error: string | null
+}
+
+export async function scaleWeights(userId: number): Promise<ScaleRead> {
   try {
-    const { weights } = await OpenScale.weights({ userId })
-    return weights.filter((w) => Number.isFinite(w.at) && w.kg > 0).sort((a, b) => a.at - b.at)
-  } catch {
-    return []
+    const { weights, rows, seen } = await OpenScale.weights({ userId })
+    const valid = weights.filter((w) => Number.isFinite(w.at) && w.kg > 0).sort((a, b) => a.at - b.at)
+    return { weights: valid, rows, seen, error: null }
+  } catch (error) {
+    return { weights: [], rows: -1, seen: [], error: error instanceof Error ? error.message : String(error) }
   }
+}
+
+/** Why a read gave no weighings, in a sentence, or null when it gave some. */
+export function emptyReason(read: ScaleRead, user: number): string | null {
+  if (read.weights.length) return null
+  if (read.error) return `openScale could not be read: ${read.error}.`
+  if (read.rows < 0) return 'openScale did not answer.'
+  if (!read.rows) return `openScale has no measurements for user ${user}. Is your data under another openScale user?`
+  return `openScale returned ${read.rows} measurements for user ${user}, none with a weight. Their values: ${read.seen.join(', ') || 'none'}.`
 }
 
 /** The fast's weighing: the last one during it, else the one closest to its end within

@@ -7,7 +7,7 @@ vi.mock('@capacitor/core', () => ({ registerPlugin: () => ({}), Capacitor: { isN
 
 import { plannedAlerts } from './alerts'
 import { BackupError, makeBackup, mergeFasts, parseBackup } from './backup'
-import { scaleWeightFor, syncWeights, weightOf } from './openscale'
+import { emptyReason, scaleWeightFor, syncWeights, weightOf } from './openscale'
 import {
   deepestByDay,
   earliestStart,
@@ -167,6 +167,15 @@ describe('openScale weights', () => {
     expect(weightOf({ ...f, weight: 70 }, weights)).toEqual({ kg: 70, scale: false })
     expect(weightOf({ ...f, weight: 72.1, fromScale: true }, [])).toEqual({ kg: 72.1, scale: true })
     expect(weightOf(f, [])).toBeNull()
+  })
+
+  it('says why a read of openScale gave no weighings', () => {
+    const read = { weights: [], rows: 0, seen: [], error: null }
+    expect(emptyReason({ ...read, weights }, 1)).toBeNull()
+    expect(emptyReason(read, 1)).toMatch(/no measurements for user 1/)
+    expect(emptyReason({ ...read, rows: 214, seen: ['builtin.fat'] }, 1)).toMatch(/214 measurements for user 1, none with a weight. Their values: builtin.fat/)
+    expect(emptyReason({ ...read, rows: -1 }, 1)).toMatch(/did not answer/)
+    expect(emptyReason({ ...read, rows: -1, error: 'denied' }, 1)).toMatch(/could not be read: denied/)
   })
 
   it('syncs the scale into fasts without a typed weight, and only those', () => {

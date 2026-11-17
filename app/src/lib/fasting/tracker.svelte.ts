@@ -6,7 +6,7 @@ import { syncAlerts } from './alerts'
 import { exportRuns, savePlan } from './autoexport'
 import { mergeFasts } from './backup'
 import { newestFirst, type Active, type Fast } from './fasts'
-import { scaleStatus, scaleWeights, syncWeights, type ScaleWeight, type SyncReport } from './openscale'
+import { scaleStatus, scaleWeights, syncWeights, type ScaleRead, type ScaleWeight, type SyncReport } from './openscale'
 import { refreshStatus } from './status'
 import { DEFAULT_SETTINGS, load, saveActive, saveFasts, saveSettings, type Settings } from './store'
 
@@ -16,6 +16,7 @@ export class Tracker {
   settings = $state<Settings>({ ...DEFAULT_SETTINGS })
   loaded = $state(false)
   scale = $state<ScaleWeight[]>([]) // weighings from openScale, oldest first
+  scaleRead = $state<ScaleRead | null>(null) // how the last read of openScale went
 
   async load(): Promise<void> {
     const saved = await load()
@@ -30,7 +31,8 @@ export class Tracker {
   /** Reads the chosen openScale user's weighings, or none when not connected. */
   async loadScale(): Promise<void> {
     const user = this.settings.scaleUser
-    this.scale = user !== null && (await scaleStatus()).granted ? await scaleWeights(user) : []
+    this.scaleRead = user !== null && (await scaleStatus()).granted ? await scaleWeights(user) : null
+    this.scale = this.scaleRead?.weights ?? []
   }
 
   async start(at: number): Promise<void> {
