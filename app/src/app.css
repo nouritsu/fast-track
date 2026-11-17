@@ -19,7 +19,7 @@
 @font-face {
   font-family: 'Noto Symbols';
   src: url('/generated/fonts/symbols.woff2') format('woff2');
-  unicode-range: U+23FE, U+263C, U+270E;
+  unicode-range: U+23FE, U+263C;
   font-display: swap;
 }
 
@@ -299,7 +299,7 @@ button.edge:disabled .icon {
   color: inherit;
 }
 
-/* A bare character as a button (< >, ✎, ⌫): the accent on the page, no fill or
+/* A bare character as a button (< >, the edit and delete icons): the accent on the page, no fill or
    border, with room around it for a finger. Disabled, it fades like any button. */
 button.glyph {
   min-width: 2.4em;

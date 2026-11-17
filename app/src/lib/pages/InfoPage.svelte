@@ -23,7 +23,7 @@
       ><span class="icon" aria-hidden="true">⚯</span>Source on GitHub</a
     >
   </p>
-  <p class="muted">Iosevka and Noto Sans Symbols 2 (SIL OFL 1.1); Catppuccin palette (MIT).</p>
+  <p class="muted">Iosevka and Noto Sans Symbols 2 (SIL OFL 1.1); Catppuccin palette (MIT); Material Icons (Apache 2.0).</p>
 </Page>
 
 <style>

@@ -6,6 +6,7 @@
   import { dayKey, longDate, monthGrid, monthTitle, nearClock } from '../fasting/time'
   import { carries, drag, type DragOptions } from '../ui/drag'
   import { clock, duration } from '../ui/fields'
+  import Icon from '../ui/Icon.svelte'
   import Page from '../ui/Page.svelte'
 
   // A month of fasts: each day that ended one in the colour of the deepest stage it
@@ -167,12 +168,12 @@
       {@const stage = STAGES[deepestStage(fast)]}
       {@const weight = weightOf(fast, scale)}
       <div class="swipe row" use:drag={entryDrag(fast)}>
-      <span class="reveal" aria-hidden="true">⌫ Delete</span>
+      <span class="reveal" aria-hidden="true">✕ Delete</span>
       <div class="entry" style:transform="translateX({swiping?.id === fast.id ? swiping.dx : 0}px)" class:moving={swiping?.id === fast.id}>
         <div class="title">
           <h3>{longDate(fast.end)}</h3>
-          <button type="button" class="glyph" aria-label="Edit" title="Edit" onclick={() => onEdit(fast)}>✎</button>
-          <button type="button" class="glyph" aria-label="Delete" title="Delete" onclick={() => remove(fast)}>⌫</button>
+          <button type="button" class="glyph" aria-label="Edit" title="Edit" onclick={() => onEdit(fast)}><Icon name="edit" /></button>
+          <button type="button" class="glyph" aria-label="Delete" title="Delete" onclick={() => remove(fast)}><Icon name="close" /></button>
         </div>
         <p class="fields">{nearClock(fast.start, fast.end)} → {clock(new Date(fast.end))} · {duration(fastLength(fast))}</p>
         <p class="fields">
