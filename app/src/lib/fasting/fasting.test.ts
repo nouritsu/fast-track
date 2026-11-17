@@ -224,6 +224,9 @@ describe('time', () => {
     expect(weeks[0]).toEqual([null, null, null, null, null, null, 1])
     expect(weeks.at(-1)).toEqual([30, null, null, null, null, null, null])
     expect(weeks.flat().filter((d) => d !== null)).toHaveLength(30)
+    const february = monthGrid(2027, 1) // starts on a Monday and fills four weeks
+    expect(february).toHaveLength(6)
+    expect(february[4]).toEqual(Array(7).fill(null))
   })
 })
 

@@ -136,6 +136,9 @@
                 {:else}
                   <span class="day muted" class:today={todayKey === k}>{String(day).padStart(2)}</span>
                 {/if}
+              {:else}
+                <!-- Holds the row's height, so short months keep the grid's size. -->
+                <span class="day" aria-hidden="true">  </span>
               {/if}
             </td>
           {/each}
@@ -239,10 +242,16 @@
     text-align: center;
   }
 
+  /* Every day the same box, button or not, blank or not: the grid never changes height. */
   .day {
     display: inline-block;
+    box-sizing: border-box;
     min-width: 3ch;
-    padding: 0.15em 0;
+    height: 1.7em;
+    padding: 0;
+    border: 1px solid transparent;
+    line-height: calc(1.7em - 2px);
+    vertical-align: middle;
     white-space: pre;
   }
 
