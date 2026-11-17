@@ -68,7 +68,7 @@ changes the goal.
  ‾‾‾‾
 ```
 
-Ended, after the scan-line flip. **¶ Note** adds a note and weight; **↺ Again** returns to the gate.
+Ended: Done!, the summary and the status values scramble into place. **¶ Note** adds a note and weight; **↺ Again** returns to the gate.
 
 ```text
 ╭─ Fast ──────────────────────── Goal 81% ─╮
@@ -179,8 +179,9 @@ Info page (the same content fills its page):
 
 
 Stats page: counts, streak, goal rate, average and longest, a sparkline of the last 14 fasts,
-hours in each stage, weight trend. Options page: theme, alerts on or off, kg or lb, export and
-import.
+hours in each stage, weight trend. Options page: theme, alerts, the status notification, kg or lb,
+weights from openScale, export and import, and regular exports on a calendar event schedule
+(systemd OnCalendar notation, said back in plain words).
 
 Status notification (Android): an ongoing notification in the system's own colours, either
 "Fasting · Ketosis" with a running timer and the goal and next stage times, or "Eating window"
