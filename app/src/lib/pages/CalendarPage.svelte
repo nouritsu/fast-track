@@ -101,13 +101,9 @@
 <Page title="Calendar">
   <div class="swipe" bind:clientWidth={width} use:drag={monthDrag} style:transform="translateX({monthShift}px)">
   <div class="month">
-    <button type="button" class="square" aria-label="Previous month" title="Previous month" onclick={() => move(-1)}>
-      <span class="icon" aria-hidden="true">‹</span>
-    </button>
+    <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => move(-1)}>&lt;</button>
     <span>{monthTitle(year, month)}</span>
-    <button type="button" class="square" aria-label="Next month" title="Next month" onclick={() => move(1)}>
-      <span class="icon" aria-hidden="true">›</span>
-    </button>
+    <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => move(1)}>&gt;</button>
   </div>
 
   <table class="grid">
@@ -171,12 +167,8 @@
       <div class="entry" style:transform="translateX({swiping?.id === fast.id ? swiping.dx : 0}px)" class:moving={swiping?.id === fast.id}>
         <div class="title">
           <h3>{longDate(fast.end)}</h3>
-          <button type="button" class="square" aria-label="Edit" title="Edit" onclick={() => onEdit(fast)}>
-            <span class="icon" aria-hidden="true">✎</span>
-          </button>
-          <button type="button" class="square" aria-label="Delete" title="Delete" onclick={() => remove(fast)}>
-            <span class="icon" aria-hidden="true">⌫</span>
-          </button>
+          <button type="button" class="glyph" aria-label="Edit" title="Edit" onclick={() => onEdit(fast)}>✎</button>
+          <button type="button" class="glyph" aria-label="Delete" title="Delete" onclick={() => remove(fast)}>⌫</button>
         </div>
         <p class="fields">{nearClock(fast.start, fast.end)} → {clock(new Date(fast.end))} · {duration(fastLength(fast))}</p>
         <p class="fields">
@@ -231,9 +223,6 @@
     justify-content: space-between;
   }
 
-  .square {
-    width: 2em;
-  }
 
   .grid {
     margin: 0.5em auto 0;

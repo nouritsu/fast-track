@@ -299,6 +299,20 @@ button.edge:disabled .icon {
   color: inherit;
 }
 
+/* A bare character as a button (< >, ✎, ⌫): the accent on the page, no fill or
+   border, with room around it for a finger. Disabled, it fades like any button. */
+button.glyph {
+  min-width: 2.4em;
+  padding: 0.35em 0.6ch;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 1.15em;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* A gate: plain large text in the accent, no border; the whole area is the button. */
 button.gate {
   width: 100%;
@@ -310,15 +324,6 @@ button.gate {
   border: none;
 }
 
-/* Icon-only square buttons (the Menu); the name goes in aria-label and title. */
-button.square {
-  aspect-ratio: 1;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  font-size: 1.3em;
-  white-space: nowrap;
-}
 
 /* Icons are Unicode symbols from the app font, in the accent colour. */
 .icon {
@@ -326,9 +331,6 @@ button.square {
   margin-right: 0.6ch;
 }
 
-button.square .icon {
-  margin: 0;
-}
 
 /* A rule across a block, border to border, like a ratatui split. */
 hr.split {

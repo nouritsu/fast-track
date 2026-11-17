@@ -4,7 +4,7 @@
   import { hold } from './hold'
 
   // A field set with ‹ › instead of typing, TUI style: a muted label, the value at a
-  // fixed width, and two square buttons that repeat while held. A sideways swipe
+  // fixed width, and two glyph buttons, < and >, that repeat while held. A sideways swipe
   // across the row scrubs it: a step every STEP_PX, right for later, with a tick.
   const STEP_PX = 28
   let {
@@ -44,12 +44,12 @@
 <div class="stepper" use:drag={scrub}>
   <span class="label muted">{label}</span>
   <span class="setting" style:min-width="{width}ch">{value}</span>
-  <button type="button" class="square" aria-label="{label} earlier" title="{label} earlier" disabled={atStart} use:hold={() => onStep(-1)}>
-    <span class="icon" aria-hidden="true">‹</span>
-  </button>
-  <button type="button" class="square" aria-label="{label} later" title="{label} later" disabled={atEnd} use:hold={() => onStep(1)}>
-    <span class="icon" aria-hidden="true">›</span>
-  </button>
+  <button type="button" class="glyph" aria-label="{label} earlier" title="{label} earlier" disabled={atStart} use:hold={() => onStep(-1)}
+    >&lt;</button
+  >
+  <button type="button" class="glyph" aria-label="{label} later" title="{label} later" disabled={atEnd} use:hold={() => onStep(1)}
+    >&gt;</button
+  >
 </div>
 
 <style>
@@ -70,9 +70,4 @@
     white-space: pre;
   }
 
-  .square {
-    width: 2em;
-    user-select: none;
-    -webkit-user-select: none;
-  }
 </style>
