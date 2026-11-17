@@ -193,6 +193,7 @@ describe('storage and backup', () => {
     expect(toSettings(null)).toEqual(DEFAULT_SETTINGS)
     expect(toSettings({ unit: 'lb', goal: 18 })).toMatchObject({ unit: 'lb', goal: 18, alerts: true, status: true })
     expect(toSettings({ status: false }).status).toBe(false)
+    expect(toSettings({ exportOn: true, exportEvery: ' ' })).toMatchObject({ exportOn: true, exportEvery: 'daily' })
   })
 
   it('round-trips a backup and merges by id', () => {

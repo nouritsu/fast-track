@@ -3,6 +3,7 @@
 // in fasts.ts; this only applies them and saves.
 
 import { syncAlerts } from './alerts'
+import { exportRuns, savePlan } from './autoexport'
 import { mergeFasts } from './backup'
 import { newestFirst, type Active, type Fast } from './fasts'
 import { refreshStatus } from './status'
@@ -20,7 +21,7 @@ export class Tracker {
     this.active = saved.active
     this.settings = saved.settings
     this.loaded = true
-    await refreshStatus()
+    await this.#planExports()
   }
 
   async start(at: number): Promise<void> {
@@ -85,7 +86,14 @@ export class Tracker {
     this.settings = { ...this.settings, ...patch }
     await saveSettings(this.settings)
     if (alertsChanged) await syncAlerts(this.active, this.settings.alerts)
-    if ('status' in patch) await refreshStatus()
+    if ('exportOn' in patch || 'exportEvery' in patch) await this.#planExports()
+    else if ('status' in patch) await refreshStatus()
+  }
+
+  /** Saves the regular exports' next run times; the native side schedules the first. */
+  async #planExports(): Promise<void> {
+    await savePlan(exportRuns(this.settings, new Date()))
+    await refreshStatus()
   }
 
   async #saveActive(): Promise<void> {
