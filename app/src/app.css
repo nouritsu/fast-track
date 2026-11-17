@@ -452,27 +452,6 @@ th {
   color: var(--muted);
 }
 
-/* ASCII art in a Catppuccin rainbow, top left to bottom right. Set --cols to its
-   widest line; it fits the width of its container (Iosevka's ch is half an em). */
-.rainbow {
-  margin: 0;
-  font: inherit;
-  font-size: min(1em, calc(100cqi / (var(--cols) * 0.522)));
-  line-height: 1.15;
-  background: linear-gradient(
-    to bottom right,
-    var(--ctp-red),
-    var(--ctp-peach),
-    var(--ctp-yellow),
-    var(--ctp-green),
-    var(--ctp-sapphire),
-    var(--ctp-blue),
-    var(--ctp-mauve)
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
 
 /* A failure that must be seen: pinned above the bottom edge. */
 .alert {

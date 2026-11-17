@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { frame, plan, pool } from './shuffle'
-import { mirrored } from './sweep'
 import { typingDelay, typingPieces } from './typing'
 
 describe('shuffle', () => {
@@ -40,11 +39,5 @@ describe('typing', () => {
       [':10', true, 'untyped'],
       ['.', false, 'untyped'],
     ])
-  })
-})
-
-describe('sweep', () => {
-  it('mirrors the title', () => {
-    expect(mirrored('Timer')).toBe('remiT')
   })
 })

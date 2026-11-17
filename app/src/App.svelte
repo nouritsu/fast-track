@@ -15,7 +15,6 @@
   import { NAME_WIDTH, STAGES, stageIndex } from './lib/fasting/stages'
   import { Tracker } from './lib/fasting/tracker.svelte'
   import { dayClock, floorMinute, HOUR, nearClock } from './lib/fasting/time'
-  import BACK_ART from './lib/back.txt?raw'
   import { reducedMotion } from './lib/motion/shuffle'
   import CalendarPage from './lib/pages/CalendarPage.svelte'
   import InfoPage from './lib/pages/InfoPage.svelte'
@@ -25,8 +24,7 @@
   import GoalPane from './lib/panes/GoalPane.svelte'
   import StartPane from './lib/panes/StartPane.svelte'
   import { currentTheme, revealTheme, saveTheme, THEMES } from './lib/theme'
-  import type { Tone } from './lib/ui/Block.svelte'
-  import FlipBlock from './lib/ui/FlipBlock.svelte'
+  import Block, { type Tone } from './lib/ui/Block.svelte'
   import Hero from './lib/ui/Hero.svelte'
   import ShuffleText from './lib/ui/ShuffleText.svelte'
   import TabBar, { type Tab } from './lib/ui/TabBar.svelte'
@@ -54,8 +52,6 @@
     { id: 'options', label: 'Options' },
     { id: 'info', label: 'Info' },
   ]
-  const ART = BACK_ART.trimEnd()
-  const ART_COLS = Math.max(...ART.split('\n').map((line) => line.length))
   const COLORS = STAGES.map((s) => s.id)
   const DISARM_MS = 3000 // Cancel stays armed this long for the second press
   const DRAW_MS = 700 // the progress line draws in while the hero shuffles in, within its 700 ms
@@ -402,33 +398,32 @@
         inert={page !== 0}
       >
         <div class="page-main" inert={pane !== null && paneHost === 0}>
-        <FlipBlock
-          title="Fast"
-          class="page-block"
-          value={phase}
-          flips={(from, to) => (from === 'running' && to === 'done') || (from === 'done' && to === 'ready')}
-        >
+        <Block title="Fast" class="page-block">
           {#snippet headingRight()}Goal <span class="value" style:--block-border={tone ? `var(--${tone})` : undefined}
               ><ShuffleText text={dashed ? '--' : `${percent}%`} staggerMs={120} /></span
             >{/snippet}
 
-          {#snippet header(p: Phase)}
-            <div class="summary">
-              <p class="fields">Stage {show(`${stage + 1}/${STAGES.length}`, '/')} <span style:color={dashed ? undefined : `var(--${STAGES[stage].id})`}>{show(STAGES[stage].name.padEnd(NAME_WIDTH))}</span></p>
-              <p class="fields">Start {show(dayClock(shownStart), DATE_FRAME)} · {p === 'done' ? 'Ended' : 'Ends'} {show(dayClock(shownEnd), DATE_FRAME)}</p>
-            </div>
-          {/snippet}
+          <div class="summary">
+            <p class="fields">Stage <ShuffleText text={show(`${stage + 1}/${STAGES.length}`, '/')} /> <span
+                style:color={dashed ? undefined : `var(--${STAGES[stage].id})`}
+                ><ShuffleText text={show(STAGES[stage].name.padEnd(NAME_WIDTH))} /></span
+              ></p>
+            <p class="fields">Start <ShuffleText text={show(dayClock(shownStart), DATE_FRAME)} /> · {phase === 'done' ? 'Ended' : 'Ends '} <ShuffleText
+                text={show(dayClock(shownEnd), DATE_FRAME)}
+              /></p>
+          </div>
+          <hr class="split" />
 
-          {#snippet face(p: Phase)}
-            {#if p === 'loading'}
+          <div class="stage">
+            {#if phase === 'loading'}
               <p class="fill muted">Loading…</p>
-            {:else if p === 'ready'}
+            {:else if phase === 'ready'}
               <button type="button" class="gate fill" onclick={begin}>
-                Start!
+                <ShuffleText text="Start!" intro />
                 <span class="sub muted">goal {goal}h</span>
                 <span class="sub muted" class:hidden={!eating}>eating window {duration(eating)}</span>
               </button>
-            {:else if p === 'running'}
+            {:else if phase === 'running'}
               <div class="center">
                 <button
                   type="button"
@@ -448,16 +443,16 @@
               {@const length = fastLength(ended)}
               {@const deepest = STAGES[deepestStage(ended)]}
               <div class="fill">
-                <p class="headline">Done!</p>
-                <p>{duration(length)} · <span style:color="var(--{deepest.id})">{deepest.name}</span></p>
+                <p class="headline"><ShuffleText text="Done!" intro /></p>
+                <p>
+                  <ShuffleText text={duration(length)} intro /> · <span style:color="var(--{deepest.id})"
+                    ><ShuffleText text={deepest.name} intro /></span
+                  >
+                </p>
                 {@render progressLine(progressOf(length, ended.goal), percentOf(length, ended.goal), tone, ended.goal)}
               </div>
             {/if}
-          {/snippet}
-
-          {#snippet back()}
-            <pre class="rainbow" style:--cols={ART_COLS} role="img" aria-label="Fast Track">{ART}</pre>
-          {/snippet}
+          </div>
 
           {#snippet actions()}
             {#if phase === 'done' && ended}
@@ -490,7 +485,7 @@
               </button>
             {/if}
           {/snippet}
-        </FlipBlock>
+        </Block>
         </div>
         {@render hangingPane(0)}
       </div>
