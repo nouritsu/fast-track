@@ -3,6 +3,7 @@ package com.nouritsu.fasttrack;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -34,6 +35,7 @@ public class OpenScalePlugin extends Plugin {
     static final String ACCESS = "openscale";
     private static final Uri PROVIDER = Uri.parse("content://com.health.openscale.provider");
     private static final String WEIGHT = "builtin.weight";
+    private static final String TAG = "FastTrack/OpenScale";
 
     /** Whether openScale is installed and Fast Track may read it. */
     @PluginMethod
@@ -72,7 +74,9 @@ public class OpenScalePlugin extends Plugin {
                     users.put(user);
                 }
             }
+            Log.i(TAG, "users: " + (cursor == null ? "no answer" : users.length() + " " + users));
         } catch (Exception e) {
+            Log.w(TAG, "users failed", e);
             call.reject("openScale did not answer: " + e.getMessage());
             return;
         }
@@ -81,7 +85,8 @@ public class OpenScalePlugin extends Plugin {
         call.resolve(result);
     }
 
-    /** One user's weights, oldest first: { weights: [{ at, kg }] }. */
+    /** One user's weights: { weights: [{ at, kg }], rows, seen }, with how many measurements
+     *  openScale returned and the value identities it carried, to tell why none were weights. */
     @PluginMethod
     public void weights(PluginCall call) {
         if (!readable(call)) return;
@@ -92,12 +97,17 @@ public class OpenScalePlugin extends Plugin {
         }
         Uri uri = PROVIDER.buildUpon().appendPath("measurements").appendPath(String.valueOf(user)).build();
         JSArray weights = new JSArray();
+        java.util.Set<String> seen = new java.util.TreeSet<>();
+        int rows = -1; // -1: openScale did not answer
         try (Cursor cursor = getContext().getContentResolver().query(uri, new String[] { "_ID", "datetime", "values_json" }, null, null, null)) {
             if (cursor != null) {
+                rows = cursor.getCount();
                 int at = cursor.getColumnIndex("datetime");
                 int values = cursor.getColumnIndex("values_json");
                 while (cursor.moveToNext()) {
-                    Double kg = weightOf(cursor.getString(values));
+                    String json = cursor.getString(values);
+                    if (seen.size() < 12) identities(json, seen);
+                    Double kg = weightOf(json);
                     if (kg == null) continue;
                     JSObject weight = new JSObject();
                     weight.put("at", cursor.getLong(at));
@@ -105,13 +115,28 @@ public class OpenScalePlugin extends Plugin {
                     weights.put(weight);
                 }
             }
+            Log.i(TAG, "measurements for user " + user + ": " + rows + " rows, " + weights.length() + " weights, values " + seen);
         } catch (Exception e) {
+            Log.w(TAG, "measurements failed for user " + user, e);
             call.reject("openScale did not answer: " + e.getMessage());
             return;
         }
         JSObject result = new JSObject();
         result.put("weights", weights);
+        result.put("rows", rows);
+        result.put("seen", new JSArray(seen));
         call.resolve(result);
+    }
+
+    /** The identities of a measurement's values, for the report when none is a weight. */
+    private static void identities(String json, java.util.Set<String> into) {
+        if (json == null) return;
+        try {
+            JSONArray values = new JSONArray(json);
+            for (int i = 0; i < values.length(); i++) into.add(values.getJSONObject(i).optString("identity", "?"));
+        } catch (Exception e) {
+            into.add("unreadable values_json");
+        }
     }
 
     private static Double weightOf(String json) {
