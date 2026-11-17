@@ -33,6 +33,17 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <!-- Rebuilds the status notification at its next change, and after a reboot, an
+             update or a clock change, which drop or shift its alarm. -->
+        <receiver android:name=".FastStatusReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.nouritsu.fasttrack.REFRESH_STATUS" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <!-- Permissions -->
@@ -43,4 +54,6 @@
     <!-- Export writes Documents/FastTrack/. Android 11 and newer need no permission
          for files the app creates; 10 and older ask for this one. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <!-- The status notification rebuilds itself after a reboot (FastStatusReceiver). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 </manifest>
