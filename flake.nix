@@ -1,5 +1,5 @@
 {
-  description = "Fast Track: a Svelte TUI Mocha app for Android";
+  description = "Fast Track: an offline intermittent-fasting tracker for Android";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -25,6 +25,7 @@
     self,
     nixpkgs,
     devenv,
+    treefmt-nix,
     ...
   }: let
     inherit (nixpkgs) lib;
@@ -37,6 +38,13 @@
           pkgs = nixpkgs.legacyPackages.${system};
           own = self.packages.${system};
         });
+
+    # The house formatters and lints, the ones the dev shell's git hook runs.
+    treefmt = forAllSystems ({pkgs, ...}:
+      treefmt-nix.lib.evalModule pkgs {
+        projectRootFile = "flake.nix";
+        imports = ["${inputs.conf-nixos}/templates/base/treefmt.nix"];
+      });
   in {
     packages = forAllSystems ({
       system,
@@ -95,41 +103,21 @@
               pkgs.qrencode
               # APK: Nix builds it (nix run .#apk); adb installs it
               pkgs.android-tools
-              # Nix
-              pkgs.alejandra
             ];
           }
         ];
       };
     });
 
-    # alejandra over every .nix file. treefmt supplies the paths: `nix fmt` passes
-    # none, which bare alejandra would read as "format stdin".
-    formatter = forAllSystems ({pkgs, ...}:
-      pkgs.treefmt.withConfig {
-        name = "alejandra-tree";
-        runtimeInputs = [pkgs.alejandra];
-        settings = {
-          tree-root-file = "flake.nix";
-          on-unmatched = "info";
-          formatter.alejandra = {
-            command = "alejandra";
-            options = ["--quiet"];
-            includes = ["*.nix"];
-          };
-        };
-      });
+    formatter = forAllSystems ({system, ...}: treefmt.${system}.config.build.wrapper);
 
     checks = forAllSystems ({
       system,
       own,
       ...
     }: {
-      # Formats a copy of the .nix files and fails on any diff.
-      formatting = self.formatter.${system}.check (lib.fileset.toSource {
-        root = ./.;
-        fileset = lib.fileset.fileFilter (file: file.hasExt "nix") ./.;
-      });
+      # Formats a copy of the tree and fails on any diff.
+      formatting = treefmt.${system}.config.build.check self;
 
       app = own.app.overrideAttrs {
         pname = "app-check";
