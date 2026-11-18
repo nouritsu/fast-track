@@ -9,8 +9,8 @@ import android.os.Build;
 
 /**
  * The app's alarms and the system events that move them: the status notification's next
- * change (FastStatus), a regular export (FastExport), and a reboot, an app update or a
- * clock change, which drop or shift both.
+ * change and its bar's refreshes (FastStatus), a regular export (FastExport), and a reboot,
+ * an app update or a clock change, which drop or shift them.
  */
 public class FastStatusReceiver extends BroadcastReceiver {
 
@@ -33,5 +33,13 @@ public class FastStatusReceiver extends BroadcastReceiver {
         boolean exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarms.canScheduleExactAlarms();
         if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, alarm);
         else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, alarm);
+    }
+
+    /**
+     * Sets `alarm` for about `at` without waking the phone: if it is asleep then, the alarm
+     * waits until it wakes. For a refresh that only matters while someone is looking.
+     */
+    static void setLazyAlarm(Context context, long at, PendingIntent alarm) {
+        context.getSystemService(AlarmManager.class).setAndAllowWhileIdle(AlarmManager.RTC, at, alarm);
     }
 }

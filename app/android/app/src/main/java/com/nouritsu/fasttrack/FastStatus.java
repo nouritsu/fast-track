@@ -13,39 +13,52 @@ import android.os.Build;
 import android.text.format.DateFormat;
 import android.text.format.DateUtils;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationCompat.ProgressStyle;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.IconCompat;
 import java.util.Date;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
  * The status notification: an ongoing, silent notification that says whether a fast or an
- * eating window is running, and the fast's stage, with a live timer. Android draws it in the
- * system's own (Material You) colours.
+ * eating window is running, and the fast's stage, with a live timer and a progress bar. Android
+ * draws it in the system's own (Material You) colours, except the bar's stage segments.
  *
  * <p>It reads what the web app saves through Capacitor Preferences (the SharedPreferences file
  * "CapacitorStorage", keys "active", "fasts" and "settings"), so the app only has to say that
  * something changed. An alarm at the next change (a stage, the goal, the eating window's end)
- * rebuilds it while the app is closed. The stage boundaries mirror src/lib/fasting/stages.ts.
+ * rebuilds it while the app is closed, and a lazier one every few minutes moves the bar. The
+ * stage boundaries mirror src/lib/fasting/stages.ts.
+ *
+ * <p>The bar is a {@link ProgressStyle}: Android 16 draws its segments, points and tracker
+ * (https://developer.android.com/develop/ui/views/notifications/progress-centric), and older
+ * versions get the plain progress bar the compat class falls back to. A fast's bar spans the
+ * goal, and once past it the next whole 12 hours; the eating window's spans the window and drains.
  */
 final class FastStatus {
 
     static final String CHANNEL = "status";
     static final int ID = 100; // apart from the stage alerts, ids 1 to 4
     static final String PREFS = "CapacitorStorage"; // what Capacitor Preferences saves
+    private static final long MINUTE = 60_000L;
     private static final long HOUR = 3_600_000L;
+    private static final long EXTEND = 12 * HOUR; // how far past the goal the bar reaches, in steps
     private static final String[] STAGES = { "Glucose", "Fat burning", "Ketosis", "Autophagy" };
     private static final int[] STARTS = { 0, 4, 12, 24 }; // hours into the fast
+    private static final int CHANGE = 0; // the request codes of the two alarms
+    private static final int TICK = 2; // 1 is the export's
 
     private FastStatus() {}
 
-    /** Shows the notification for the saved state, or removes it, and sets the next alarm. */
+    /** Shows the notification for the saved state, or removes it, and sets the next alarms. */
     static void update(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         NotificationManagerCompat manager = NotificationManagerCompat.from(context);
-        cancelAlarm(context);
-        if (!enabled(prefs) || !allowed(context)) {
+        cancelAlarms(context);
+        JSONObject settings = parseObject(prefs.getString("settings", null));
+        if (!enabled(settings) || !allowed(context)) {
             manager.cancel(ID);
             return;
         }
@@ -54,6 +67,7 @@ final class FastStatus {
         long now = System.currentTimeMillis();
         NotificationCompat.Builder builder = builder(context);
         long next; // when the notification next changes, or 0 for never
+        int span = 0; // the bar's length in minutes, or 0 for no bar
         JSONObject active = parseObject(prefs.getString("active", null));
         if (active != null) {
             long start = active.optLong("start");
@@ -61,14 +75,18 @@ final class FastStatus {
             long goalAt = start + Math.round(goal * HOUR);
             int stage = stageAt((now - start) / (double) HOUR);
             long stageEnd = stage + 1 < STARTS.length ? start + STARTS[stage + 1] * HOUR : 0;
+            // The bar spans the goal; past it, up to the next whole 12 hours, so the tracker keeps moving.
+            long barEnd = now < goalAt ? goalAt : start + ((now - start) / EXTEND + 1) * EXTEND;
             StringBuilder text = new StringBuilder(now < goalAt ? "Goal " + time(context, goalAt) : "Goal reached");
             if (stageEnd > 0) text.append(" · ").append(STAGES[stage + 1]).append(' ').append(time(context, stageEnd));
+            span = Math.max(1, minutes(barEnd - start));
             builder
                 .setContentTitle("Fasting · " + STAGES[stage])
                 .setContentText(text)
                 .setWhen(start)
-                .setUsesChronometer(true);
-            next = earliest(now < goalAt ? goalAt : 0, stageEnd);
+                .setUsesChronometer(true)
+                .setStyle(fastBar(context, settings, span, minutes(now - start), minutes(goalAt - start)));
+            next = earliest(earliest(now < goalAt ? goalAt : 0, stageEnd), now < goalAt ? 0 : barEnd);
         } else {
             JSONObject last = lastFast(prefs.getString("fasts", null));
             if (last == null) {
@@ -79,12 +97,14 @@ final class FastStatus {
             double goal = last.optDouble("goal", 16);
             long windowEnd = end + Math.round(Math.max(0, 24 - goal) * HOUR);
             if (now < windowEnd) {
+                span = Math.max(1, minutes(windowEnd - end));
                 builder
                     .setContentTitle("Eating window")
                     .setContentText("Next fast " + time(context, windowEnd))
                     .setWhen(windowEnd)
                     .setUsesChronometer(true)
-                    .setChronometerCountDown(true);
+                    .setChronometerCountDown(true)
+                    .setStyle(windowBar(context, span, minutes(windowEnd - now)));
                 next = windowEnd;
             } else {
                 builder
@@ -101,7 +121,10 @@ final class FastStatus {
         } catch (SecurityException e) {
             return; // permission withdrawn between the check and here
         }
-        if (next > 0) FastStatusReceiver.setAlarm(context, next + 1000, alarmIntent(context)); // just past the change
+        if (next > 0) FastStatusReceiver.setAlarm(context, next + 1000, alarmIntent(context, CHANGE)); // just past the change
+        // The bar moves between changes; a change before the next tick rebuilds it anyway.
+        long tick = span > 0 ? now + tickEvery(span) : 0;
+        if (tick > 0 && (next == 0 || tick < next)) FastStatusReceiver.setLazyAlarm(context, tick, alarmIntent(context, TICK));
     }
 
     private static NotificationCompat.Builder builder(Context context) {
@@ -112,10 +135,8 @@ final class FastStatus {
             open,
             PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
-        // The status-bar icon from app/notification.svg; Nix puts it in res/drawable-*.
-        int icon = context.getResources().getIdentifier("ic_stat_fast", "drawable", context.getPackageName());
         return new NotificationCompat.Builder(context, CHANNEL)
-            .setSmallIcon(icon != 0 ? icon : context.getApplicationInfo().icon)
+            .setSmallIcon(icon(context))
             .setContentIntent(tap)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -127,6 +148,40 @@ final class FastStatus {
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE);
     }
 
+    /** The status-bar icon from app/notification.svg; Nix puts it in res/drawable-*. */
+    private static int icon(Context context) {
+        int icon = context.getResources().getIdentifier("ic_stat_fast", "drawable", context.getPackageName());
+        return icon != 0 ? icon : context.getApplicationInfo().icon;
+    }
+
+    /**
+     * A fast's bar over `span` minutes: a segment for each stage in the span, in the stage's
+     * colour, the tracker `at` now and a point at the `goal`. Both are in minutes from the start.
+     */
+    private static ProgressStyle fastBar(Context context, JSONObject settings, int span, int at, int goal) {
+        int[] colors = FastColors.stages(context, settings);
+        ProgressStyle bar = bar(context, span, at);
+        for (int i = 0; i < STARTS.length; i++) {
+            int from = STARTS[i] * 60;
+            int to = i + 1 < STARTS.length ? Math.min(STARTS[i + 1] * 60, span) : span;
+            if (to > from) bar.addProgressSegment(new ProgressStyle.Segment(to - from).setColor(colors[i]));
+        }
+        // The goal's point keeps the system's colour.
+        return bar.addProgressPoint(new ProgressStyle.Point(Math.max(0, Math.min(goal, span))));
+    }
+
+    /** The eating window's bar: one segment in the system's colour, with `left` minutes of `span` to go. */
+    private static ProgressStyle windowBar(Context context, int span, int left) {
+        return bar(context, span, left).addProgressSegment(new ProgressStyle.Segment(span));
+    }
+
+    /** A bar of `span` minutes with the tracker `at` one of them. */
+    private static ProgressStyle bar(Context context, int span, int at) {
+        // The tracker is drawn over the stage colours, so it takes a colour that reads on them.
+        IconCompat tracker = IconCompat.createWithResource(context, icon(context)).setTint(FastColors.onStage(context));
+        return new ProgressStyle().setProgress(Math.max(0, Math.min(at, span))).setProgressTrackerIcon(tracker);
+    }
+
     private static void createChannel(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationChannel channel = new NotificationChannel(CHANNEL, "Fast status", NotificationManager.IMPORTANCE_LOW);
@@ -136,8 +191,7 @@ final class FastStatus {
     }
 
     /** The status notification is on unless the settings say otherwise. */
-    private static boolean enabled(SharedPreferences prefs) {
-        JSONObject settings = parseObject(prefs.getString("settings", null));
+    private static boolean enabled(JSONObject settings) {
         return settings == null || settings.optBoolean("status", true);
     }
 
@@ -153,6 +207,16 @@ final class FastStatus {
         int stage = 0;
         for (int i = 0; i < STARTS.length; i++) if (hours >= STARTS[i]) stage = i;
         return stage;
+    }
+
+    /** The minutes in `millis`, the bar's unit. */
+    private static int minutes(long millis) {
+        return (int) Math.max(0, Math.round(millis / (double) MINUTE));
+    }
+
+    /** How often the bar is redrawn: every 2% of its `span` in minutes, but within 5 to 15 minutes. */
+    private static long tickEvery(int span) {
+        return Math.min(15, Math.max(5, span / 50)) * MINUTE;
     }
 
     /** "19:39" today, else "Wed 19:39", in the phone's 12- or 24-hour format. */
@@ -191,12 +255,14 @@ final class FastStatus {
         }
     }
 
-    private static PendingIntent alarmIntent(Context context) {
+    private static PendingIntent alarmIntent(Context context, int code) {
         Intent intent = new Intent(context, FastStatusReceiver.class).setAction(FastStatusReceiver.REFRESH);
-        return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        return PendingIntent.getBroadcast(context, code, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    private static void cancelAlarm(Context context) {
-        context.getSystemService(AlarmManager.class).cancel(alarmIntent(context));
+    private static void cancelAlarms(Context context) {
+        AlarmManager alarms = context.getSystemService(AlarmManager.class);
+        alarms.cancel(alarmIntent(context, CHANGE));
+        alarms.cancel(alarmIntent(context, TICK));
     }
 }
