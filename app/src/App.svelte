@@ -371,13 +371,11 @@
     return { id: crypto.randomUUID(), start: end - goalHours * HOUR, end, goal: goalHours, note: '', weight: null }
   }
 
-  const closeEdit = closePane
-
   function saveEdit(fast: Fast) {
     attempt(async () => {
       await tracker.save(fast)
       if (ended?.id === fast.id) ended = fast
-      closeEdit()
+      closePane()
     })
   }
 
@@ -448,7 +446,7 @@
         unit={settings.unit}
         {now}
         onSave={saveEdit}
-        onClose={closeEdit}
+        onClose={closePane}
       />
     {/if}
     </div>
@@ -647,7 +645,7 @@
   .track {
     display: flex;
     height: 100%;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: transform var(--slide);
   }
 
   /* Under the finger, the track and a pulled page follow it without easing. */

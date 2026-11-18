@@ -6,9 +6,8 @@
   import { askScale, emptyReason, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
   import { backupName, makeBackup, parseBackup, saveBackupFile } from '../fasting/backup'
   import { toIcs, WEEK_STARTS, weekStartName } from '../fasting/calendar'
-  import { dayKey } from '../fasting/time'
   import { describeSchedule, listed, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
-  import { dayClock, shortDate } from '../fasting/time'
+  import { dayClock, dayKey, shortDate } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
   import Block from '../ui/Block.svelte'
   import type { Theme } from '../theme'
@@ -142,17 +141,14 @@
     }, 'scale')
   }
 
+  const STAMP = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' })
   const autoLine = $derived(
     auto &&
-      `Last regular export ${new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(auto.at))}${
+      `Last regular export ${STAMP.format(new Date(auto.at))}${
         auto.error ? ` failed: ${auto.error}` : ` to ${auto.path}`
       }.`,
   )
-  const last = $derived(
-    settings.lastExport
-      ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(settings.lastExport))
-      : null,
-  )
+  const last = $derived(settings.lastExport ? STAMP.format(new Date(settings.lastExport)) : null)
 
   async function run(task: () => Promise<string>, at: typeof messageAt = 'backup') {
     busy = true
