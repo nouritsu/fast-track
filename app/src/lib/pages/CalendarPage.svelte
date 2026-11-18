@@ -6,7 +6,7 @@
   import type { Settings } from '../fasting/store'
   import { dayKey, longDate, nearClock } from '../fasting/time'
   import { carries, drag, type DragOptions } from '../ui/drag'
-  import { clock, duration } from '../ui/fields'
+  import { clock, duration, hm } from '../ui/fields'
   import Icon from '../ui/Icon.svelte'
   import Block from '../ui/Block.svelte'
 
@@ -63,10 +63,6 @@
   const todayKey = $derived(dayKey(now))
   const monthKey = $derived(key(1).slice(0, 7))
   const summary = $derived(monthSummary(fasts, year, month))
-  const hm = (ms: number) => {
-    const minutes = Math.round(ms / 60_000)
-    return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
-  }
 
   // The month or the year changed elsewhere (its pane): no day stays picked.
   $effect(() => {

@@ -551,7 +551,16 @@
       </div>
 
       <div class="page" id="page-stats" role="tabpanel" aria-labelledby="tab-stats" inert={page !== 2}>
-        <StatsPage fasts={tracker.fasts} scale={tracker.scale} unit={settings.unit} {now} />
+        <StatsPage
+          fasts={tracker.fasts}
+          active={tracker.active}
+          scale={tracker.scale}
+          unit={settings.unit}
+          weekStart={settings.weekStart}
+          span={settings.statsSpan}
+          {now}
+          onSpan={(statsSpan) => attempt(() => tracker.setSettings({ statsSpan }))}
+        />
       </div>
 
       <div class="page" id="page-options" role="tabpanel" aria-labelledby="tab-options" inert={page !== 3}>

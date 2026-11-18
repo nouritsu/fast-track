@@ -5,6 +5,7 @@
 import { Preferences } from '@capacitor/preferences'
 import { WEEK_STARTS, type WeekStart } from './calendar'
 import { DEFAULT_GOAL, type Active, type Fast } from './fasts'
+import { SPANS, type Span } from './stats'
 
 export interface Settings {
   goal: number // the next fast's goal, in hours
@@ -18,6 +19,7 @@ export interface Settings {
   weekStart: WeekStart // the calendar's first weekday (calendar.ts)
   weekNumbers: boolean // ISO week numbers before each week
   weekTotals: boolean // each week's fasting hours after it
+  statsSpan: Span // the days Stats covers (stats.ts); 0 is all of them
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -32,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   weekStart: 1,
   weekNumbers: false,
   weekTotals: true,
+  statsSpan: 30,
 }
 
 export interface Saved {
@@ -79,6 +82,7 @@ export function toSettings(v: unknown): Settings {
     weekStart: WEEK_STARTS.includes(s.weekStart as WeekStart) ? (s.weekStart as WeekStart) : DEFAULT_SETTINGS.weekStart,
     weekNumbers: typeof s.weekNumbers === 'boolean' ? s.weekNumbers : DEFAULT_SETTINGS.weekNumbers,
     weekTotals: typeof s.weekTotals === 'boolean' ? s.weekTotals : DEFAULT_SETTINGS.weekTotals,
+    statsSpan: SPANS.includes(s.statsSpan as Span) ? (s.statsSpan as Span) : DEFAULT_SETTINGS.statsSpan,
   }
 }
 
