@@ -10,11 +10,12 @@
   import { describeSchedule, listed, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
   import { dayClock, shortDate } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
-  import Page from '../ui/Page.svelte'
+  import Block from '../ui/Block.svelte'
   import type { Theme } from '../theme'
 
-  // The theme, alerts, the status notification, the weight unit, weights from openScale,
-  // and the backup with its regular exports. Toggles show the current state.
+  // A pane a category: the theme and weight unit, the notifications, the calendar,
+  // weights from openScale, the backup, and its regular exports. Toggles show the
+  // current state.
   let {
     tracker,
     theme,
@@ -222,143 +223,144 @@
   }
 </script>
 
-<Page title="Options">
-  <div class="row first">
-    <span>Theme</span>
-    <button type="button" class="word" aria-label="Theme: {theme === 'mocha' ? 'Mocha' : 'Latte'}" onclick={(e) => onTheme(e.currentTarget)}>
-      <span class="icon" aria-hidden="true">{theme === 'mocha' ? '⏾' : '☼'}</span>{theme === 'mocha' ? 'Mocha' : 'Latte'}
-    </button>
-  </div>
-  <hr class="split" />
-
-  <div class="row">
-    <span>Alerts</span>
-    <button type="button" class="word" disabled={busy} aria-pressed={settings.alerts} onclick={toggleAlerts}>
-      {settings.alerts ? 'on' : 'off'}
-    </button>
-  </div>
-  <p class="muted">A notification when a stage begins and at the goal.</p>
-  <hr class="split" />
-
-  <div class="row">
-    <span>Status</span>
-    <button type="button" class="word" disabled={busy} aria-pressed={settings.status} onclick={toggleStatus}>
-      {settings.status ? 'on' : 'off'}
-    </button>
-  </div>
-  <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer.</p>
-  {#if message && messageAt === 'notify'}<p class="message" role="status">{message}</p>{/if}
-  <hr class="split" />
-
-  <div class="row">
-    <span>Weight</span>
-    <button
-      type="button"
-      class="word"
-      aria-label="Weight unit: {settings.unit}"
-      onclick={() => tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' })}>{settings.unit}</button
-    >
-  </div>
-  <hr class="split" />
-
-  <h3>Calendar</h3>
-  <div class="row">
-    <span>Week starts on</span>
-    <button type="button" class="word" onclick={() => tracker.setSettings({ weekStart: nextWeekStart() })}
-      >{weekStartName(settings.weekStart)}</button
-    >
-  </div>
-  {#each [['weekNumbers', 'Week numbers'], ['weekTotals', 'Weekly totals']] as const as [key, name] (key)}
+<!-- A pane a category, in one scrolling column like Stats (app.css .panes). -->
+<div class="panes">
+  <Block title="General">
+    <div class="row first">
+      <span>Theme</span>
+      <button type="button" class="word" aria-label="Theme: {theme === 'mocha' ? 'Mocha' : 'Latte'}" onclick={(e) => onTheme(e.currentTarget)}>
+        <span class="icon" aria-hidden="true">{theme === 'mocha' ? '⏾' : '☼'}</span>{theme === 'mocha' ? 'Mocha' : 'Latte'}
+      </button>
+    </div>
     <div class="row">
-      <span>{name}</span>
-      <button type="button" class="word" aria-pressed={settings[key]} onclick={() => tracker.setSettings({ [key]: !settings[key] })}
-        >{settings[key] ? 'on' : 'off'}</button
+      <span>Weight</span>
+      <button
+        type="button"
+        class="word"
+        aria-label="Weight unit: {settings.unit}"
+        onclick={() => tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' })}>{settings.unit}</button
       >
     </div>
-  {/each}
-  <p class="muted">Week numbers are ISO weeks; a week's hours count the fasts that ended in it.</p>
-  <hr class="split" />
+  </Block>
 
-  <h3>openScale</h3>
-  {#if !scale.installed}
-    <p class="muted">openScale is not installed. With it, each fast takes its weight from your scale.</p>
-  {:else if scale.granted && settings.scaleUser !== null}
+  <Block title="Notifications">
+    <div class="row first">
+      <span>Alerts</span>
+      <button type="button" class="word" disabled={busy} aria-pressed={settings.alerts} onclick={toggleAlerts}>
+        {settings.alerts ? 'on' : 'off'}
+      </button>
+    </div>
+    <p class="muted">A notification when a stage begins and at the goal.</p>
     <div class="row">
-      <span>Weights from {scaleUser?.name || `user ${settings.scaleUser}`}</span>
-      <button type="button" class="word" disabled={busy} onclick={disconnect}>disconnect</button>
+      <span>Status</span>
+      <button type="button" class="word" disabled={busy} aria-pressed={settings.status} onclick={toggleStatus}>
+        {settings.status ? 'on' : 'off'}
+      </button>
     </div>
-    <p class="muted">
-      {tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within
-      {WINDOW_HOURS} hours; a weight you type in wins. Sync writes them into past fasts.
-    </p>
-    {#if reason}<p class="problem">{reason}</p>{/if}
+    <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer.</p>
+    {#if message && messageAt === 'notify'}<p class="message" role="status">{message}</p>{/if}
+  </Block>
+
+  <Block title="Calendar">
+    <div class="row first">
+      <span>Week starts on</span>
+      <button type="button" class="word" onclick={() => tracker.setSettings({ weekStart: nextWeekStart() })}
+        >{weekStartName(settings.weekStart)}</button
+      >
+    </div>
+    {#each [['weekNumbers', 'Week numbers'], ['weekTotals', 'Weekly totals']] as const as [key, name] (key)}
+      <div class="row">
+        <span>{name}</span>
+        <button type="button" class="word" aria-pressed={settings[key]} onclick={() => tracker.setSettings({ [key]: !settings[key] })}
+          >{settings[key] ? 'on' : 'off'}</button
+        >
+      </div>
+    {/each}
+    <p class="muted">Week numbers are ISO weeks; a week's hours count the fasts that ended in it.</p>
+  </Block>
+
+  <Block title="openScale">
+    {#if !scale.installed}
+      <p class="muted">openScale is not installed. With it, each fast takes its weight from your scale.</p>
+    {:else if scale.granted && settings.scaleUser !== null}
+      <div class="row first">
+        <span>Weights from {scaleUser?.name || `user ${settings.scaleUser}`}</span>
+        <button type="button" class="word" disabled={busy} onclick={disconnect}>disconnect</button>
+      </div>
+      <p class="muted">
+        {tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within
+        {WINDOW_HOURS} hours; a weight you type in wins. Sync writes them into past fasts.
+      </p>
+      {#if reason}<p class="problem">{reason}</p>{/if}
+      <div class="pair">
+        <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>sync weights</button>
+        <button type="button" class="word" disabled={busy} onclick={changeUser}>change user</button>
+      </div>
+    {:else if choosing.length}
+      <div class="choices">
+        {#each choosing as user (user.id)}
+          <button type="button" class="word" disabled={busy} onclick={() => run(() => pick(user), 'scale')}>{user.name || `user ${user.id}`}</button>
+        {/each}
+      </div>
+    {:else}
+      <p class="muted">Take each fast's weight from openScale: the weighing closest to its end, within {WINDOW_HOURS} hours.</p>
+      <button type="button" class="word lead" disabled={busy} onclick={connect}
+        ><span class="icon" aria-hidden="true">⚯</span>connect openScale</button
+      >
+    {/if}
+    {#if message && messageAt === 'scale'}<p class="message" role="status">{message}</p>{/if}
+  </Block>
+
+  <Block title="Backup">
+    <p class="muted">{last ? `Last export ${last}.` : 'Never exported.'}</p>
     <div class="pair">
-      <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>sync weights</button>
-      <button type="button" class="word" disabled={busy} onclick={changeUser}>change user</button>
+      <button type="button" class="word lead" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>export</button>
+      <button type="button" class="word" disabled={busy} onclick={() => picker?.click()}>
+        <span class="icon" aria-hidden="true">⤒</span>import
+      </button>
     </div>
-  {:else if choosing.length}
-    <div class="choices">
-      {#each choosing as user (user.id)}
-        <button type="button" class="word" disabled={busy} onclick={() => run(() => pick(user), 'scale')}>{user.name || `user ${user.id}`}</button>
-      {/each}
+    <input bind:this={picker} type="file" accept="application/json,.json" hidden onchange={importFile} />
+    <button type="button" class="word lead" disabled={busy} onclick={exportIcs}
+      ><span class="icon" aria-hidden="true">⤓</span>export to calendar (.ics)</button
+    >
+    {#if message && messageAt === 'backup'}<p class="message" role="status">{message}</p>{/if}
+    <p class="muted">Import adds fasts the app does not have yet and changes none. The .ics file has one event per fast for any calendar app.</p>
+  </Block>
+
+  <Block title="Regular export">
+    <div class="row first">
+      <span>Export on a schedule</span>
+      <button
+        type="button"
+        class="word"
+        aria-pressed={settings.exportOn}
+        onclick={() => tracker.setSettings({ exportOn: !settings.exportOn })}>{settings.exportOn ? 'on' : 'off'}</button
+      >
     </div>
-  {:else}
-    <p class="muted">Take each fast's weight from openScale: the weighing closest to its end, within {WINDOW_HOURS} hours.</p>
-    <button type="button" class="word lead" disabled={busy} onclick={connect}
-      ><span class="icon" aria-hidden="true">⚯</span>connect openScale</button
-    >
-  {/if}
-  {#if message && messageAt === 'scale'}<p class="message" role="status">{message}</p>{/if}
-  <hr class="split" />
-
-  <h3>Backup</h3>
-  <p class="muted">{last ? `Last export ${last}.` : 'Never exported.'}</p>
-  <div class="pair">
-    <button type="button" class="word lead" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>export</button>
-    <button type="button" class="word" disabled={busy} onclick={() => picker?.click()}>
-      <span class="icon" aria-hidden="true">⤒</span>import
-    </button>
-  </div>
-  <input bind:this={picker} type="file" accept="application/json,.json" hidden onchange={importFile} />
-  <button type="button" class="word lead" disabled={busy} onclick={exportIcs}
-    ><span class="icon" aria-hidden="true">⤓</span>export to calendar (.ics)</button
-  >
-  {#if message && messageAt === 'backup'}<p class="message" role="status">{message}</p>{/if}
-  <p class="muted">Import adds fasts the app does not have yet and changes none. The .ics file has one event per fast for any calendar app.</p>
-  <hr class="split" />
-
-  <div class="row">
-    <span>Regular export</span>
-    <button
-      type="button"
-      class="word"
-      aria-pressed={settings.exportOn}
-      onclick={() => tracker.setSettings({ exportOn: !settings.exportOn })}>{settings.exportOn ? 'on' : 'off'}</button
-    >
-  </div>
-  <label class="when">
-    <span class="muted">Every</span>
-    <input
-      type="text"
-      bind:value={every}
-      oninput={typed}
-      onblur={() => (typing = false)}
-      autocapitalize="off"
-      autocomplete="off"
-      spellcheck="false"
-      placeholder="daily"
-      aria-describedby="when-reads"
-    />
-  </label>
-  <p id="when-reads" class:problem={!reading.ok} role="status">
-    {reading.text}{#if reading.ok && settings.exportOn}{' '}<span class="muted">{reading.next}</span>{/if}
-  </p>
-  <p class="muted">
-    In calendar event notation (systemd's OnCalendar format): daily, weekly, Mon..Fri 08:00, *-*-01 09:00, *:0/30.
-    Files go to Documents/FastTrack/, one a day.
-  </p>
-  {#if autoLine}<p class="muted message">{autoLine}</p>{/if}
-</Page>
+    <label class="when">
+      <span class="muted">Every</span>
+      <input
+        type="text"
+        bind:value={every}
+        oninput={typed}
+        onblur={() => (typing = false)}
+        autocapitalize="off"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="daily"
+        aria-describedby="when-reads"
+      />
+    </label>
+    <p id="when-reads" class:problem={!reading.ok} role="status">
+      {reading.text}{#if reading.ok && settings.exportOn}{' '}<span class="muted">{reading.next}</span>{/if}
+    </p>
+    <p class="muted">
+      In calendar event notation (systemd's OnCalendar format): daily, weekly, Mon..Fri 08:00, *-*-01 09:00, *:0/30.
+      Files go to Documents/FastTrack/, one a day.
+    </p>
+    {#if autoLine}<p class="muted message">{autoLine}</p>{/if}
+  </Block>
+</div>
 
 <style>
   .row {
@@ -372,14 +374,18 @@
     margin-top: 0;
   }
 
-  /* Between options, across the content (inside it, so nothing scrolls sideways). */
-  hr.split {
-    margin: 0.6em 0;
+  p {
+    margin: 0.3em 0;
   }
 
   .pair {
     display: flex;
     gap: 3ch;
+  }
+
+  /* A button on its own line keeps to its words, not the pane's width. */
+  button.lead {
+    align-self: flex-start;
   }
 
   .message {

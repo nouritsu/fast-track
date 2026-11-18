@@ -210,7 +210,7 @@
   </span>
 {/snippet}
 
-<div class="layout">
+<div class="panes">
   {#if !fasts.length}
     <Block title="Statistics" class="pane"><p class="muted">No fasts yet.</p></Block>
   {:else}
@@ -463,24 +463,6 @@
 </div>
 
 <style>
-  /* The panes as one scrolling column, the scroll reaching up into the page's room
-     above so the first title is not cut off. Each pane keeps its own height. */
-  .layout {
-    height: calc(100% + 1em);
-    margin-top: -1em;
-    padding: 1em 0 0.3em;
-    box-sizing: border-box;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    display: flex;
-    flex-direction: column;
-    gap: 1.6em;
-  }
-
-  .layout > :global(.pane) {
-    flex: none;
-  }
-
   /* The panes' inner width, and a character's off ten of them. */
   .measure {
     position: relative;

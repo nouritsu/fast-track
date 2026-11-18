@@ -210,6 +210,48 @@
     )
   }
 
+  // While a pane is open, its page above is one button that closes it (.dismiss). A tap
+  // there on a button that opens another pane in the same place (marked data-pane:
+  // Start and Goal under the Fast page, month and year over the calendar) swaps the
+  // panes instead: the new one slides in from the side its button is on as the old one
+  // slides out the other way, and the page moves to the new one's height.
+  let slide = $state<1 | -1>(1) // the side the next pane comes in from: 1 the right
+  const SIDE_BY_SIDE: PaneId[][] = [
+    ['start', 'goal'],
+    ['month', 'year'],
+  ]
+
+  function tapAbove(event: MouseEvent) {
+    const host = (event.currentTarget as HTMLElement).parentElement
+    const inside = (el: Element) => {
+      const r = el.getBoundingClientRect()
+      return event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom
+    }
+    const hit = [...(host?.querySelectorAll<HTMLButtonElement>('[data-pane]') ?? [])].find((el) => !el.disabled && inside(el))
+    const id = hit?.dataset.pane as PaneId | undefined
+    const from = pane && host?.querySelector(`[data-pane="${pane}"]`)
+    if (!hit || !id || !from || id === pane || !SIDE_BY_SIDE.some((group) => group.includes(id) && group.includes(pane!)))
+      return closePane()
+    slide = hit.getBoundingClientRect().left < from.getBoundingClientRect().left ? -1 : 1
+    clearTimeout(paneTimer)
+    pane = shownPane = id
+  }
+
+  const PANE_SWAP_MS = 220
+  const easeOut = (t: number) => 1 - (1 - t) ** 3
+
+  /** A swapped-in pane, sliding in from the side its button is on. */
+  function paneIn(_node: HTMLElement, { side }: { side: number }) {
+    return { duration: reducedMotion() ? 0 : PANE_SWAP_MS, easing: easeOut, css: (_t: number, u: number) => `transform: translateX(${side * u * 100}%)` }
+  }
+
+  /** The pane it replaces, out of the flow (the new one sets the height) and sliding
+   *  out the other way. */
+  function paneOut(node: HTMLElement, { side, top }: { side: number; top: boolean }) {
+    Object.assign(node.style, { position: 'absolute', left: '0', right: '0', [top ? 'bottom' : 'top']: '0' })
+    return { duration: reducedMotion() ? 0 : PANE_SWAP_MS, easing: easeOut, css: (_t: number, u: number) => `transform: translateX(${-side * u * 100}%)` }
+  }
+
   // Pages follow a sideways drag and settle on release: on the next page when it went
   // far or fast enough, else back. Past the first or last page the drag resists. The
   // click a swipe ends in is swallowed (drag.ts), so a swipe across the gate does not
@@ -371,9 +413,11 @@
         aria-label="Close {pane === 'edit' ? 'editor' : pane}"
         tabindex="-1"
         use:drag={paneDrag}
-        onclick={closePane}
+        onclick={tapAbove}
       ></button>{/if}
     <div class="hang" class:top={fromTop} bind:offsetHeight={paneHeight} use:drag={paneDrag}>
+    {#key shownPane}
+    <div class="slot" in:paneIn={{ side: slide }} out:paneOut={{ side: slide, top: fromTop }}>
     {#if shownPane === 'start'}
       <StartPane
         initial={active?.start ?? now}
@@ -407,6 +451,8 @@
         onClose={closeEdit}
       />
     {/if}
+    </div>
+    {/key}
     </div>
   {/if}
 {/snippet}
@@ -495,20 +541,20 @@
               <button type="button" class="edge" class:flash={armed} disabled={!active} onclick={cancel}>
                 <span class="icon" aria-hidden="true">✕</span><ShuffleText text={armed ? 'Discard?' : 'Cancel'} />
               </button>
-              <button type="button" class="edge" aria-label="Start time" disabled={!active} onclick={() => openPane('start')}>
+              <button type="button" class="edge" data-pane="start" aria-label="Start time" disabled={!active} onclick={() => openPane('start')}>
                 <span class="icon" aria-hidden="true">◷</span>Start
               </button>
-              <button type="button" class="edge" aria-label="Goal: {goal} hours" onclick={() => openPane('goal')}>
+              <button type="button" class="edge" data-pane="goal" aria-label="Goal: {goal} hours" onclick={() => openPane('goal')}>
                 <span class="icon" aria-hidden="true">⧗</span>{goal}h
               </button>
               <button type="button" class="edge primary" disabled={!active} onclick={end}>
                 <span class="icon" aria-hidden="true">■</span>End fast
               </button>
             {:else if phase === 'ready'}
-              <button type="button" class="edge" onclick={() => openPane('start')}>
+              <button type="button" class="edge" data-pane="start" onclick={() => openPane('start')}>
                 <span class="icon" aria-hidden="true">◷</span>Start at
               </button>
-              <button type="button" class="edge" aria-label="Goal: {goal} hours" onclick={() => openPane('goal')}>
+              <button type="button" class="edge" data-pane="goal" aria-label="Goal: {goal} hours" onclick={() => openPane('goal')}>
                 <span class="icon" aria-hidden="true">⧗</span>{goal}h
               </button>
             {/if}
@@ -601,7 +647,7 @@
   .track {
     display: flex;
     height: 100%;
-    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
   }
 
   /* Under the finger, the track and a pulled page follow it without easing. */
@@ -658,6 +704,15 @@
     max-height: 100%;
     display: flex;
     flex-direction: column;
+  }
+
+  /* The pane in it, passing the height on so a tall pane still scrolls inside. A
+     swapped-out pane leaves the flow (App's paneOut) and slides off over the next. */
+  .slot {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
   }
 
   /* What is left of the page above an open pane: a tap there closes the pane, and a
