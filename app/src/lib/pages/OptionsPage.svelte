@@ -4,7 +4,7 @@
   import { askAlerts } from '../fasting/alerts'
   import { lastResult, type ExportResult } from '../fasting/autoexport'
   import { askScale, emptyReason, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
-  import { backupName, makeBackup, parseBackup, saveBackupFile } from '../fasting/backup'
+  import { backupName, makeBackup, parseBackup, saveExportFile } from '../fasting/backup'
   import { toIcs, WEEK_STARTS, weekStartName } from '../fasting/calendar'
   import { describeSchedule, listed, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
   import { dayClock, dayKey, shortDate } from '../fasting/time'
@@ -189,7 +189,7 @@
   function exportNow() {
     run(async () => {
       const now = new Date()
-      const where = await saveBackupFile(backupName(now), JSON.stringify(makeBackup(tracker.fasts, settings, now), null, 1))
+      const where = await saveExportFile(backupName(now), JSON.stringify(makeBackup(tracker.fasts, settings, now), null, 1))
       await tracker.setSettings({ lastExport: now.toISOString() })
       return `Saved to ${where}.`
     })
@@ -198,7 +198,7 @@
   // The fasts as an .ics file, for any calendar app.
   function exportIcs() {
     run(async () => {
-      const where = await saveBackupFile(`fast-track-${dayKey(new Date())}.ics`, toIcs(tracker.fasts, settings.unit), 'text/calendar')
+      const where = await saveExportFile(`fast-track-${dayKey(new Date())}.ics`, toIcs(tracker.fasts, settings.unit), 'text/calendar')
       return `Saved ${tracker.fasts.length} fasts to ${where}; open it with a calendar app to import them.`
     })
   }
