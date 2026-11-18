@@ -13,11 +13,13 @@ buildNpmPackage {
   npmDeps = importNpmLock {npmRoot = ../app;};
   inherit (importNpmLock) npmConfigHook;
 
-  # The generated fonts join the build; the launcher icons go to the APK's res/ (nix/apk.nix).
+  # The generated fonts and the third-party notices (Info shows them) join the build;
+  # the launcher icons go to the APK's res/ (nix/apk.nix).
   preBuild = ''
     mkdir -p public
     cp -r --no-preserve=mode ${assets} public/generated
     rm -r public/generated/android
+    cp ${../THIRD_PARTY_NOTICES.md} public/THIRD_PARTY_NOTICES.md
   '';
 
   installPhase = ''
