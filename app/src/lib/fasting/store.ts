@@ -21,6 +21,7 @@ export interface Settings {
   weekTotals: boolean // each week's fasting hours after it
   statsSpan: Span // the days Stats covers (stats.ts); 0 is all of them
   cloudBackup: boolean // Android's backup to the Google account (FastBackupAgent.java)
+  keepOneFile: boolean // exports replace one fast-track.json instead of making a file a day (backup.ts, FastExport.java)
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   weekTotals: true,
   statsSpan: 30,
   cloudBackup: false,
+  keepOneFile: false,
 }
 
 export interface Saved {
@@ -86,6 +88,7 @@ export function toSettings(v: unknown): Settings {
     weekTotals: typeof s.weekTotals === 'boolean' ? s.weekTotals : DEFAULT_SETTINGS.weekTotals,
     statsSpan: SPANS.includes(s.statsSpan as Span) ? (s.statsSpan as Span) : DEFAULT_SETTINGS.statsSpan,
     cloudBackup: s.cloudBackup === true,
+    keepOneFile: s.keepOneFile === true,
   }
 }
 

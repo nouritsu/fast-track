@@ -13,7 +13,7 @@
   import type { Theme } from '../theme'
 
   // A pane a category: the theme and weight unit, the notifications, the calendar,
-  // weights from openScale, the backup, its regular exports, and privacy. Toggles show
+  // weights from openScale, the backup with its regular exports, and privacy. Toggles show
   // the current state.
   let {
     tracker,
@@ -65,6 +65,14 @@
       typing = false
       void tracker.setSettings({ exportEvery: expression })
     }, SAVE_MS)
+  }
+
+  // Examples to tap: they fill the field and save as typing does.
+  const EXAMPLES = ['daily', 'weekly', 'Mon..Fri 08:00', '*:0/30']
+
+  function example(text: string) {
+    every = text
+    typed()
   }
 
   // openScale: connect asks Android for access, then which of its users is this one.
@@ -150,6 +158,11 @@
   )
   const last = $derived(settings.lastExport ? STAMP.format(new Date(settings.lastExport)) : null)
 
+  // Where exports go and what they are called: a file a day, or one that each export replaces.
+  const exportNote = $derived(
+    `In Documents/FastTrack/, ${settings.keepOneFile ? 'one file, replaced each time' : 'a file a day'}: ${backupName(new Date(), settings.keepOneFile)}.`,
+  )
+
   async function run(task: () => Promise<string>, at: typeof messageAt = 'backup') {
     busy = true
     messageAt = at
@@ -164,7 +177,7 @@
 
   // Settings that are on or off. Alerts and the status notification ask Android for
   // permission to notify before they turn on, and say what they did.
-  type Switch = 'alerts' | 'status' | 'weekNumbers' | 'weekTotals' | 'exportOn' | 'cloudBackup'
+  type Switch = 'alerts' | 'status' | 'weekNumbers' | 'weekTotals' | 'exportOn' | 'keepOneFile' | 'cloudBackup'
   const NOTICES: Partial<Record<Switch, string>> = { alerts: 'Alerts', status: 'Status notification' }
 
   function flip(key: Switch) {
@@ -184,7 +197,10 @@
   function exportNow() {
     run(async () => {
       const now = new Date()
-      const where = await saveExportFile(backupName(now), JSON.stringify(makeBackup(tracker.fasts, settings, now), null, 1))
+      const where = await saveExportFile(
+        backupName(now, settings.keepOneFile),
+        JSON.stringify(makeBackup(tracker.fasts, settings, now), null, 1),
+      )
       await tracker.setSettings({ lastExport: now.toISOString() })
       return `Saved to ${where}.`
     })
@@ -309,11 +325,12 @@
       ><span class="icon" aria-hidden="true">⤓</span>export to calendar (.ics)</button
     >
     {#if message && messageAt === 'backup'}<p class="message" role="status">{message}</p>{/if}
-    <p class="muted">Import adds fasts the app does not have yet and changes none. The .ics file has one event per fast for any calendar app.</p>
-  </Block>
+    <p class="muted">Import adds the fasts the app lacks and changes none.</p>
 
-  <Block title="Regular export">
-    {@render toggle('exportOn', 'Export on a schedule', true)}
+    <hr class="split" />
+    {@render toggle('keepOneFile', 'Keep one file')}
+    <p class="muted">{exportNote}</p>
+    {@render toggle('exportOn', 'Export on a schedule')}
     <label class="when">
       <span class="muted">Every</span>
       <input
@@ -331,10 +348,9 @@
     <p id="when-reads" class:problem={!reading.ok} role="status">
       {reading.text}{#if reading.ok && settings.exportOn}{' '}<span class="muted">{reading.next}</span>{/if}
     </p>
-    <p class="muted">
-      In calendar event notation (systemd's OnCalendar format): daily, weekly, Mon..Fri 08:00, *-*-01 09:00, *:0/30.
-      Files go to Documents/FastTrack/, one a day.
-    </p>
+    <div class="examples">
+      {#each EXAMPLES as text (text)}<button type="button" class="link" onclick={() => example(text)}>{text}</button>{/each}
+    </div>
     {#if autoLine}<p class="muted message">{autoLine}</p>{/if}
   </Block>
 
@@ -361,6 +377,10 @@
 
   p {
     margin: 0.3em 0;
+  }
+
+  hr.split {
+    margin-top: 0.8em;
   }
 
   .pair {
@@ -394,6 +414,17 @@
   .when input {
     flex: 1;
     min-width: 0;
+  }
+
+  /* Example schedules to tap, spaced out, with room round each for a finger. */
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2ch;
+  }
+
+  .examples button {
+    padding: 0.35em 0;
   }
 
   .problem {

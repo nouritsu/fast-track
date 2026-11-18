@@ -6,7 +6,7 @@ vi.mock('@capacitor/filesystem', () => ({ Directory: {}, Encoding: {}, Filesyste
 vi.mock('@capacitor/core', () => ({ registerPlugin: () => ({}), Capacitor: { isNativePlatform: () => false } }))
 
 import { plannedAlerts } from './alerts'
-import { BackupError, makeBackup, mergeFasts, parseBackup } from './backup'
+import { backupName, BackupError, makeBackup, mergeFasts, parseBackup, writeFailure } from './backup'
 import { emptyReason, scaleWeightFor, syncWeights, weightOf } from './openscale'
 import {
   earliestStart,
@@ -250,6 +250,41 @@ describe('storage and backup', () => {
     expect(toSettings({ scaleUser: 'me' }).scaleUser).toBeNull()
     expect(toSettings({ statsSpan: 90 }).statsSpan).toBe(90)
     expect(toSettings({ statsSpan: 7 }).statsSpan).toBe(30)
+  })
+
+  it('reads the keep one file setting, off by default', () => {
+    expect(DEFAULT_SETTINGS.keepOneFile).toBe(false)
+    expect(toSettings({ keepOneFile: true }).keepOneFile).toBe(true)
+    expect(toSettings({ keepOneFile: 'yes' }).keepOneFile).toBe(false)
+  })
+
+  it('names exports by the day, or as the one file that each replaces', () => {
+    const now = new Date(2026, 10, 18, 9, 30)
+    expect(backupName(now)).toBe('fast-track-2026-11-18.json')
+    expect(backupName(now, false)).toBe('fast-track-2026-11-18.json')
+    expect(backupName(now, true)).toBe('fast-track.json')
+  })
+
+  it('says in a sentence why a file left by an earlier install cannot be replaced', () => {
+    const where = 'Documents/FastTrack/fast-track.json'
+    const message = writeFailure(new Error("'writeFile' failed with: /storage/emulated/0/Documents/FastTrack/fast-track.json: open failed: EACCES (Permission denied)"), where)
+    expect(message).toBe(`cannot replace ${where}, which an earlier install left; delete it in a file manager`)
+    expect(writeFailure(new Error('Unable to do file operation, user denied permission request.'), where)).toMatch(/denied permission request/)
+    expect(writeFailure('disk full', where)).toBe('disk full')
+  })
+
+  it('imports a backup from before the keep one file setting, with it off', () => {
+    const old = {
+      format: 'fast-track-backup',
+      version: 1,
+      exported_at: '2026-11-01T08:00:00.000Z',
+      settings: { goal: 18, unit: 'lb', cloudBackup: true },
+      fasts: [fast('2026-10-30T20:00', '2026-10-31T12:30')],
+    }
+    const backup = parseBackup(JSON.stringify(old))
+    expect(backup.fasts).toHaveLength(1)
+    expect(backup.settings).toMatchObject({ goal: 18, unit: 'lb', cloudBackup: true, keepOneFile: false })
+    expect(parseBackup(JSON.stringify({ ...old, settings: undefined })).settings).toEqual(DEFAULT_SETTINGS)
   })
 
   it('round-trips a backup and merges by id', () => {
