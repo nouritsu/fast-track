@@ -56,6 +56,11 @@
          requestLegacyExternalStorage too; 11 and newer need neither.
          https://capacitorjs.com/docs/apis/filesystem#android -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <!-- Stage alerts and the status notification (FastStatus) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Alarms on time for the status notification and regular exports (FastStatus,
+         FastExport), where the user allows it -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- Weights from openScale (OpenScalePlugin): its own permission, which the user
          grants once, and visibility of its provider on Android 11 and newer. -->
     <uses-permission android:name="com.health.openscale.READ_WRITE_DATA" />
