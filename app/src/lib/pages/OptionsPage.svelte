@@ -288,7 +288,7 @@
         {/each}
       </div>
     {:else}
-      <p class="muted">Take each fast's weight from openScale: the weighing closest to its end, within {WINDOW_HOURS} hours.</p>
+      <p class="muted">Take each fast's weight from openScale: the last weighing during it, else the closest to its end within {WINDOW_HOURS} hours.</p>
       <button type="button" class="word lead" disabled={busy} onclick={connect}
         ><span class="icon" aria-hidden="true">⚯</span>connect openScale</button
       >

@@ -137,15 +137,10 @@ body {
   overscroll-behavior: none;
 }
 
-/* The theme reveal (theme.ts): a circle of the new theme grows from the button (to
-   Latte), or the old Latte view shrinks into it (to Mocha). While it runs, the root
-   stays out of the view transition and the body is captured under its theme's name,
-   so each view gets its own group; the body takes the background so both views are
-   opaque. The Latte view's image pair is the circle: centred on the button, with a
-   radius that covers the page, and the view inside it pinned to the page. theme.ts
-   scales the circle and the view in opposite directions: transforms run on the
-   compositor, where an animated clip-path repaints every frame. Colour transitions
-   are held so nothing fades inside the circle. */
+/* The theme reveal (theme.ts), a view transition: a circle of Latte grows from the button
+   or shrinks into it, theme.ts scaling it and the view inside it in opposite directions
+   on the compositor. Colour transitions are held meanwhile.
+   https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API */
 :root[data-reveal] {
   view-transition-name: none;
 }
@@ -469,7 +464,7 @@ hr.split {
   }
 }
 
-/* Large accent text for a gate or an ending ("Ready!", "Done!"). */
+/* Large accent text for the ending ("Done!"). */
 .headline {
   margin: 0;
   font-size: 2.5em;
@@ -498,7 +493,7 @@ hr.split {
   line-height: 1.35;
 }
 
-/* Section headings inside a sheet. */
+/* Section headings in a pane or page. */
 h3 {
   margin: 0 0 0.3em;
   font-size: 1em;

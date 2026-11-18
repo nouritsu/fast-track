@@ -1,5 +1,5 @@
-// Fasts and what the app works out from them: progress, stages, streaks, stats,
-// the eating window and the calendar. Plain functions over plain data.
+// Fasts and what the app works out from them: progress, stages, the streak, a summary,
+// the eating window and weights. Plain functions over plain data.
 
 import { STAGES, stageEnd, stageIndex } from './stages'
 import { dayKey, HOUR, MINUTE } from './time'
@@ -22,7 +22,7 @@ export interface Active {
   goal: number
 }
 
-/** The goals the ‹ › buttons step through: by the hour up to a day, then longer fasts. */
+/** The goals the < > buttons step through: by the hour up to a day, then longer fasts. */
 export const GOALS = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 30, 36, 42, 48, 60, 72] as const
 export const DEFAULT_GOAL = 16
 

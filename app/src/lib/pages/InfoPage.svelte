@@ -115,7 +115,7 @@
 </Page>
 
 <style>
-  /* The stages as a text bar, as the Fast page draws progress: one cell an hour. */
+  /* The stages as a text bar, as the Fast page draws progress. */
   .bar {
     display: flex;
     margin-top: 0.5em;

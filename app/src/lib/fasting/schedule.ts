@@ -1,8 +1,6 @@
-// When regular exports run, in calendar event notation: systemd's OnCalendar format (systemd.time(7)):
-// "daily", "Mon..Fri 08:00", "*-*-01 09:00", "*:0/30". Supported: the shorthands
-// (minutely, hourly, daily, weekly, monthly, quarterly, semiannually, yearly), and
-// "[weekdays] [[year-]month-day] [hour:minute[:second]]" where each field is *, a
-// number, a list (1,15), a range (9..17) or a repetition (*/2, 0/15). Times are local.
+// When regular exports run, in systemd's calendar event notation, in local time:
+// https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html
+// Supported: the shorthands and "[weekdays] [[year-]month-day] [hour:minute[:second]]".
 
 import { MONTHS } from './time'
 import { two } from '../ui/fields'

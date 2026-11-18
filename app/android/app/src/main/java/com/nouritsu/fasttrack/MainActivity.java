@@ -19,9 +19,8 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * Asks for the display's fastest refresh rate. With adaptive refresh rate (Android 15+)
-     * the WebView draws at the "normal" rate, 60 Hz, so animations look slower than in a
-     * browser. The window's explicit rate counts only while it is on screen and drawing.
+     * Asks for the display's fastest refresh rate; with adaptive refresh rate the WebView
+     * draws at 60 Hz: https://developer.android.com/develop/ui/views/animations/adaptive-refresh-rate
      */
     private void preferFastestRefreshRate() {
         Display display = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R

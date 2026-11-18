@@ -49,7 +49,7 @@
   } = $props()
 
   let selected = $state<string | null>(null)
-  let removed = $state<Fast[]>([]) // deleted while the sheet is open, for Undo
+  let removed = $state<Fast[]>([]) // deleted while the page is in view, for Undo
 
   $effect(() => {
     if (!visible) removed = []

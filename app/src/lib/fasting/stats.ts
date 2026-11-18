@@ -190,8 +190,8 @@ export interface Clock {
   spread: number // minutes either side: the circular standard deviation
 }
 
-/** The typical time of day of `times`: a circular mean, so 23:30 and 00:30 make
- *  midnight, not noon. Null without times, or with times spread evenly round the clock. */
+/** The typical time of day of `times`, or null without times or with times spread evenly
+ *  round the clock: https://en.wikipedia.org/wiki/Circular_mean */
 export function typicalClock(times: number[]): Clock | null {
   let x = 0
   let y = 0
@@ -252,8 +252,8 @@ export function weighings(fasts: Fast[], scale: ScaleWeight[], window: Window): 
   return [...scale.filter((w) => inside(w.at)), ...typed].sort((a, b) => a.at - b.at)
 }
 
-/** A trend through the weighings that daily swings of water barely move: each one pulls
- *  the trend a tenth of the way to it for every day since the one before. */
+/** A trend through the weighings that daily swings of water barely move: smoothing
+ *  constant 0.9 a day, as in The Hacker's Diet: https://www.fourmilab.ch/hackdiet/e4/signalnoise.html */
 export function weightTrend(points: ScaleWeight[]): ScaleWeight[] {
   let trend = points[0]?.kg ?? 0
   let last = points[0]?.at ?? 0

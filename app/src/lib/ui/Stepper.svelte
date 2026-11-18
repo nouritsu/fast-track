@@ -3,8 +3,8 @@
   import { tick } from './haptics'
   import { hold } from './hold'
 
-  // A field set with ‹ › instead of typing, TUI style: a muted label, the value at a
-  // fixed width, and two glyph buttons, < and >, that repeat while held. A sideways swipe
+  // A field set with < > instead of typing, TUI style: a muted label, the value at a
+  // fixed width, and the two glyph buttons, which repeat while held. A sideways swipe
   // across the row scrubs it: a step every STEP_PX, right for later, with a tick.
   const STEP_PX = 28
   let {

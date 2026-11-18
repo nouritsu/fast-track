@@ -3,7 +3,8 @@
 # - the icons Iosevka lacks or draws too small, from Noto Sans Symbols 2 (SIL OFL 1.1);
 # - the Android launcher icons rendered from app/icon.svg: 48 dp legacy icons and the
 #   108 dp adaptive foreground, whose motif sits in the central safe zone;
-# - the 24 dp status-bar icon for stage alerts, from app/notification.svg.
+# - the 24 dp status-bar icon for stage alerts and the status notification
+#   (FastStatus.java), from app/notification.svg.
 # In development: nix build .#app-assets -o app/public/generated
 {
   fetchurl,
@@ -20,8 +21,8 @@
     hash = "sha256-S6U8fByzknmq5fjX0iBUxIXHEWmSDlo27QmLEV4uPF0=";
   };
   # Text: Basic Latin to Latin Extended-A, General Punctuation (– … ‘ ’), Box Drawing
-  # and Block Elements (bars, sparklines, heatmaps). Then every icon the app draws
-  # from Iosevka; keep this list equal to the icons in the code.
+  # and Block Elements (bars). Then every icon the app draws from Iosevka; keep this
+  # list equal to the icons in the code.
   text = ["U+0000-017F" "U+2000-206F" "U+2500-259F"];
   icons = [
     "U+25F7" # ◷ Start time
