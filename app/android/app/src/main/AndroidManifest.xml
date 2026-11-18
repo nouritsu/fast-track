@@ -49,7 +49,6 @@
 
     <!-- Permissions -->
 
-    <uses-permission android:name="android.permission.INTERNET" />
     <!-- navigator.vibrate, for haptics -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Export writes Documents/FastTrack/. Android 11 and newer need no permission
