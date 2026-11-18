@@ -73,7 +73,8 @@ export async function saveBackupFile(name: string, text: string, type = 'applica
   try {
     await write()
   } catch {
-    // Android 9 and older ask for storage access first; 11 and newer never need it.
+    // Android 10 and older ask for storage access first; 11 and newer need none:
+    // https://capacitorjs.com/docs/apis/filesystem#android
     await Filesystem.requestPermissions()
     await write()
   }

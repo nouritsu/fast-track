@@ -122,7 +122,8 @@ final class FastStatus {
             .setShowWhen(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            // On the lock screen, the phone's setting decides whether its details show.
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE);
     }
 
     private static void createChannel(Context context) {

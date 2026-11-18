@@ -74,7 +74,7 @@ public class OpenScalePlugin extends Plugin {
                     users.put(user);
                 }
             }
-            Log.i(TAG, "users: " + (cursor == null ? "no answer" : users.length() + " " + users));
+            Log.i(TAG, "users: " + (cursor == null ? "no answer" : users.length()));
         } catch (Exception e) {
             Log.w(TAG, "users failed", e);
             call.reject("openScale did not answer: " + e.getMessage());
