@@ -1,7 +1,4 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Fast Track</string>
-    <string name="title_activity_main">Fast Track</string>
-    <string name="package_name">com.nouritsu.fasttrack</string>
-    <string name="custom_url_scheme">com.nouritsu.fasttrack</string>
 </resources>
