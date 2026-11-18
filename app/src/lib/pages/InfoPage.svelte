@@ -134,7 +134,6 @@
 
   /* The same size as the bar, so each hour sits under the cell it names. */
   .ticks {
-    margin: 0;
     white-space: pre;
     font-variant-ligatures: none;
     color: var(--muted);

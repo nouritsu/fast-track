@@ -388,6 +388,22 @@ button.gate {
   flex: none;
 }
 
+/* A block's content that scrolls inside its border, up and down only: inside a
+   scroller the WebView ignores .pages' own pan-y, takes a sideways drag and cancels
+   the swipe. */
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding-top: 0.3em;
+}
+
+.scroller p {
+  margin: 0.3em 0;
+}
+
 /* A rule across a block, border to border, like a ratatui split. */
 hr.split {
   border: 0;

@@ -43,7 +43,7 @@
   aria-label={title}
 >
   <Block {title}>
-    <div class="content" class:scrolls bind:this={content}>{@render children()}</div>
+    <div class="content scroller" class:scrolls bind:this={content}>{@render children()}</div>
     {#snippet actions()}
       <button type="button" class="edge" onclick={onClose}><span class="icon" aria-hidden="true">✕</span>Close</button>
       {#if action}{@render action()}{/if}
@@ -63,19 +63,10 @@
   }
 
   .content {
-    flex: 1;
-    min-height: 0;
     touch-action: none;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding-top: 0.3em;
   }
 
   .content.scrolls {
     touch-action: pan-y;
-  }
-
-  .content :global(p) {
-    margin: 0.3em 0;
   }
 </style>

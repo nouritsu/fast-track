@@ -199,7 +199,7 @@
 </Block>
 
 <Block title="Fasts" class="fasts-block" headingRight={addButton}>
-  <div class="content">
+  <div class="content scroller">
   <div class="head">
     {#if selected}
       <p class="fields">{longDate(noonOf(selected))} · {count === 1 ? '1 fast' : `${count} fasts`}</p>
@@ -271,18 +271,8 @@
     min-height: 0;
   }
 
-  /* Scrolls up and down only, so a sideways drag stays a page swipe (Page.svelte). */
   .content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    touch-action: pan-y;
     padding-top: 0.2em;
-  }
-
-  .content :global(p) {
-    margin: 0.3em 0;
   }
 
   /* Swipeable areas: vertical drags still scroll the page. */
@@ -306,6 +296,7 @@
 
   .entry {
     position: relative;
+    padding: 0.5em 0 0.2em;
     background: var(--bg);
     transition: transform 0.2s ease;
   }
@@ -408,10 +399,6 @@
 
   p.summary {
     white-space: normal;
-  }
-
-  .entry {
-    padding: 0.5em 0 0.2em;
   }
 
   .entry .title {
