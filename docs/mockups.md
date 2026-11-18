@@ -303,7 +303,31 @@ off by default.
 ╰──────────────────────────────────────╯
 ```
 
-Status notification (Android): an ongoing notification in the system's own colours, either
-"Fasting · Ketosis" with a running timer and the goal and next stage times, or "Eating window"
-counting down to the next fast. It updates itself at each change with the app closed, and can be
-turned off in Options.
+Status notification (Android): an ongoing notification in the system's own colours and fonts,
+with a progress bar. It updates itself with the app closed (at each change, and every 5 to 15
+minutes to move the bar) and can be turned off in Options.
+
+While fasting it says "Fasting · Ketosis", the goal and the next stage's time, and a timer that
+counts down to the goal and then up past it. The bar spans 0 to the goal: a segment for each
+stage (Glucose 0–4h, Fat burning 4–12h, Ketosis 12–24h, Autophagy 24h+) in the stage's colour,
+the tracker (the status-bar icon) at now and a point at the goal. Past the goal it spans on to
+the next whole 12 hours, so the tracker keeps moving. The segments take the stage colours (blue,
+orange, red and mauve unless others are chosen) as Catppuccin Mocha in dark mode and Latte in
+light; the point keeps the system's colour, and a day/night switch shows at the next refresh
+(at once while the app is in memory).
+
+During the eating window it says "Eating window", the next fast's time and a timer counting down
+to it, over a one-colour bar that drains as the window runs out. Once the window has closed it
+says "Not fasting" with a timer since, and no bar.
+
+```text
+Fasting · Ketosis                      3:12:45
+Goal 19:39 · Autophagy Wed 03:39
+━━━━━━━━━━━━━━━━━━━━━━━━●┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈◆
+ Glucose  Fat burning       Ketosis
+```
+
+On Android 16 the bar is a progress-centric one (segments, a point and a tracker), and the
+notification asks to be a Live Update: a chip in the status bar with the time left to the goal
+or past it, or left in the eating window. Older versions get a plain progress bar of the same
+length and no chip.
