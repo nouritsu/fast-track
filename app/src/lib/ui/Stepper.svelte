@@ -62,7 +62,7 @@
   }
 
   .label {
-    width: 5ch;
+    min-width: 5ch;
   }
 
   .setting {

@@ -6,15 +6,18 @@
   import { askScale, emptyReason, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
   import { backupName, makeBackup, parseBackup, saveExportFile } from '../fasting/backup'
   import { toIcs, WEEK_STARTS, weekStartName } from '../fasting/calendar'
+  import { bmiFormula } from '../fasting/fasts'
   import { describeSchedule, listed, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
+  import { latestWeighing } from '../fasting/stats'
   import { dayClock, dayKey, shortDate } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
   import Block from '../ui/Block.svelte'
+  import HeightStepper from '../ui/HeightStepper.svelte'
   import type { Theme } from '../theme'
 
-  // A pane a category: the theme and weight unit, the notifications, the calendar,
-  // weights from openScale, the backup with its regular exports, and privacy. Toggles show
-  // the current state.
+  // A pane a category: the theme, the weight unit and BMI, the notifications, the
+  // calendar, weights from openScale, the backup with its regular exports, and privacy.
+  // Toggles show the current state.
   let {
     tracker,
     theme,
@@ -163,6 +166,11 @@
     `In Documents/FastTrack/, ${settings.keepOneFile ? 'one file, replaced each time' : 'a file a day'}: ${backupName(new Date(), settings.keepOneFile)}.`,
   )
 
+  // BMI's formula, with numbers once there is a height and a weight: the latest one the
+  // app knows, from a fast or openScale.
+  const latest = $derived(latestWeighing(tracker.fasts, tracker.scale))
+  const formula = $derived(bmiFormula(settings.unit, latest?.kg ?? null, settings.height))
+
   async function run(task: () => Promise<string>, at: typeof messageAt = 'backup') {
     busy = true
     messageAt = at
@@ -177,7 +185,7 @@
 
   // Settings that are on or off. Alerts and the status notification ask Android for
   // permission to notify before they turn on, and say what they did.
-  type Switch = 'alerts' | 'status' | 'weekNumbers' | 'weekTotals' | 'exportOn' | 'keepOneFile' | 'cloudBackup'
+  type Switch = 'alerts' | 'status' | 'weekNumbers' | 'weekTotals' | 'exportOn' | 'keepOneFile' | 'bmi' | 'cloudBackup'
   const NOTICES: Partial<Record<Switch, string>> = { alerts: 'Alerts', status: 'Status notification' }
 
   function flip(key: Switch) {
@@ -249,7 +257,10 @@
         <span class="icon" aria-hidden="true">{theme === 'mocha' ? '⏾' : '☼'}</span>{theme === 'mocha' ? 'Mocha' : 'Latte'}
       </button>
     </div>
-    <div class="row">
+  </Block>
+
+  <Block title="Body">
+    <div class="row first">
       <span>Weight</span>
       <button
         type="button"
@@ -258,6 +269,11 @@
         onclick={() => tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' })}>{settings.unit}</button
       >
     </div>
+    {@render toggle('bmi', 'BMI')}
+    {#if settings.bmi}
+      <HeightStepper height={settings.height} unit={settings.unit} onChange={(height) => tracker.setSettings({ height })} />
+      <p class:muted={settings.height === null || !latest}>{formula}</p>
+    {/if}
   </Block>
 
   <Block title="Notifications">
