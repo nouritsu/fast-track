@@ -162,27 +162,22 @@
     }
   }
 
-  function toggleAlerts() {
-    run(async () => {
-      if (settings.alerts) {
-        await tracker.setSettings({ alerts: false })
-        return 'Alerts off.'
-      }
-      if (Capacitor.isNativePlatform() && !(await askAlerts())) return 'Notifications are blocked in Android settings.'
-      await tracker.setSettings({ alerts: true })
-      return 'Alerts on.'
-    }, 'notify')
-  }
+  // Settings that are on or off. Alerts and the status notification ask Android for
+  // permission to notify before they turn on, and say what they did.
+  type Switch = 'alerts' | 'status' | 'weekNumbers' | 'weekTotals' | 'exportOn'
+  const NOTICES: Partial<Record<Switch, string>> = { alerts: 'Alerts', status: 'Status notification' }
 
-  function toggleStatus() {
+  function flip(key: Switch) {
+    const notice = NOTICES[key]
+    if (!notice) return void tracker.setSettings({ [key]: !settings[key] })
     run(async () => {
-      if (settings.status) {
-        await tracker.setSettings({ status: false })
-        return 'Status notification off.'
+      if (settings[key]) {
+        await tracker.setSettings({ [key]: false })
+        return `${notice} off.`
       }
       if (Capacitor.isNativePlatform() && !(await askAlerts())) return 'Notifications are blocked in Android settings.'
-      await tracker.setSettings({ status: true })
-      return 'Status notification on.'
+      await tracker.setSettings({ [key]: true })
+      return `${notice} on.`
     }, 'notify')
   }
 
@@ -219,6 +214,16 @@
   }
 </script>
 
+<!-- A setting that is on or off: its name, and the word to press. -->
+{#snippet toggle(key: Switch, name: string, first = false)}
+  <div class="row" class:first>
+    <span>{name}</span>
+    <button type="button" class="word" disabled={key in NOTICES && busy} aria-pressed={settings[key]} onclick={() => flip(key)}
+      >{settings[key] ? 'on' : 'off'}</button
+    >
+  </div>
+{/snippet}
+
 <!-- A pane a category, in one scrolling column like Stats (app.css .panes). -->
 <div class="panes">
   <Block title="General">
@@ -240,19 +245,9 @@
   </Block>
 
   <Block title="Notifications">
-    <div class="row first">
-      <span>Alerts</span>
-      <button type="button" class="word" disabled={busy} aria-pressed={settings.alerts} onclick={toggleAlerts}>
-        {settings.alerts ? 'on' : 'off'}
-      </button>
-    </div>
+    {@render toggle('alerts', 'Alerts', true)}
     <p class="muted">A notification when a stage begins and at the goal.</p>
-    <div class="row">
-      <span>Status</span>
-      <button type="button" class="word" disabled={busy} aria-pressed={settings.status} onclick={toggleStatus}>
-        {settings.status ? 'on' : 'off'}
-      </button>
-    </div>
+    {@render toggle('status', 'Status')}
     <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer.</p>
     {#if message && messageAt === 'notify'}<p class="message" role="status">{message}</p>{/if}
   </Block>
@@ -264,14 +259,8 @@
         >{weekStartName(settings.weekStart)}</button
       >
     </div>
-    {#each [['weekNumbers', 'Week numbers'], ['weekTotals', 'Weekly totals']] as const as [key, name] (key)}
-      <div class="row">
-        <span>{name}</span>
-        <button type="button" class="word" aria-pressed={settings[key]} onclick={() => tracker.setSettings({ [key]: !settings[key] })}
-          >{settings[key] ? 'on' : 'off'}</button
-        >
-      </div>
-    {/each}
+    {@render toggle('weekNumbers', 'Week numbers')}
+    {@render toggle('weekTotals', 'Weekly totals')}
     <p class="muted">Week numbers are ISO weeks; a week's hours count the fasts that ended in it.</p>
   </Block>
 
@@ -324,15 +313,7 @@
   </Block>
 
   <Block title="Regular export">
-    <div class="row first">
-      <span>Export on a schedule</span>
-      <button
-        type="button"
-        class="word"
-        aria-pressed={settings.exportOn}
-        onclick={() => tracker.setSettings({ exportOn: !settings.exportOn })}>{settings.exportOn ? 'on' : 'off'}</button
-      >
-    </div>
+    {@render toggle('exportOn', 'Export on a schedule', true)}
     <label class="when">
       <span class="muted">Every</span>
       <input
