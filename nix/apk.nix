@@ -13,7 +13,6 @@
   jdk21,
   nodejs,
   web,
-  versionCode ? 1,
 }: let
   buildToolsVersion = "35.0.0"; # AGP 8.13's default; any other makes it reach for the network
   android = androidenv.composeAndroidPackages {
@@ -25,10 +24,24 @@
     includeNDK = false;
   };
   sdk = "${android.androidsdk}/libexec/android-sdk";
+
+  inherit (lib.importJSON ../app/package.json) version;
+  # versionCode = MAJOR*10000 + MINOR*100 + PATCH, so 0.1.0 is 100. Android installs an
+  # update only over a lower code, so bumping the version in package.json is all a
+  # release needs; build.gradle's fallbacks cover Android Studio builds.
+  versionParts = builtins.match "(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)" version;
+  versionCode = let
+    part = n: lib.toInt (builtins.elemAt versionParts n);
+    minor = part 1;
+    patch = part 2;
+  in
+    assert lib.assertMsg (versionParts != null) "app/package.json: version must be plain X.Y.Z, got \"${version}\"";
+    assert lib.assertMsg (minor < 100 && patch < 100) "app/package.json: MINOR and PATCH must stay below 100 to fit the versionCode, got ${version}";
+      part 0 * 10000 + minor * 100 + patch;
 in
   stdenv.mkDerivation (finalAttrs: {
     pname = "fast-track-apk";
-    inherit (lib.importJSON ../app/package.json) version;
+    inherit version;
     src = ../app;
 
     npmDeps = importNpmLock {npmRoot = ../app;};
@@ -76,7 +89,7 @@ in
       runHook postInstall
     '';
 
-    passthru = {inherit sdk;};
+    passthru = {inherit sdk buildToolsVersion versionCode;};
 
     meta.sourceProvenance = with lib.sourceTypes; [
       fromSource

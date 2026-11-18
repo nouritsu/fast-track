@@ -70,11 +70,8 @@
     }: {
       apk = {
         type = "app";
-        program = lib.getExe (pkgs.callPackage ./nix/apk-app.nix {
-          inherit (own) apk;
-          flake = self;
-        });
-        meta.description = "Build the APK, sign it with the debug key, and optionally adb install it";
+        program = lib.getExe (pkgs.callPackage ./nix/apk-app.nix {inherit (own) apk;});
+        meta.description = "Sign the APK with the debug key, and optionally adb install it";
       };
     });
 
