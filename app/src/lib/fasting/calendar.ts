@@ -38,8 +38,7 @@ export function monthRows(year: number, month: number, start: WeekStart): WeekRo
   })
 }
 
-/** The ISO 8601 week number of a date: weeks start on Monday, and week 1 holds the
- *  year's first Thursday. */
+/** The ISO 8601 week number of a date: https://en.wikipedia.org/wiki/ISO_week_date */
 export function isoWeek(at: Date): number {
   const d = new Date(Date.UTC(at.getFullYear(), at.getMonth(), at.getDate()))
   const weekday = d.getUTCDay() || 7
@@ -94,8 +93,8 @@ const stamp = (at: number) => new Date(at).toISOString().replace(/[-:]/g, '').re
 export const icsText = (text: string): string =>
   text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
 
-/** A content line folded at 75 octets, continuation lines starting with a space,
- *  never splitting a character. */
+/** A content line folded at 75 octets, never splitting a character:
+ *  https://datatracker.ietf.org/doc/html/rfc5545#section-3.1 */
 export function foldLine(line: string): string {
   const encoder = new TextEncoder()
   const parts: string[] = []

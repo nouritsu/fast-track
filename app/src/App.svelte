@@ -37,11 +37,12 @@
   import { stageCells } from './lib/ui/progress'
 
   // Fast Track: five pages side by side, switched by the tabs along the bottom or a
-  // swipe. The Fast page is one panel: the goal's share sits in its top edge, a
-  // coloured progress line under the timer, the fast's status at its top, and its buttons in its bottom
-  // edge. A fast starts at the gate (now) or from Start at (earlier), runs until End
-  // fast, and ends on "Done!". Start time, Goal and Edit fast open as panes hung below
-  // the current page: the page slides up and off the top, pushed by the pane.
+  // swipe. The Fast page is one panel: the fast's status at its top, the goal's share
+  // in its top edge, a coloured progress line under the timer, and its buttons in its
+  // bottom edge. A fast starts at the gate (now) or from Start at (earlier), runs until
+  // End fast, and ends on "Done!". Start time, Goal and Edit fast open as panes hung
+  // below the page, which slides up and off the top, pushed by the pane; the calendar's
+  // month and year panes hang above it and push it down.
   type Phase = 'loading' | 'ready' | 'running' | 'done'
   type PageId = 'fast' | 'calendar' | 'stats' | 'options' | 'info'
   type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year'

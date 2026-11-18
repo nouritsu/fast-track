@@ -22,7 +22,7 @@
   }: {
     fast: Fast
     others: Fast[] // the rest of the history, which it must not overlap
-    scale: ScaleWeight[] // openScale's weighings: the one nearest the end fills an empty weight
+    scale: ScaleWeight[] // openScale's weighings: the fast's own (scaleWeightFor) fills an empty weight
     isNew: boolean
     unit: 'kg' | 'lb'
     now: number
