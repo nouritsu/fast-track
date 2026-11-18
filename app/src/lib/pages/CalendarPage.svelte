@@ -1,23 +1,31 @@
 <script lang="ts">
-  import { untrack } from 'svelte'
-  import { deepestByDay, deepestStage, fastLength, percentOf, showWeight, type Fast } from '../fasting/fasts'
+  import { dayTotals, hoursOf, monthRows, monthSummary, rowWeek, weekdayHeads, weekTotal } from '../fasting/calendar'
+  import { deepestStage, fastLength, percentOf, showWeight, type Fast } from '../fasting/fasts'
   import { weightOf, type ScaleWeight } from '../fasting/openscale'
   import { STAGES } from '../fasting/stages'
-  import { dayKey, longDate, monthGrid, monthTitle, nearClock } from '../fasting/time'
+  import type { Settings } from '../fasting/store'
+  import { dayKey, longDate, nearClock } from '../fasting/time'
   import { carries, drag, type DragOptions } from '../ui/drag'
   import { clock, duration } from '../ui/fields'
   import Icon from '../ui/Icon.svelte'
   import Page from '../ui/Page.svelte'
 
   // A month of fasts: each day that ended one in the colour of the deepest stage it
-  // reached, and below, the month's fasts (or a tapped day's), newest first. Delete
+  // reached, with its hours and a goal mark under it, week numbers and weekly totals
+  // as the settings say; the month's summary; and its fasts (or a tapped day's), newest
+  // first. Tapping the month or the year opens a pane to pick another (App). Delete
   // takes effect at once; the entry turns into an Undo line until the page is left.
   let {
     fasts,
     scale,
     unit,
     now,
+    settings,
+    year = $bindable(),
+    month = $bindable(),
     shown: visible,
+    onPickMonth,
+    onPickYear,
     onEdit,
     onAdd,
     onDelete,
@@ -27,16 +35,18 @@
     scale: ScaleWeight[] // openScale's weighings, for fasts without a weight typed in
     unit: 'kg' | 'lb'
     now: number
+    settings: Settings
+    year: number
+    month: number // 0–11
     shown: boolean // the page is in view; leaving it clears the Undo lines
+    onPickMonth: () => void
+    onPickYear: () => void
     onEdit: (fast: Fast) => void
     onAdd: (day: string | null) => void
     onDelete: (fast: Fast) => void
     onRestore: (fast: Fast) => void
   } = $props()
 
-  const today = untrack(() => new Date(now))
-  let year = $state(today.getFullYear())
-  let month = $state(today.getMonth())
   let selected = $state<string | null>(null)
   let removed = $state<Fast[]>([]) // deleted while the sheet is open, for Undo
 
@@ -44,11 +54,26 @@
     if (!visible) removed = []
   })
 
-  const days = $derived(deepestByDay(fasts))
-  const weeks = $derived(monthGrid(year, month))
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  const days = $derived(dayTotals(fasts))
+  const rows = $derived(monthRows(year, month, settings.weekStart))
+  const heads = $derived(weekdayHeads(settings.weekStart))
   const key = (day: number) => dayKey(new Date(year, month, day))
   const todayKey = $derived(dayKey(now))
   const monthKey = $derived(key(1).slice(0, 7))
+  const sub = $derived(settings.dayHours || settings.goalMarks) // a second line under the days
+  const summary = $derived(monthSummary(fasts, year, month))
+  const hm = (ms: number) => {
+    const minutes = Math.round(ms / 60_000)
+    return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
+  }
+
+  // The month or the year changed elsewhere (its pane): no day stays picked.
+  $effect(() => {
+    void year
+    void month
+    selected = null
+  })
 
   // Deleted fasts stay in their place in the list as Undo lines.
   const shown = $derived(
@@ -61,7 +86,6 @@
     const d = new Date(year, month + by, 1)
     year = d.getFullYear()
     month = d.getMonth()
-    selected = null
   }
 
   function remove(fast: Fast) {
@@ -104,68 +128,97 @@
 
 <Page title="Calendar">
   <div class="swipe" bind:clientWidth={width} use:drag={monthDrag} style:transform="translateX({monthShift}px)">
-  <div class="month">
-    <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => move(-1)}>&lt;</button>
-    <span>{monthTitle(year, month)}</span>
-    <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => move(1)}>&gt;</button>
-  </div>
+    <div class="month">
+      <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => move(-1)}>&lt;</button>
+      <span class="when">
+        <button type="button" class="word" aria-label="Pick a month: {MONTHS[month]}" onclick={onPickMonth}>{MONTHS[month]}</button>
+        <button type="button" class="word" aria-label="Pick a year: {year}" onclick={onPickYear}>{year}</button>
+      </span>
+      <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => move(1)}>&gt;</button>
+    </div>
 
-  <table class="grid">
-    <thead>
-      <tr>{#each ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] as d (d)}<th scope="col">{d}</th>{/each}</tr>
-    </thead>
-    <tbody>
-      {#each weeks as week, w (w)}
+    <table class="grid" class:sub>
+      <thead>
         <tr>
-          {#each week as day, d (d)}
-            <td>
-              {#if day !== null}
-                {@const k = key(day)}
-                {@const stage = days.get(k)}
-                {#if stage !== undefined}
-                  <button
-                    type="button"
-                    class="day"
-                    class:selected={selected === k}
-                    class:today={todayKey === k}
-                    style:color="var(--{STAGES[stage].id})"
-                    aria-label="{longDate(new Date(year, month, day).getTime())}: {STAGES[stage].name}"
-                    aria-pressed={selected === k}
-                    onclick={() => (selected = selected === k ? null : k)}>{String(day).padStart(2)}</button
-                  >
-                {:else}
-                  <span class="day muted" class:today={todayKey === k}>{String(day).padStart(2)}</span>
-                {/if}
-              {:else}
-                <!-- Holds the row's height, so short months keep the grid's size. -->
-                <span class="day" aria-hidden="true">  </span>
-              {/if}
-            </td>
-          {/each}
+          {#if settings.weekNumbers}<th scope="col" class="side" aria-label="Week">wk</th>{/if}
+          {#each heads as d (d)}<th scope="col">{d}</th>{/each}
+          {#if settings.weekTotals}<th scope="col" class="side" aria-label="Hours that week">h</th>{/if}
         </tr>
-      {/each}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each rows as row, w (w)}
+          {@const inMonth = row.days.some((d) => d !== null)}
+          <tr>
+            {#if settings.weekNumbers}<th scope="row" class="side muted">{inMonth ? rowWeek(row) : ''}</th>{/if}
+            {#each row.days as day, d (d)}
+              <td>
+                {#if day !== null}
+                  {@const k = key(day)}
+                  {@const total = days.get(k)}
+                  {#if total}
+                    <button
+                      type="button"
+                      class="day"
+                      class:selected={selected === k}
+                      class:today={todayKey === k}
+                      style:--stage="var(--{STAGES[total.stage].id})"
+                      aria-label="{longDate(new Date(year, month, day).getTime())}: {hoursOf(total.ms)} hours, {STAGES[total.stage]
+                        .name}, goal {total.met ? 'met' : 'not met'}"
+                      aria-pressed={selected === k}
+                      onclick={() => (selected = selected === k ? null : k)}
+                    >
+                      <span class="date">{day}</span>
+                      {#if sub}<span class="under"
+                          >{#if settings.dayHours}<span class="hours">{hoursOf(total.ms)}</span>{/if}{#if settings.goalMarks}<span
+                              class="mark"
+                              class:met={total.met}>•</span
+                            >{/if}</span
+                        >{/if}
+                    </button>
+                  {:else}
+                    <span class="day muted" class:today={todayKey === k}>
+                      <span class="date">{day}</span>
+                      {#if sub}<span class="under"> </span>{/if}
+                    </span>
+                  {/if}
+                {:else}
+                  <!-- Holds the row's height, so short months keep the grid's size. -->
+                  <span class="day" aria-hidden="true"><span class="date"> </span>{#if sub}<span class="under"> </span>{/if}</span>
+                {/if}
+              </td>
+            {/each}
+            {#if settings.weekTotals}
+              {@const ms = inMonth ? weekTotal(fasts, row) : 0}
+              <td class="side muted">{ms ? `${hoursOf(ms)}h` : ''}</td>
+            {/if}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
   </div>
-
-  <p class="legend">
-    {#each STAGES as stage (stage.id)}<span><span style:color="var(--{stage.id})">■</span> {stage.name}</span>{/each}
-  </p>
 
   <div class="head">
-    <span class="muted">
-      {selected ? longDate(new Date(`${selected}T12:00`).getTime()) : monthTitle(year, month).split(' ')[0]} ·
-      {count === 1 ? '1 fast' : `${count} fasts`}
-    </span>
-    <button type="button" onclick={() => onAdd(selected)}><span class="icon" aria-hidden="true">✚</span>Add</button>
+    {#if selected}
+      <p class="fields">{longDate(new Date(`${selected}T12:00`).getTime())} · {count === 1 ? '1 fast' : `${count} fasts`}</p>
+    {:else if summary.count}
+      <p class="fields">{MONTHS[month]} · {summary.count === 1 ? '1 fast' : `${summary.count} fasts`} · {hoursOf(summary.total)}h</p>
+    {:else}
+      <p class="fields muted">{MONTHS[month]} · no fasts</p>
+    {/if}
+    <button type="button" class="word" onclick={() => onAdd(selected)}><span class="icon" aria-hidden="true">✚</span>add</button>
   </div>
+  {#if !selected && summary.count}
+    <p class="fields muted summary">
+      avg {hm(summary.average)} · goal met {Math.round(summary.goalRate * 100)}% · longest {hm(summary.longest)}
+    </p>
+  {/if}
 
   {#each shown as { fast, gone } (fast.id)}
     <hr class="split" />
     {#if gone}
       <div class="entry gone">
         <span class="muted">Deleted {longDate(fast.end)}</span>
-        <button type="button" onclick={() => restore(fast)}><span class="icon" aria-hidden="true">↺</span>Undo</button>
+        <button type="button" class="word" onclick={() => restore(fast)}><span class="icon" aria-hidden="true">↺</span>undo</button>
       </div>
     {:else}
       {@const stage = STAGES[deepestStage(fast)]}
@@ -192,6 +245,14 @@
     <hr class="split" />
     <p class="muted">No fasts {selected ? 'that day' : 'this month'}.</p>
   {/each}
+
+  {#snippet edge()}
+    <!-- The stage colours, set into the bottom edge. -->
+    <span class="legend" aria-label="Stage colours"
+      >{#each STAGES as stage (stage.id)}<span><span style:color="var(--{stage.id})">■</span> {stage.name.slice(0, 3).toLowerCase()}</span
+        >{/each}</span
+    >
+  {/snippet}
 </Page>
 
 <style>
@@ -230,50 +291,98 @@
     justify-content: space-between;
   }
 
+  .when {
+    display: flex;
+    gap: 1ch;
+  }
 
   .grid {
-    margin: 0.5em auto 0;
+    margin: 0.4em auto 0;
     text-align: center;
+    font-size: 1.1em;
   }
 
   .grid th,
   .grid td {
-    padding: 0.05em 0.4ch;
+    padding: 0.1em 0.3ch;
     text-align: center;
+    vertical-align: middle;
+  }
+
+  .grid thead th {
+    font-size: 0.85em;
+  }
+
+  /* Week numbers before a week, its hours after it. */
+  .side {
+    font-size: 0.8em;
+    min-width: 3.5ch;
   }
 
   /* Every day the same box, button or not, blank or not: the grid never changes height. */
   .day {
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     box-sizing: border-box;
-    min-width: 3ch;
-    height: 1.7em;
+    min-width: 3.4ch;
+    height: 1.9em;
     padding: 0;
     border: 1px solid transparent;
-    line-height: calc(1.7em - 2px);
+    border-radius: 0.4em;
+    line-height: 1.1;
     vertical-align: middle;
     white-space: pre;
   }
 
+  .sub .day {
+    height: 2.7em;
+  }
+
+  .under {
+    font-size: 0.7em;
+    min-height: 1.1em;
+  }
+
   button.day {
-    font-weight: 700;
     background: none;
     border-color: transparent;
+  }
+
+  button.day .date {
+    font-weight: 700;
+    color: var(--stage);
+  }
+
+  .hours {
+    color: var(--stage);
+  }
+
+  .mark {
+    color: var(--bad);
+  }
+
+  .mark.met {
+    color: var(--ok);
   }
 
   button.day.selected {
     border-color: var(--accent);
   }
 
-  .today {
+  .today .date {
     text-decoration: underline;
   }
 
+  /* The legend in the bottom edge, cutting the line like the edge buttons. */
   .legend {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0 2ch;
-    justify-content: center;
+    gap: 1.2ch;
+    padding: 0 0.8ch;
+    background: var(--bg);
+    font-size: 0.85em;
+    margin: 0 auto;
   }
 
   .head,
@@ -283,6 +392,15 @@
     justify-content: space-between;
     gap: 1ch;
     margin-top: 0.6em;
+  }
+
+  .head p,
+  p.summary {
+    margin: 0;
+  }
+
+  p.summary {
+    white-space: normal;
   }
 
   .entry {

@@ -5,6 +5,8 @@
   import { lastResult, type ExportResult } from '../fasting/autoexport'
   import { askScale, emptyReason, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
   import { backupName, makeBackup, parseBackup, saveBackupFile } from '../fasting/backup'
+  import { toIcs, WEEK_STARTS, weekStartName } from '../fasting/calendar'
+  import { dayKey } from '../fasting/time'
   import { describeSchedule, listed, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
   import { dayClock, shortDate } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
@@ -196,6 +198,17 @@
     })
   }
 
+  // The fasts as an .ics file, for any calendar app.
+  function exportIcs() {
+    run(async () => {
+      const where = await saveBackupFile(`fast-track-${dayKey(new Date())}.ics`, toIcs(tracker.fasts, settings.unit), 'text/calendar')
+      return `Saved ${tracker.fasts.length} fasts to ${where}; open it with a calendar app to import them.`
+    })
+  }
+
+  /** The calendar's next first weekday: Monday, Sunday, Saturday. */
+  const nextWeekStart = () => WEEK_STARTS[(WEEK_STARTS.indexOf(settings.weekStart) + 1) % WEEK_STARTS.length]
+
   function importFile(event: Event) {
     const input = event.currentTarget as HTMLInputElement
     const file = input.files?.[0]
@@ -248,6 +261,24 @@
   </div>
   <hr class="split" />
 
+  <h3>Calendar</h3>
+  <div class="row">
+    <span>Week starts on</span>
+    <button type="button" class="word" onclick={() => tracker.setSettings({ weekStart: nextWeekStart() })}
+      >{weekStartName(settings.weekStart)}</button
+    >
+  </div>
+  {#each [['weekNumbers', 'Week numbers'], ['dayHours', 'Hours under days'], ['goalMarks', 'Goal marks'], ['weekTotals', 'Weekly totals']] as const as [key, name] (key)}
+    <div class="row">
+      <span>{name}</span>
+      <button type="button" class="word" aria-pressed={settings[key]} onclick={() => tracker.setSettings({ [key]: !settings[key] })}
+        >{settings[key] ? 'on' : 'off'}</button
+      >
+    </div>
+  {/each}
+  <p class="muted">Week numbers are ISO weeks. Goal marks are green when every fast that ended that day met its goal.</p>
+  <hr class="split" />
+
   <h3>openScale</h3>
   {#if !scale.installed}
     <p class="muted">openScale is not installed. With it, each fast takes its weight from your scale.</p>
@@ -289,8 +320,11 @@
     </button>
   </div>
   <input bind:this={picker} type="file" accept="application/json,.json" hidden onchange={importFile} />
+  <button type="button" class="word lead" disabled={busy} onclick={exportIcs}
+    ><span class="icon" aria-hidden="true">⤓</span>export to calendar (.ics)</button
+  >
   {#if message && messageAt === 'backup'}<p class="message" role="status">{message}</p>{/if}
-  <p class="muted">Import adds fasts the app does not have yet and changes none.</p>
+  <p class="muted">Import adds fasts the app does not have yet and changes none. The .ics file has one event per fast for any calendar app.</p>
   <hr class="split" />
 
   <div class="row">
