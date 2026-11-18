@@ -13,8 +13,8 @@
   import type { Theme } from '../theme'
 
   // A pane a category: the theme and weight unit, the notifications, the calendar,
-  // weights from openScale, the backup, and its regular exports. Toggles show the
-  // current state.
+  // weights from openScale, the backup, its regular exports, and privacy. Toggles show
+  // the current state.
   let {
     tracker,
     theme,
@@ -164,7 +164,7 @@
 
   // Settings that are on or off. Alerts and the status notification ask Android for
   // permission to notify before they turn on, and say what they did.
-  type Switch = 'alerts' | 'status' | 'weekNumbers' | 'weekTotals' | 'exportOn'
+  type Switch = 'alerts' | 'status' | 'weekNumbers' | 'weekTotals' | 'exportOn' | 'cloudBackup'
   const NOTICES: Partial<Record<Switch, string>> = { alerts: 'Alerts', status: 'Status notification' }
 
   function flip(key: Switch) {
@@ -336,6 +336,14 @@
       Files go to Documents/FastTrack/, one a day.
     </p>
     {#if autoLine}<p class="muted message">{autoLine}</p>{/if}
+  </Block>
+
+  <Block title="Privacy">
+    {@render toggle('cloudBackup', 'Cloud backup', true)}
+    <p class="muted">
+      Off keeps your fasts out of your Google account's backup; moving to a new phone by direct transfer works either
+      way, on Android 9 and newer.
+    </p>
   </Block>
 </div>
 
