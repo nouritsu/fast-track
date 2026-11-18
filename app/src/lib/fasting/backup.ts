@@ -24,7 +24,10 @@ export function makeBackup(fasts: Fast[], settings: Settings, now = new Date()):
   return { format: FORMAT, version: VERSION, exported_at: now.toISOString(), settings, fasts }
 }
 
-export const backupName = (now = new Date()): string => `fast-track-${dayKey(now)}.json`
+/** The backup's file name: a file a day, or one file each export replaces. FastExport.java
+ *  names its files the same way. */
+export const backupName = (now = new Date(), keepOne = false): string =>
+  keepOne ? 'fast-track.json' : `fast-track-${dayKey(now)}.json`
 
 export class BackupError extends Error {}
 
@@ -52,6 +55,14 @@ export function mergeFasts(fasts: Fast[], incoming: Fast[]): { fasts: Fast[]; ad
   return { fasts: [...fasts, ...fresh], added: fresh.length }
 }
 
+/** Why a write failed, in a sentence. Android 11 and newer let only the app that made a file
+ *  replace it, so one an earlier install left (EACCES) cannot be written over:
+ *  https://developer.android.com/training/data-storage/shared/documents-files */
+export function writeFailure(error: unknown, where: string): string {
+  const reason = error instanceof Error ? error.message : String(error)
+  return /EACCES|Permission denied/.test(reason) ? `cannot replace ${where}, which an earlier install left; delete it in a file manager` : reason
+}
+
 /** Saves an export (a backup or an .ics file) where the user can reach it; returns where it went. */
 export async function saveExportFile(name: string, text: string, type = 'application/json'): Promise<string> {
   if (!Capacitor.isNativePlatform()) {
@@ -70,13 +81,16 @@ export async function saveExportFile(name: string, text: string, type = 'applica
       encoding: Encoding.UTF8,
       recursive: true,
     })
+  const where = `Documents/${FOLDER}/${name}`
   try {
     await write()
   } catch {
     // Android 10 and older ask for storage access first; 11 and newer need none:
     // https://capacitorjs.com/docs/apis/filesystem#android
     await Filesystem.requestPermissions()
-    await write()
+    await write().catch((error: unknown) => {
+      throw new Error(writeFailure(error, where))
+    })
   }
-  return `Documents/${FOLDER}/${name}`
+  return where
 }
