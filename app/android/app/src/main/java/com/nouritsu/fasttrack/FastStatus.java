@@ -33,6 +33,7 @@ final class FastStatus {
 
     static final String CHANNEL = "status";
     static final int ID = 100; // apart from the stage alerts, ids 1 to 4
+    static final String PREFS = "CapacitorStorage"; // what Capacitor Preferences saves
     private static final long HOUR = 3_600_000L;
     private static final String[] STAGES = { "Glucose", "Fat burning", "Ketosis", "Autophagy" };
     private static final int[] STARTS = { 0, 4, 12, 24 }; // hours into the fast
@@ -41,7 +42,7 @@ final class FastStatus {
 
     /** Shows the notification for the saved state, or removes it, and sets the next alarm. */
     static void update(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         NotificationManagerCompat manager = NotificationManagerCompat.from(context);
         cancelAlarm(context);
         if (!enabled(prefs) || !allowed(context)) {
@@ -100,7 +101,7 @@ final class FastStatus {
         } catch (SecurityException e) {
             return; // permission withdrawn between the check and here
         }
-        if (next > 0) setAlarm(context, next + 1000); // just past the change
+        if (next > 0) FastStatusReceiver.setAlarm(context, next + 1000, alarmIntent(context)); // just past the change
     }
 
     private static NotificationCompat.Builder builder(Context context) {
@@ -193,14 +194,6 @@ final class FastStatus {
     private static PendingIntent alarmIntent(Context context) {
         Intent intent = new Intent(context, FastStatusReceiver.class).setAction(FastStatusReceiver.REFRESH);
         return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
-    /** Exact when the system allows it, else as close as Android's batching makes it. */
-    private static void setAlarm(Context context, long at) {
-        AlarmManager alarms = context.getSystemService(AlarmManager.class);
-        boolean exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarms.canScheduleExactAlarms();
-        if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, alarmIntent(context));
-        else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, alarmIntent(context));
     }
 
     private static void cancelAlarm(Context context) {

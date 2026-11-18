@@ -5,7 +5,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Environment;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,10 +36,7 @@ final class FastExport {
         AlarmManager alarms = context.getSystemService(AlarmManager.class);
         alarms.cancel(intent(context));
         long next = nextRun(prefs.getString("exportPlan", null), System.currentTimeMillis());
-        if (next <= 0) return;
-        boolean exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarms.canScheduleExactAlarms();
-        if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next, intent(context));
-        else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next, intent(context));
+        if (next > 0) FastStatusReceiver.setAlarm(context, next, intent(context));
     }
 
     /** Writes the backup now, records the result, and schedules the next run. */
@@ -108,7 +104,7 @@ final class FastExport {
     }
 
     private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
+        return context.getSharedPreferences(FastStatus.PREFS, Context.MODE_PRIVATE);
     }
 
     private static PendingIntent intent(Context context) {
