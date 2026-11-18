@@ -2,6 +2,7 @@
   import { untrack } from 'svelte'
   import { STAGES, stageSpan } from '../fasting/stages'
   import Icon from '../ui/Icon.svelte'
+  import Measure from '../ui/Measure.svelte'
   import { spread } from '../ui/progress'
   import Page from '../ui/Page.svelte'
 
@@ -23,10 +24,10 @@
   // Each stage's hours, the open-ended last as long as the one before.
   const SPANS = STAGES.map((s, i) => (STAGES[i + 1]?.from ?? s.from + (s.from - STAGES[i - 1].from)) - s.from)
 
-  // As many cells as the width holds, measured: the bar's width over a character's.
+  // As many cells as the width holds: the bar's width over a character's (Measure).
   let width = $state(0)
-  let tenChars = $state(0)
-  const cells = $derived(tenChars ? Math.max(STAGES.length * 3, Math.floor((width * 10) / tenChars)) : 36)
+  let ch = $state(0)
+  const cells = $derived(ch ? Math.max(STAGES.length * 3, Math.floor(width / ch)) : 36)
   const counts = $derived(spread(SPANS, cells))
   // The hours under the bar, each at the cell its stage starts on.
   const ticks = $derived(
@@ -42,8 +43,8 @@
 
 <Page title="Info">
   <h3>Stages of a fast</h3>
-  <div class="bar" role="tablist" aria-label="Stages of a fast" bind:clientWidth={width}>
-    <span class="measure" aria-hidden="true" bind:clientWidth={tenChars}>0000000000</span>
+  <Measure bind:width bind:ch />
+  <div class="bar" role="tablist" aria-label="Stages of a fast">
     {#each STAGES as s, i (s.id)}<button
         type="button"
         role="tab"
@@ -116,19 +117,11 @@
 <style>
   /* The stages as a text bar, as the Fast page draws progress: one cell an hour. */
   .bar {
-    position: relative;
     display: flex;
     margin-top: 0.5em;
     font-variant-ligatures: none;
     white-space: pre;
     line-height: 1.2;
-  }
-
-  /* A character's width, measured off ten of them in the bar's font. */
-  .measure {
-    position: absolute;
-    visibility: hidden;
-    pointer-events: none;
   }
 
   .run {

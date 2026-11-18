@@ -42,6 +42,7 @@
   import { hm, pad, two } from '../ui/fields'
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
+  import Measure from '../ui/Measure.svelte'
 
   // The history in panes, one block each, scrolling as a column. Summary's top edge
   // picks the span the panes cover (remembered in the settings) and sets it against the
@@ -81,11 +82,11 @@
   const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
   const percent = (share: number) => `${Math.round(share * 100)}%`
 
-  // The panes' inner width and a character's, measured off ten of them: charts are
-  // drawn in pixels to that width, and text bars in as many cells as fit.
+  // The panes' inner width and a character's (Measure): charts are drawn in pixels to
+  // that width, and text bars in as many cells as fit.
   let width = $state(0)
-  let tenChars = $state(0)
-  const ch = $derived(tenChars ? tenChars / 10 : 8)
+  let measured = $state(0)
+  const ch = $derived(measured || 8)
   const cells = $derived(Math.max(20, Math.floor(width / ch)))
   const gutter = $derived(5 * ch) // left of each chart, for its labels
   const plot = $derived(Math.max(0, width - gutter))
@@ -212,7 +213,7 @@
     <Block title="Statistics"><p class="muted">No fasts yet.</p></Block>
   {:else}
     <Block title="Summary" headingRight={spans}>
-      <div class="measure" aria-hidden="true" bind:clientWidth={width}><span bind:clientWidth={tenChars}>0000000000</span></div>
+      <Measure bind:width bind:ch={measured} />
       {#if sum.count}
         <p class="fields">{plural(sum.count, 'fast')} · {Math.round(sum.total / HOUR)}h · goal met {percent(sum.goalRate)}</p>
         <p class="fields">avg {hm(sum.average)} · streak {streak(fasts, minute)}</p>
@@ -460,20 +461,6 @@
 </div>
 
 <style>
-  /* The panes' inner width, and a character's off ten of them. */
-  .measure {
-    position: relative;
-    height: 0;
-  }
-
-  .measure span {
-    position: absolute;
-    visibility: hidden;
-    pointer-events: none;
-    white-space: pre;
-    font-variant-ligatures: none;
-  }
-
   /* The spans in Summary's top edge: the one shown in the accent, bold. The tap area
      reaches above and below the line without moving the words off it. */
   .spans {
