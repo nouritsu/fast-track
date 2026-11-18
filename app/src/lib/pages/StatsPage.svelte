@@ -378,9 +378,9 @@
           aria-label="Average hours by weekday: {days.map((d) => `${d.head} ${d.hours === null ? 'none' : Math.round(d.hours)}`).join(', ')}"
         >
           {#each days as day, i (day.head)}
-            {@const pitch = plot / days.length}
+            {@const pitch = width / days.length}
             {@const w = Math.min(pitch - 6, 3 * ch)}
-            {@const x = gutter + i * pitch + (pitch - w) / 2}
+            {@const x = i * pitch + (pitch - w) / 2}
             {@const h = day.hours === null ? 0 : (day.hours / dayMost) * (WEEKDAY_H - 30)}
             <text class="axis" x={x + w / 2} y={WEEKDAY_H - 21 - h} text-anchor="middle" dominant-baseline="central"
               >{day.hours === null ? '--' : Math.round(day.hours)}</text
