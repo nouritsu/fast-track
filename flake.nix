@@ -55,6 +55,8 @@
       # Font subset and launcher icons; in development: nix build .#app-assets -o app/public/generated
       app-assets = pkgs.callPackage ./nix/app-assets.nix {};
       app = pkgs.callPackage ./nix/app.nix {assets = app-assets;};
+      # Store screenshots of the web build; `nix run .#screenshots` puts them in fastlane/.
+      screenshots = pkgs.callPackage ./nix/screenshots.nix {web = app;};
       # Unsigned; `nix run .#apk` signs it and can install it.
       apk = androidPkgs.callPackage ./nix/apk.nix {
         assets = app-assets;
@@ -72,6 +74,11 @@
         type = "app";
         program = lib.getExe (pkgs.callPackage ./nix/apk-app.nix {inherit (own) apk;});
         meta.description = "Sign the APK with the debug key or a release keystore, and optionally adb install it";
+      };
+      screenshots = {
+        type = "app";
+        program = lib.getExe own.screenshots.update;
+        meta.description = "Render the store screenshots and copy them to fastlane/metadata";
       };
     });
 
