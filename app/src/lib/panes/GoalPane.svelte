@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { GOALS, planName, stepGoal, type Active } from '../fasting/fasts'
+  import { planName, type Active } from '../fasting/fasts'
   import { STAGES } from '../fasting/stages'
   import { dayClock, HOUR } from '../fasting/time'
+  import GoalStepper from '../ui/GoalStepper.svelte'
   import Pane from '../ui/Pane.svelte'
-  import Stepper from '../ui/Stepper.svelte'
 
   // The goal, in hours: of the fast in progress, and of the ones after it. Each step
   // applies at once.
@@ -18,13 +18,7 @@
 </script>
 
 <Pane title="Goal" {onClose}>
-  <Stepper
-    label="Goal"
-    value="{String(goal).padStart(2)}h"
-    onStep={(d) => onChange(stepGoal(goal, d))}
-    atStart={goal <= GOALS[0]}
-    atEnd={goal >= GOALS[GOALS.length - 1]}
-  />
+  <GoalStepper {goal} {onChange} />
   <p>{planName(goal)}</p>
   {#if active}<p class="fields">Ends {dayClock(active.start + goal * HOUR)}</p>{/if}
   <p class="muted">
