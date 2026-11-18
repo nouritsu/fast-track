@@ -140,8 +140,8 @@
     <div class="month">
       <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => move(-1)}>&lt;</button>
       <span class="when">
-        <button type="button" class="word" aria-label="Pick a month: {MONTHS[month]}" onclick={onPickMonth}>{MONTHS[month]}</button>
-        <button type="button" class="word" aria-label="Pick a year: {year}" onclick={onPickYear}>{year}</button>
+        <button type="button" class="word" data-pane="month" aria-label="Pick a month: {MONTHS[month]}" onclick={onPickMonth}>{MONTHS[month]}</button>
+        <button type="button" class="word" data-pane="year" aria-label="Pick a year: {year}" onclick={onPickYear}>{year}</button>
       </span>
       <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => move(1)}>&gt;</button>
     </div>
@@ -272,11 +272,13 @@
     min-height: 0;
   }
 
+  /* Scrolls up and down only, so a sideways drag stays a page swipe (Page.svelte). */
   .content {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
+    touch-action: pan-y;
     padding-top: 0.2em;
   }
 

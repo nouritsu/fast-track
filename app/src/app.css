@@ -377,6 +377,26 @@ button.gate {
 }
 
 
+/* A page of panes (Stats, Options) as one scrolling column, the scroll reaching up
+   into the page's room above so the first title is not cut off. Each pane keeps its
+   own height. Up and down only, so a sideways drag stays a page swipe (Page.svelte). */
+.panes {
+  height: calc(100% + 1em);
+  margin-top: -1em;
+  padding: 1em 0 0.3em;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6em;
+}
+
+.panes > * {
+  flex: none;
+}
+
 /* A rule across a block, border to border, like a ratatui split. */
 hr.split {
   border: 0;
@@ -385,11 +405,13 @@ hr.split {
 }
 
 /* The main block's face: three rows, the outer two always equal, so the hero in
-   the middle stays put whatever opens below it. Past the bottom edge it scrolls. */
+   the middle stays put whatever opens below it. Past the bottom edge it scrolls, up
+   and down only, so a sideways drag stays a page swipe (Page.svelte). */
 .stage {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  touch-action: pan-y;
   container-type: inline-size;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);

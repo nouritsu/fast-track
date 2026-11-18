@@ -93,7 +93,7 @@
     flex: none;
   }
 
-  /* Under the current word; moves with the pages (App's PAGE_MS). */
+  /* Under the current word; moves with the pages (App's .track). */
   .line {
     position: absolute;
     left: 0;
@@ -102,8 +102,8 @@
     border-radius: 1px;
     background: var(--accent);
     transition:
-      transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-      width 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+      transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+      width 0.2s cubic-bezier(0.2, 0, 0, 1);
   }
 
   @media (prefers-reduced-motion: reduce) {

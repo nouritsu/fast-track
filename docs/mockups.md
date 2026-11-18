@@ -9,7 +9,9 @@ Five pages side by side — **Fast │ Calendar │ Stats │ Options │ Info**
 the bottom (the accent line under the current one slides with the page) or by swiping left and
 right. Start time, Goal and Edit fast open as panes: each rises out of the bottom edge over
 the current page, the size of its panel, with **✕ Close** and its own button in its bottom edge,
-and sinks back when closed.
+and sinks back when closed. With one open, tapping the button of another that opens in the same
+place (Start and Goal, or the calendar's month and year) swaps them: the new pane slides in from
+the side its button is on as the old one slides out the other way.
 
 ## Fast page
 
@@ -235,9 +237,10 @@ the text's grid in the stage colours; the length bands and the stage bar are tex
 ╰──────────────────────────────────────╯
 ```
 
-Options page: theme, alerts, the status notification, kg or lb,
-weights from openScale, export and import, and regular exports on a calendar event schedule
-(systemd OnCalendar notation, said back in plain words).
+Options page: a pane a category, in a column that scrolls like Stats: General (theme, kg or lb),
+Notifications (alerts, the status notification), Calendar, openScale (weights from the scale),
+Backup (export and import, and an .ics file), and Regular export (on a calendar event schedule,
+in systemd OnCalendar notation, said back in plain words).
 
 Status notification (Android): an ongoing notification in the system's own colours, either
 "Fasting · Ketosis" with a running timer and the goal and next stage times, or "Eating window"

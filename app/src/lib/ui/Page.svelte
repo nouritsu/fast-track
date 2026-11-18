@@ -17,10 +17,13 @@
     box-sizing: border-box;
   }
 
+  /* Scrolls up and down only: a sideways drag stays a page swipe. Inside a scroller
+     the WebView ignores .pages' own pan-y, takes a sideways drag and cancels the swipe. */
   .content {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    touch-action: pan-y;
     overscroll-behavior: contain;
     padding-top: 0.3em;
   }
