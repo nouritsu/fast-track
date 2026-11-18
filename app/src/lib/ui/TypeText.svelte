@@ -4,16 +4,12 @@
 
   // Text typed out left to right behind an accent block cursor; `hl` marks a span
   // [start, end) bold and underlined. The untyped rest holds its place, invisible.
-  let {
-    text,
-    hl = [0, 0],
-    animate = true,
-  }: { text: string; hl?: [number, number]; animate?: boolean } = $props()
+  let { text, hl = [0, 0] }: { text: string; hl?: [number, number] } = $props()
   let typed = $state(0)
 
   $effect(() => {
     const length = text.length
-    if (!animate || reducedMotion()) {
+    if (reducedMotion()) {
       typed = length
       return
     }
