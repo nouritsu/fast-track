@@ -20,6 +20,7 @@ export interface Settings {
   weekNumbers: boolean // ISO week numbers before each week
   weekTotals: boolean // each week's fasting hours after it
   statsSpan: Span // the days Stats covers (stats.ts); 0 is all of them
+  cloudBackup: boolean // Android's backup to the Google account (FastBackupAgent.java)
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -35,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   weekNumbers: false,
   weekTotals: true,
   statsSpan: 30,
+  cloudBackup: false,
 }
 
 export interface Saved {
@@ -83,6 +85,7 @@ export function toSettings(v: unknown): Settings {
     weekNumbers: typeof s.weekNumbers === 'boolean' ? s.weekNumbers : DEFAULT_SETTINGS.weekNumbers,
     weekTotals: typeof s.weekTotals === 'boolean' ? s.weekTotals : DEFAULT_SETTINGS.weekTotals,
     statsSpan: SPANS.includes(s.statsSpan as Span) ? (s.statsSpan as Span) : DEFAULT_SETTINGS.statsSpan,
+    cloudBackup: s.cloudBackup === true,
   }
 }
 

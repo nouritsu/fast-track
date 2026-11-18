@@ -244,6 +244,8 @@ describe('storage and backup', () => {
     expect(toSettings({ unit: 'lb', goal: 18 })).toMatchObject({ unit: 'lb', goal: 18, alerts: true, status: true })
     expect(toSettings({ status: false }).status).toBe(false)
     expect(toSettings({ exportOn: true, exportEvery: ' ' })).toMatchObject({ exportOn: true, exportEvery: 'daily' })
+    expect(toSettings({}).cloudBackup).toBe(false)
+    expect(toSettings({ cloudBackup: true }).cloudBackup).toBe(true)
     expect(toSettings({ scaleUser: 2 }).scaleUser).toBe(2)
     expect(toSettings({ scaleUser: 'me' }).scaleUser).toBeNull()
     expect(toSettings({ statsSpan: 90 }).statsSpan).toBe(90)
