@@ -25,4 +25,6 @@ buildNpmPackage {
     cp -r dist $out
     runHook postInstall
   '';
+
+  meta.license = lib.licenses.gpl3Plus;
 }

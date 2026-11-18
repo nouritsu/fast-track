@@ -91,6 +91,7 @@ in
 
     passthru = {inherit sdk buildToolsVersion versionCode;};
 
+    meta.license = lib.licenses.gpl3Plus;
     meta.sourceProvenance = with lib.sourceTypes; [
       fromSource
       binaryBytecode # Maven artefacts from the mitm cache
