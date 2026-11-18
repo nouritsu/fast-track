@@ -82,11 +82,7 @@
       };
     });
 
-    devShells = forAllSystems ({
-      pkgs,
-      own,
-      ...
-    }: {
+    devShells = forAllSystems ({pkgs, ...}: {
       # Needs impure eval for the project root: `nix develop --no-pure-eval`.
       default = devenv.lib.mkShell {
         inherit inputs pkgs;
@@ -97,14 +93,11 @@
               # App; qrencode prints the link app/phone.fish serves
               pkgs.nodejs
               pkgs.qrencode
-              # APK: Gradle and a JDK to build app/android by hand, adb to install
-              pkgs.gradle
-              pkgs.jdk21
+              # APK: Nix builds it (nix run .#apk); adb installs it
               pkgs.android-tools
               # Nix
               pkgs.alejandra
             ];
-            env.ANDROID_HOME = "${own.apk.sdk}";
           }
         ];
       };
