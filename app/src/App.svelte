@@ -604,6 +604,7 @@
           active={tracker.active}
           scale={tracker.scale}
           unit={settings.unit}
+          height={settings.bmi ? settings.height : null}
           weekStart={settings.weekStart}
           span={settings.statsSpan}
           {now}
