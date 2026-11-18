@@ -10,6 +10,7 @@
   import { clock, duration, hm } from '../ui/fields'
   import Icon from '../ui/Icon.svelte'
   import Block from '../ui/Block.svelte'
+  import ShuffleText from '../ui/ShuffleText.svelte'
 
   // Two panels. The Calendar: a month in which each day that ended a fast is in the
   // colour of the deepest stage it reached, and week numbers
@@ -237,8 +238,12 @@
     <div class="month">
       <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => step(-1)}>&lt;</button>
       <span class="when">
-        <button type="button" class="word" data-pane="month" aria-label="Pick a month: {MONTHS[month]}" onclick={onPickMonth}>{MONTHS[month]}</button>
-        <button type="button" class="word" data-pane="year" aria-label="Pick a year: {year}" onclick={onPickYear}>{year}</button>
+        <button type="button" class="word" data-pane="month" aria-label="Pick a month: {MONTHS[month]}" onclick={onPickMonth}
+          ><ShuffleText text={MONTHS[month]} /></button
+        >
+        <button type="button" class="word" data-pane="year" aria-label="Pick a year: {year}" onclick={onPickYear}
+          ><ShuffleText text={String(year)} /></button
+        >
       </span>
       <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => step(1)}>&gt;</button>
     </div>
