@@ -22,6 +22,7 @@
   import StatsPage from './lib/pages/StatsPage.svelte'
   import EditPane from './lib/panes/EditPane.svelte'
   import GoalPane from './lib/panes/GoalPane.svelte'
+  import LicencesPane from './lib/panes/LicencesPane.svelte'
   import MonthPane from './lib/panes/MonthPane.svelte'
   import StartPane from './lib/panes/StartPane.svelte'
   import YearPane from './lib/panes/YearPane.svelte'
@@ -40,12 +41,12 @@
   // swipe. The Fast page is one panel: the fast's status at its top, the goal's share
   // in its top edge, a coloured progress line under the timer, and its buttons in its
   // bottom edge. A fast starts at the gate (now) or from Start at (earlier), runs until
-  // End fast, and ends on "Done!". Start time, Goal and Edit fast open as panes hung
-  // below the page, which slides up and off the top, pushed by the pane; the calendar's
-  // month and year panes hang above it and push it down.
+  // End fast, and ends on "Done!". Start time, Goal, Edit fast and Info's licences open
+  // as panes hung below the page, which slides up and off the top, pushed by the pane;
+  // the calendar's month and year panes hang above it and push it down.
   type Phase = 'loading' | 'ready' | 'running' | 'done'
   type PageId = 'fast' | 'calendar' | 'stats' | 'options' | 'info'
-  type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year'
+  type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year' | 'licences'
   type HeroMode = 'left' | 'elapsed'
 
   const TABS: Tab<PageId>[] = [
@@ -449,6 +450,8 @@
         onSave={saveEdit}
         onClose={closePane}
       />
+    {:else if shownPane === 'licences'}
+      <LicencesPane onClose={closePane} />
     {/if}
     </div>
     {/key}
@@ -612,8 +615,21 @@
         <OptionsPage {tracker} {theme} onTheme={switchTheme} />
       </div>
 
-      <div class="page" id="page-info" role="tabpanel" aria-labelledby="tab-info" inert={page !== 4}>
-        <InfoPage current={phase === 'running' && active ? stage : null} />
+      <div
+        class="page"
+        class:pushed={pane !== null && paneHost === 4}
+        class:pulling={pulling && paneHost === 4}
+        style:--push="{fromTop ? -paneHeight : paneHeight}px"
+        style:--pull="{paneHost === 4 ? pull : 0}px"
+        id="page-info"
+        role="tabpanel"
+        aria-labelledby="tab-info"
+        inert={page !== 4}
+      >
+        <div class="page-main" inert={pane !== null && paneHost === 4}>
+        <InfoPage current={phase === 'running' && active ? stage : null} onLicences={() => openPane('licences')} />
+        </div>
+        {@render hangingPane(4)}
       </div>
     </div>
   </div>

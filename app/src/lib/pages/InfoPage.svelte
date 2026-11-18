@@ -10,8 +10,9 @@
   // as many cells as fit, shared among the stages by the hours they span, each run in
   // its stage's colour, the picked one solid and the others shaded. Tapping a run
   // (or < >) shows what happens in it and papers to read; it opens on the stage the
-  // fast in progress is in. Then the app: version, source, its origin and credits.
-  let { current = null }: { current?: number | null } = $props()
+  // fast in progress is in. Then the app: version, source, its origin, credits and
+  // licences, which open in a pane (App).
+  let { current = null, onLicences }: { current?: number | null; onLicences: () => void } = $props()
 
   let pick = $state(untrack(() => current ?? 0))
   // A fast that moves on to the next stage moves the bar with it.
@@ -110,6 +111,10 @@
       <span class="muted">(Apache 2.0),</span>
       <a class="link" href="https://primer.style/octicons" target="_blank" rel="noreferrer">Octicons</a>
       <span class="muted">(MIT)</span>
+    </li>
+    <li>
+      <span class="muted">licences</span>
+      <button type="button" class="link" onclick={onLicences}>third-party notices</button>
     </li>
   </ul>
 </Page>
