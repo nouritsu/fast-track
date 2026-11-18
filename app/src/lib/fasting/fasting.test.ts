@@ -9,7 +9,6 @@ import { plannedAlerts } from './alerts'
 import { BackupError, makeBackup, mergeFasts, parseBackup } from './backup'
 import { emptyReason, scaleWeightFor, syncWeights, weightOf } from './openscale'
 import {
-  deepestByDay,
   earliestStart,
   eatingLeft,
   invalidTimes,
@@ -27,7 +26,7 @@ import {
 } from './fasts'
 import { stageIndex, stageSpan, STAGES } from './stages'
 import { DEFAULT_SETTINGS, toFast, toSettings } from './store'
-import { dayKey, HOUR, monthGrid, stepDay, stepMinute } from './time'
+import { dayKey, HOUR, stepDay, stepMinute } from './time'
 
 const at = (iso: string) => new Date(iso).getTime()
 const fast = (start: string, end: string, goal = 16, extra: Partial<Fast> = {}): Fast => ({
@@ -140,12 +139,6 @@ describe('history', () => {
     expect(summarize([]).average).toBe(0)
   })
 
-  it('marks each day with the deepest stage of the fasts ending on it', () => {
-    const days = deepestByDay([...fasts, fast('2026-11-17T11:00', '2026-11-17T13:00')])
-    expect(days.get('2026-11-17')).toBe(2)
-    expect(days.get('2026-11-15')).toBe(2)
-  })
-
   it('counts down the eating window after the last fast', () => {
     expect(eatingLeft(fasts, at('2026-11-17T12:00'))).toBe(6 * HOUR) // window of 8h from 10:00
     expect(eatingLeft(fasts, at('2026-11-17T19:00'))).toBe(0)
@@ -236,16 +229,6 @@ describe('time', () => {
     expect(new Date(stepMinute(at('2026-11-17T06:32'), 1)).getMinutes()).toBe(35)
     expect(new Date(stepMinute(at('2026-11-17T06:32'), -1)).getMinutes()).toBe(30)
     expect(new Date(stepMinute(at('2026-11-17T06:30'), -1)).getMinutes()).toBe(25)
-  })
-
-  it('lays out a month Monday first', () => {
-    const weeks = monthGrid(2026, 10) // November 2026 starts on a Sunday
-    expect(weeks[0]).toEqual([null, null, null, null, null, null, 1])
-    expect(weeks.at(-1)).toEqual([30, null, null, null, null, null, null])
-    expect(weeks.flat().filter((d) => d !== null)).toHaveLength(30)
-    const february = monthGrid(2027, 1) // starts on a Monday and fills four weeks
-    expect(february).toHaveLength(6)
-    expect(february[4]).toEqual(Array(7).fill(null))
   })
 })
 

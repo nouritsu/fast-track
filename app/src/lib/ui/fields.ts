@@ -26,13 +26,3 @@ export function hm(ms: number): string {
 /** A time of day as HH:MM. */
 export const clock = (at: Date): string =>
   `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
-
-/** The status block's right title: weekday and time of day. */
-export const daytime = (at: Date): string =>
-  `${new Intl.DateTimeFormat('en', { weekday: 'long' }).format(at)} ${clock(at)}`
-
-const SPARKS = '▁▂▃▄▅▆▇█'
-
-/** One block for `value` as a share of `max`, from ▁ to █. */
-export const spark = (value: number, max: number): string =>
-  SPARKS[max > 0 ? Math.round((Math.min(max, Math.max(0, value)) / max) * (SPARKS.length - 1)) : 0]

@@ -11,7 +11,6 @@ const format = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(
 const WEEKDAY = format({ weekday: 'short' })
 const WEEKDAY_LONG = format({ weekday: 'long' })
 const MONTH = format({ month: 'short' })
-const MONTH_LONG = format({ month: 'long' })
 
 /** A local calendar day as YYYY-MM-DD, for grouping fasts by day. */
 export function dayKey(at: number | Date): string {
@@ -46,10 +45,6 @@ export const dayMonth = (at: number, now: number): string => {
   return `${d.getDate()} ${MONTH.format(d)}${year}`
 }
 
-/** "November 2026". */
-export const monthTitle = (year: number, month: number): string =>
-  `${MONTH_LONG.format(new Date(year, month, 1))} ${year}`
-
 export const floorMinute = (at: number): number => Math.floor(at / MINUTE) * MINUTE
 
 /** The same time of day `days` later; DST-safe, unlike adding 24 hours. */
@@ -67,14 +62,4 @@ export function stepMinute(at: number, steps: number, size = 5): number {
   const snapped = steps > 0 ? Math.floor(d.getMinutes() / size) * size : Math.ceil(d.getMinutes() / size) * size
   d.setMinutes(snapped + steps * size)
   return d.getTime()
-}
-
-/** Six weeks for every month, Monday first, with null for days outside it: always six,
- *  so the calendar keeps its height from month to month. */
-export function monthGrid(year: number, month: number): (number | null)[][] {
-  const first = (new Date(year, month, 1).getDay() + 6) % 7 // Monday is 0
-  const days = new Date(year, month + 1, 0).getDate()
-  const cells: (number | null)[] = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)]
-  while (cells.length < 6 * 7) cells.push(null)
-  return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7))
 }
