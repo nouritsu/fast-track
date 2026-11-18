@@ -125,24 +125,27 @@ While fasting it says when the fast would end.
 ╰─ ✕ Close ────────────────────────────────╯
 ```
 
-Calendar page: a Calendar block and a Fasts block. `<` `>` or a swipe moves the month; tapping
-the month or the year opens a pane above the page to pick one. Days that ended a fast are in the
-colour of the deepest stage it reached, and tapping one lists only its fasts; the stage colours
-sit in the block's bottom edge. Options adds ISO week numbers (**wk**) before each week and its
-hours (**h**) after it. Fasts sums up the month, then lists its fasts: **✚ add** logs one
+Calendar page: a Calendar block and a Fasts block. `<` `>` or a swipe slides the month's grid
+away for its neighbour's, the grids side by side and the swipe following the finger; the header
+stays put, and once the new month has landed its words shuffle into place. Tapping the month or
+the year opens a pane above the page to pick one, which jumps there without sliding. Days that
+ended a fast are in the colour of the deepest stage it reached, and tapping one lists only its
+fasts; the stage colours sit in the block's bottom edge. Options adds ISO week numbers (**wk**)
+before each week and its hours (**h**) after it, hanging outside the seven days, which stay in
+the middle either way. Fasts sums up the month, then lists its fasts: **✚ add** logs one
 afterwards, ✎ edits one (note, weight, start, end, goal), and ✕ or a swipe to the left deletes
 it, leaving a line with **↺ undo** until you leave the page. ✎ and ✕ are Material icons.
 
 ```text
 ╭─ Calendar ───────────────────────────────╮
 │ <          [November] [2026]           > │
-│    Mo   Tu   We   Th   Fr   Sa   Su    h │
-│                                   1 102h │
-│     2    3    4    5    6    7    8  88h │
-│     9   10   11   12   13   14   15 118h │
-│    16   17   18   19   20   21   22 104h │
-│    23   24   25   26   27   28   29  50h │
-│    30                                    │
+│        Mo  Tu  We  Th  Fr  Sa  Su    h   │
+│                                 1 102h   │
+│         2   3   4   5   6   7   8  88h   │
+│         9  10  11  12  13  14  15 118h   │
+│        16  17  18  19  20  21  22 104h   │
+│        23  24  25  26  27  28  29  50h   │
+│        30                                │
 ╰─ ■ glu ■ fat ■ ket ■ aut ────────────────╯
 ╭─ Fasts ────────────────────────── ✚ add ─╮
 │ November · 21 fasts · 381h               │
@@ -251,9 +254,9 @@ the text's grid in the stage colours; the length bands and the stage bar are tex
 │ 16–18h ████████████████████████  13  │
 ╰──────────────────────────────────────╯
 ╭─ Goal ───────────────────── 69% met ─╮
-│  Mo  ■ ■ □ ■ ■                       │   days in weeks, in the deepest
-│  We  ■ □ ■ ■ ■                       │   stage's colour: filled when a fast
-│  Fr  ■ ■ ■ ■                         │   met its goal, outlined when not
+│            Mo  ■ ■ □ ■ ■             │   days in weeks, in the deepest
+│            We  ■ □ ■ ■ ■             │   stage's colour: filled when a fast
+│            Fr  ■ ■ ■ ■               │   met its goal, outlined when not
 │ best streak 8 days · 6.1 a week      │
 │ near misses 6 · avg 108% of goal     │
 ╰──────────────────────────────────────╯
@@ -269,8 +272,8 @@ the text's grid in the stage colours; the length bands and the stage bar are tex
 │ starts ~20:24 ±0:44                  │
 │ ends   ~12:45 ±2:15                  │
 │ eating window 9:36 on average        │
-│  ▆  ▆  ▅  ▇  █  ▅  ▆                 │   average hours by weekday
-│  Mo Tu We Th Fr Sa Su                │
+│   ▆    ▆    ▅    ▇    █    ▅    ▆    │   average hours by weekday
+│   Mo   Tu   We   Th   Fr   Sa   Su   │
 ╰──────────────────────────────────────╯
 ╭─ Weight ─────────────────── 79.9 kg ─╮
 │ 80.5 ·‾‾‾\___  ·  ·                  │   weighings as dots, the trend
