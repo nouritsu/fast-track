@@ -2,10 +2,12 @@
   import { untrack } from 'svelte'
   import { STAGES, stageSpan } from '../fasting/stages'
   import Icon from '../ui/Icon.svelte'
+  import { spread } from '../ui/progress'
   import Page from '../ui/Page.svelte'
 
-  // The stages of a fast as one text bar like the Fast page's, a cell an hour, each
-  // stage's run in its colour: the picked one solid, the others shaded. Tapping a run
+  // The stages of a fast as one text bar like the Fast page's, as wide as the page:
+  // as many cells as fit, shared among the stages by the hours they span, each run in
+  // its stage's colour, the picked one solid and the others shaded. Tapping a run
   // (or < >) shows what happens in it and papers to read; it opens on the stage the
   // fast in progress is in. Then the app: version, source, its origin and credits.
   let { current = null }: { current?: number | null } = $props()
@@ -18,10 +20,21 @@
   const stage = $derived(STAGES[pick])
   const step = (by: -1 | 1) => (pick = (pick + by + STAGES.length) % STAGES.length)
 
-  // Each run's cells: the hours it spans, the open-ended last as long as the one before.
+  // Each stage's hours, the open-ended last as long as the one before.
   const SPANS = STAGES.map((s, i) => (STAGES[i + 1]?.from ?? s.from + (s.from - STAGES[i - 1].from)) - s.from)
+
+  // As many cells as the width holds, measured: the bar's width over a character's.
+  let width = $state(0)
+  let tenChars = $state(0)
+  const cells = $derived(tenChars ? Math.max(STAGES.length * 3, Math.floor((width * 10) / tenChars)) : 36)
+  const counts = $derived(spread(SPANS, cells))
   // The hours under the bar, each at the cell its stage starts on.
-  const TICKS = STAGES.reduce((line, s, i) => line.padEnd(s.from) + (i === STAGES.length - 1 ? `${s.from}h+` : `${s.from}h`), '')
+  const ticks = $derived(
+    STAGES.reduce((line, s, i) => {
+      const at = counts.slice(0, i).reduce((a, b) => a + b, 0)
+      return line.padEnd(at) + (i === STAGES.length - 1 ? `${s.from}h+` : `${s.from}h`) + ' '
+    }, '').trimEnd(),
+  )
 
   const SOURCE = 'https://github.com/nouritsu/fast-track'
   const ORIGINAL = 'https://github.com/Darkrock-Studios/FastTrack'
@@ -29,7 +42,8 @@
 
 <Page title="Info">
   <h3>Stages of a fast</h3>
-  <div class="bar" role="tablist" aria-label="Stages of a fast">
+  <div class="bar" role="tablist" aria-label="Stages of a fast" bind:clientWidth={width}>
+    <span class="measure" aria-hidden="true" bind:clientWidth={tenChars}>0000000000</span>
     {#each STAGES as s, i (s.id)}<button
         type="button"
         role="tab"
@@ -37,10 +51,10 @@
         aria-selected={pick === i}
         aria-label="{s.name}, {stageSpan(i)}{current === i ? ', now' : ''}"
         style:color="var(--{s.id})"
-        onclick={() => (pick = i)}>{(pick === i ? '█' : '░').repeat(SPANS[i])}</button
+        onclick={() => (pick = i)}>{(pick === i ? '█' : '░').repeat(counts[i])}</button
       >{/each}
   </div>
-  <p class="ticks" aria-hidden="true">{TICKS}</p>
+  <p class="ticks" aria-hidden="true">{ticks}</p>
 
   <div class="detail" role="tabpanel" aria-label={stage.name}>
     <div class="name">
@@ -67,8 +81,8 @@
 
   <hr class="split" />
   <ul class="credits">
-    <li>Fast Track {__APP_VERSION__}</li>
     <li>
+      Fast Track {__APP_VERSION__} ·
       <a class="link" href={SOURCE} target="_blank" rel="noreferrer"><Icon name="github" /> source on GitHub</a>
     </li>
     <li>
@@ -102,11 +116,19 @@
 <style>
   /* The stages as a text bar, as the Fast page draws progress: one cell an hour. */
   .bar {
+    position: relative;
     display: flex;
     margin-top: 0.5em;
     font-variant-ligatures: none;
     white-space: pre;
     line-height: 1.2;
+  }
+
+  /* A character's width, measured off ten of them in the bar's font. */
+  .measure {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .run {
