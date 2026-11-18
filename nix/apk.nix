@@ -1,6 +1,6 @@
 # The Android APK: the web build in Capacitor's WebView shell, built by Gradle offline.
-# The output is unsigned; `nix run .#apk` signs it with the machine's debug key, so no
-# key ever enters the store.
+# The output is unsigned; `nix run .#apk` signs it with a release key or the machine's
+# debug key, so no key ever enters the store.
 # First build, and after changing Capacitor, AGP or Gradle:
 #   nix build .#apk.mitmCache.updateScript && ./result
 {
