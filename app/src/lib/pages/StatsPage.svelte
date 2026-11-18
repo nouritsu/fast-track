@@ -120,6 +120,8 @@
   const grid = $derived(weeks.slice(-Math.max(1, Math.floor(plot / 7))))
   const cellPitch = $derived(grid.length ? Math.min(18, plot / grid.length) : 18)
   const cellGap = $derived(cellPitch >= 9 ? 2 : 1)
+  // A few weeks sit in the middle with their labels, not under the gutter at the left.
+  const cellsAt = $derived(Math.max(0, (plot - (grid.length * cellPitch - cellGap)) / 2 - ch))
   const heads = $derived(weekdayHeads(weekStart))
   const goals = $derived(goalStats(shown))
   const best = $derived(bestStreak(shown))
@@ -282,13 +284,13 @@
           aria-label="{plural(grid.length, 'week')} of days, each in the colour of the deepest stage reached, filled where the goal was met"
         >
           {#each [0, 2, 4, 6] as row (row)}
-            <text class="axis" x={gutter - ch} y={(row + 0.5) * cellPitch} text-anchor="end" dominant-baseline="central">{heads[row]}</text>
+            <text class="axis" x={gutter + cellsAt - ch} y={(row + 0.5) * cellPitch} text-anchor="end" dominant-baseline="central">{heads[row]}</text>
           {/each}
           {#each grid as week, w (week.start)}
             {#each week.days as day, d (d)}
               {#if day}
                 {@const size = cellPitch - cellGap}
-                {@const x = gutter + w * cellPitch}
+                {@const x = gutter + cellsAt + w * cellPitch}
                 {@const y = d * cellPitch}
                 {#if day.stage === null}
                   <rect class="empty" {x} {y} width={size} height={size} rx="2" />
