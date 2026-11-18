@@ -268,7 +268,7 @@
       >{weekStartName(settings.weekStart)}</button
     >
   </div>
-  {#each [['weekNumbers', 'Week numbers'], ['dayHours', 'Hours under days'], ['weekTotals', 'Weekly totals']] as const as [key, name] (key)}
+  {#each [['weekNumbers', 'Week numbers'], ['weekTotals', 'Weekly totals']] as const as [key, name] (key)}
     <div class="row">
       <span>{name}</span>
       <button type="button" class="word" aria-pressed={settings[key]} onclick={() => tracker.setSettings({ [key]: !settings[key] })}

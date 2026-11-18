@@ -11,7 +11,7 @@
   import Block from '../ui/Block.svelte'
 
   // Two panels. The Calendar: a month in which each day that ended a fast is in the
-  // colour of the deepest stage it reached, with its hours under it, and week numbers
+  // colour of the deepest stage it reached, and week numbers
   // and weekly totals as the settings say; tapping the month or the year opens a pane
   // to pick another (App), and the stage legend sits in its bottom edge. The Fasts:
   // the month's summary and its fasts (or a tapped day's), newest first. Delete takes
@@ -62,7 +62,6 @@
   const key = (day: number) => dayKey(new Date(year, month, day))
   const todayKey = $derived(dayKey(now))
   const monthKey = $derived(key(1).slice(0, 7))
-  const sub = $derived(settings.dayHours) // a second line under the days, for their hours
   const summary = $derived(monthSummary(fasts, year, month))
   const hm = (ms: number) => {
     const minutes = Math.round(ms / 60_000)
@@ -151,7 +150,7 @@
       <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => move(1)}>&gt;</button>
     </div>
 
-    <table class="grid" class:sub>
+    <table class="grid">
       <thead>
         <tr>
           {#if settings.weekNumbers}<th scope="col" class="side" aria-label="Week">wk</th>{/if}
@@ -181,17 +180,15 @@
                       onclick={() => (selected = selected === k ? null : k)}
                     >
                       <span class="date">{day}</span>
-                      {#if sub}<span class="under hours">{hoursOf(total.ms)}</span>{/if}
                     </button>
                   {:else}
                     <span class="day muted" class:today={todayKey === k}>
                       <span class="date">{day}</span>
-                      {#if sub}<span class="under"> </span>{/if}
                     </span>
                   {/if}
                 {:else}
                   <!-- Holds the row's height, so short months keep the grid's size. -->
-                  <span class="day" aria-hidden="true"><span class="date"> </span>{#if sub}<span class="under"> </span>{/if}</span>
+                  <span class="day" aria-hidden="true"><span class="date"> </span></span>
                 {/if}
               </td>
             {/each}
@@ -371,15 +368,6 @@
     white-space: pre;
   }
 
-  .sub .day {
-    height: 2.7em;
-  }
-
-  .under {
-    font-size: 0.7em;
-    min-height: 1.1em;
-  }
-
   button.day {
     background: none;
     border-color: transparent;
@@ -387,10 +375,6 @@
 
   button.day .date {
     font-weight: 700;
-    color: var(--stage);
-  }
-
-  .hours {
     color: var(--stage);
   }
 
