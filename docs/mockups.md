@@ -290,11 +290,51 @@ the text's grid in the stage colours; the length bands and the stage bar are tex
 ╰──────────────────────────────────────╯
 ```
 
-Options page: a pane a category, in a column that scrolls like Stats: General (theme, kg or lb),
-Notifications (alerts, the status notification), Calendar, openScale (weights from the scale),
-Backup (export and import, and an .ics file), Regular export (on a calendar event schedule, in
-systemd OnCalendar notation, said back in plain words), and Privacy: Android's cloud backup,
-off by default.
+Options page: a pane a category, in a column that scrolls like Stats: General (theme), Body (kg or
+lb, and BMI), Notifications (alerts, the status notification), Calendar, openScale (weights from
+the scale), Backup (export and import, an .ics file, and regular exports) and Privacy: Android's
+cloud backup, off by default.
+
+Body: BMI is off by default. On, it adds a Height row, stepped by `<` `>` like Start time's fields:
+by the cm, 100–250, with kg, and by the inch, as `5′ 11″`, with lb; it is stored in cm either way.
+Under it the formula in the weight's unit, filled in with the latest weight the app knows, from a
+fast or openScale; without a weight or a height it shows without numbers. With a height set,
+Stats' Weight block adds ◆ and the BMI to its top edge (`79.9 kg ◆ 24.7`) and the change in BMI to
+its change line (`-0.3 kg ◆ -0.1 since 22 Oct · -0.1 kg/wk`).
+
+Backup: export writes a file a day, `fast-track-YYYY-MM-DD.json`, in Documents/FastTrack/, or with
+**Keep one file** on a single `fast-track.json` that every export replaces; the .ics file is
+unaffected. Regular exports below the rule take a calendar event schedule in systemd's OnCalendar
+notation, said back in plain words with the next run; tapping an example fills the field and saves
+it. Where Android 11 or newer will not let the app replace a file an earlier install left, the
+export says so.
+
+```text
+╭─ Body ───────────────────────────────────╮
+│ Weight                              [kg] │
+│ BMI                                 [on] │
+│ Height  180 cm                      <  > │
+│ BMI = 80.6 kg / (1.80 m)² = 24.9         │
+╰──────────────────────────────────────────╯
+╭─ Backup ─────────────────────────────────╮
+│ Last export Nov 18, 2026, 8:12 PM.       │
+│ [⤓ export]   [⤒ import]                  │
+│ [⤓ export to calendar (.ics)]            │
+│ Import adds the fasts the app lacks and  │
+│ changes none.                            │
+├──────────────────────────────────────────┤
+│ Keep one file                       [on] │
+│ In Documents/FastTrack/, one file,       │
+│ replaced each time: fast-track.json.     │
+│ Export on a schedule                [on] │
+│ Every  [Mon..Fri 08:00               ]   │
+│ On weekdays at 08:00. Next Thu 08:00.    │
+│ daily  weekly  Mon..Fri 08:00  *:0/30    │
+│ Last regular export Nov 18, 2026, 8:00   │
+│ AM to                                    │
+│ Documents/FastTrack/fast-track.json.     │
+╰──────────────────────────────────────────╯
+```
 
 ```text
 ╭─ Privacy ────────────────────────────╮

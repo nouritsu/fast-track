@@ -1,9 +1,12 @@
 <script lang="ts">
   import { weekdayHeads, type WeekStart } from '../fasting/calendar'
   import {
+    bmi,
     fastLength,
     KG_PER_LB,
     percentOf,
+    showBmi,
+    signedNumber,
     stageHours,
     streak,
     summarize,
@@ -54,6 +57,7 @@
     active,
     scale,
     unit,
+    height,
     weekStart,
     span,
     now,
@@ -63,6 +67,7 @@
     active: Active | null // drawn in the rhythm strip up to now
     scale: ScaleWeight[]
     unit: 'kg' | 'lb'
+    height: number | null // in cm, when BMI is on and a height is set; else no BMI is shown
     weekStart: WeekStart
     span: Span
     now: number
@@ -179,11 +184,16 @@
   const firstAt = $derived(points[0]?.at ?? range.from)
   const wx = (at: number) => gutter + (range.to > firstAt ? ((at - firstAt) / (range.to - firstAt)) * (plot - 3) : plot / 2)
   /** A change in kg in the unit, signed: "-1.6", "+0.4", "±0.0". */
-  const signed = (kg: number) => {
-    const value = weightNumber(Math.abs(kg), unit)
-    return `${Number(value) === 0 ? '±' : kg < 0 ? '-' : '+'}${value}`
-  }
+  const signed = (kg: number) => signedNumber(inUnit(kg))
   const change = $derived(rate === null ? 0 : (rate * (points[points.length - 1].at - points[0].at)) / (7 * DAY))
+  // BMI beside the weight, once there is a height: the trend's in the top edge, and the
+  // change in it beside the change in weight.
+  const edge = $derived.by(() => {
+    if (!trend.length) return ''
+    const kg = trend[trend.length - 1].kg
+    return `${weightNumber(kg, unit)} ${unit}${height === null ? '' : ` ◆ ${showBmi(bmi(kg, height))}`}`
+  })
+  const bmiChange = $derived(height === null ? '' : ` ◆ ${signedNumber(bmi(change, height))}`)
   const weighed = $derived(scale.length > 0 || fasts.some((f) => f.weight !== null))
 
   // Records: the whole history.
@@ -395,7 +405,7 @@
       </Block>
     {/if}
 
-    <Block title="Weight" titleRight={trend.length ? `${weightNumber(trend[trend.length - 1].kg, unit)} ${unit}` : ''}>
+    <Block title="Weight" titleRight={edge}>
       {#if points.length && width}
         <svg
           class="chart"
@@ -423,7 +433,7 @@
           {/if}
         </svg>
         {#if rate !== null}
-          <p class="fields">{signed(change)} {unit} since {dayMonth(points[0].at, minute)} · {signed(rate)} {unit}/wk</p>
+          <p class="fields">{signed(change)} {unit}{bmiChange} since {dayMonth(points[0].at, minute)} · {signed(rate)} {unit}/wk</p>
         {/if}
         <p class="fields muted">
           low {weightNumber(Math.min(...points.map((p) => p.kg)), unit)} · high {weightNumber(Math.max(...points.map((p) => p.kg)), unit)} · {plural(

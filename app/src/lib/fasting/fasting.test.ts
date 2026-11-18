@@ -9,17 +9,24 @@ import { plannedAlerts } from './alerts'
 import { backupName, BackupError, makeBackup, mergeFasts, parseBackup, writeFailure } from './backup'
 import { emptyReason, scaleWeightFor, syncWeights, weightOf } from './openscale'
 import {
+  bmi,
+  bmiFormula,
   earliestStart,
   eatingLeft,
+  heightAtLimit,
   invalidTimes,
   milestones,
   overlapping,
   parseWeight,
   percentOf,
   planName,
+  showBmi,
+  showHeight,
   showWeight,
+  signedNumber,
   stageHours,
   stepGoal,
+  stepHeight,
   streak,
   summarize,
   type Fast,
@@ -223,6 +230,56 @@ describe('checks', () => {
   })
 })
 
+describe('BMI', () => {
+  it('is the weight over the height in metres, squared, to one decimal when shown', () => {
+    expect(bmi(80.6, 180)).toBeCloseTo(24.877, 3)
+    expect(showBmi(bmi(80.6, 180))).toBe('24.9')
+    expect(showBmi(bmi(70, 175))).toBe('22.9')
+    expect(showBmi(bmi(80.6, 180.34))).toBe('24.8') // 71 inches
+    expect(showBmi(bmi(-3.1, 180))).toBe('-1.0') // a change in weight gives the change in BMI
+  })
+
+  it('signs a change to one decimal', () => {
+    expect([-1.04, 0.44, 0, 0.04, -0.04, 12.35].map(signedNumber)).toEqual(['-1.0', '+0.4', '±0.0', '±0.0', '±0.0', '+12.3'])
+  })
+
+  it('steps the height by the cm with kg, and by the inch with lb, within limits', () => {
+    expect(stepHeight(180, 1, 'kg')).toBe(181)
+    expect(stepHeight(180, -1, 'kg')).toBe(179)
+    expect(stepHeight(100, -1, 'kg')).toBe(100)
+    expect(stepHeight(250, 1, 'kg')).toBe(250)
+    expect(stepHeight(180.34, 1, 'lb')).toBe(182.88) // 71 inches to 72
+    expect(stepHeight(180, -1, 'lb')).toBe(177.8) // 70.87 inches to 70
+    expect(stepHeight(250, 1, 'lb')).toBe(248.92) // 98 inches, the top
+    expect(stepHeight(100, -1, 'lb')).toBe(99.06) // 39 inches, the bottom, not stepped up
+    expect(stepHeight(null, 1, 'kg')).toBe(170)
+    expect(stepHeight(null, -1, 'kg')).toBe(170)
+    expect(stepHeight(null, 1, 'lb')).toBe(170.18) // 67 inches
+    expect(heightAtLimit(100, -1, 'kg')).toBe(true)
+    expect(heightAtLimit(100, 1, 'kg')).toBe(false)
+    expect(heightAtLimit(250, 1, 'kg')).toBe(true)
+    expect(heightAtLimit(99.06, -1, 'lb')).toBe(true)
+    expect(heightAtLimit(248.92, 1, 'lb')).toBe(true)
+    expect(heightAtLimit(null, -1, 'kg')).toBe(false)
+  })
+
+  it('shows the height in cm, or in feet and inches', () => {
+    expect(showHeight(180, 'kg')).toBe('180 cm')
+    expect(showHeight(180.34, 'kg')).toBe('180 cm')
+    expect(showHeight(180.34, 'lb')).toBe('5′ 11″')
+    expect(showHeight(182.88, 'lb')).toBe('6′ 0″')
+    expect(showHeight(null, 'kg')).toBe('--- cm')
+    expect(showHeight(null, 'lb')).toBe('-′ --″')
+  })
+
+  it('writes the formula in the unit, with numbers once there is a weight and a height', () => {
+    expect(bmiFormula('kg', 80.6, 180)).toBe('BMI = 80.6 kg / (1.80 m)² = 24.9')
+    expect(bmiFormula('lb', 80.6, 180.34)).toBe('BMI = 703 × 177.7 lb / (71 in)² = 24.8')
+    expect(bmiFormula('kg', null, 180)).toBe('BMI = kg / m²')
+    expect(bmiFormula('lb', 80.6, null)).toBe('BMI = 703 × lb / in²')
+  })
+})
+
 describe('time', () => {
   it('steps days by the calendar and minutes onto fives', () => {
     expect(dayKey(stepDay(at('2026-11-30T08:00'), 1))).toBe('2026-12-01')
@@ -252,10 +309,12 @@ describe('storage and backup', () => {
     expect(toSettings({ statsSpan: 7 }).statsSpan).toBe(30)
   })
 
-  it('reads the keep one file setting, off by default', () => {
-    expect(DEFAULT_SETTINGS.keepOneFile).toBe(false)
-    expect(toSettings({ keepOneFile: true }).keepOneFile).toBe(true)
-    expect(toSettings({ keepOneFile: 'yes' }).keepOneFile).toBe(false)
+  it('reads the export and BMI settings, and keeps them off and unset by default', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({ keepOneFile: false, bmi: false, height: null })
+    expect(toSettings({ keepOneFile: true, bmi: true, height: 180 })).toMatchObject({ keepOneFile: true, bmi: true, height: 180 })
+    expect(toSettings({ keepOneFile: 'yes', bmi: 1, height: '180' })).toMatchObject({ keepOneFile: false, bmi: false, height: null })
+    expect(toSettings({ height: 0 }).height).toBeNull()
+    expect(toSettings({ height: -170 }).height).toBeNull()
   })
 
   it('names exports by the day, or as the one file that each replaces', () => {
@@ -273,7 +332,7 @@ describe('storage and backup', () => {
     expect(writeFailure('disk full', where)).toBe('disk full')
   })
 
-  it('imports a backup from before the keep one file setting, with it off', () => {
+  it('imports a backup from before these settings, with them at their defaults', () => {
     const old = {
       format: 'fast-track-backup',
       version: 1,
@@ -283,7 +342,7 @@ describe('storage and backup', () => {
     }
     const backup = parseBackup(JSON.stringify(old))
     expect(backup.fasts).toHaveLength(1)
-    expect(backup.settings).toMatchObject({ goal: 18, unit: 'lb', cloudBackup: true, keepOneFile: false })
+    expect(backup.settings).toMatchObject({ goal: 18, unit: 'lb', cloudBackup: true, keepOneFile: false, bmi: false, height: null })
     expect(parseBackup(JSON.stringify({ ...old, settings: undefined })).settings).toEqual(DEFAULT_SETTINGS)
   })
 

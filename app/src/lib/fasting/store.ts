@@ -22,6 +22,8 @@ export interface Settings {
   statsSpan: Span // the days Stats covers (stats.ts); 0 is all of them
   cloudBackup: boolean // Android's backup to the Google account (FastBackupAgent.java)
   keepOneFile: boolean // exports replace one fast-track.json instead of making a file a day (backup.ts, FastExport.java)
+  bmi: boolean // show BMI, from the latest weight and the height (fasts.ts)
+  height: number | null // in cm, whichever unit it is shown in; none until set
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -39,6 +41,8 @@ export const DEFAULT_SETTINGS: Settings = {
   statsSpan: 30,
   cloudBackup: false,
   keepOneFile: false,
+  bmi: false,
+  height: null,
 }
 
 export interface Saved {
@@ -89,6 +93,8 @@ export function toSettings(v: unknown): Settings {
     statsSpan: SPANS.includes(s.statsSpan as Span) ? (s.statsSpan as Span) : DEFAULT_SETTINGS.statsSpan,
     cloudBackup: s.cloudBackup === true,
     keepOneFile: s.keepOneFile === true,
+    bmi: s.bmi === true,
+    height: isNumber(s.height) && s.height > 0 ? s.height : null,
   }
 }
 
