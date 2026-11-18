@@ -82,7 +82,11 @@
   let shownPane = $state<PaneId | null>(null) // the pane drawn; it stays while the page slides back
   let paneHost = $state<number | null>(null) // the page it hangs below
   let paneTimer = 0
-  let paneHeight = $state(0) // the open pane's height: how far it pushes its page up
+  let paneHeight = $state(0) // the open pane's height: how far it pushes its page
+  // Panes opened from the top of a page hang above it and push it down: the calendar's
+  // month and year, whose buttons sit at its top.
+  const FROM_TOP: PaneId[] = ['month', 'year']
+  const fromTop = $derived(shownPane !== null && FROM_TOP.includes(shownPane))
   let editing = $state<{ fast: Fast; isNew: boolean } | null>(null)
   let heroMode = $state<HeroMode>(savedHeroMode())
   let drawn = $state(1) // how much of the progress line has drawn in, 0 to 1
@@ -236,11 +240,12 @@
     axis: 'y',
     enabled: () => pane !== null,
     onStart: () => (pulling = true),
-    onMove: (dy) => (pull = dy > 0 ? dy : dy / 4),
+    // Away from the page closes it: down for a pane below, up for one above.
+    onMove: (dy) => (pull = (fromTop ? dy < 0 : dy > 0) ? dy : dy / 4),
     onEnd: (dy, velocity) => {
       pulling = false
       pull = 0
-      if (dy > 0 && carries(dy, paneHeight, velocity, 0.3)) closePane()
+      if ((fromTop ? dy < 0 : dy > 0) && carries(dy, paneHeight, velocity, 0.3)) closePane()
     },
   }
 
@@ -368,7 +373,7 @@
         use:drag={paneDrag}
         onclick={closePane}
       ></button>{/if}
-    <div class="hang" bind:offsetHeight={paneHeight} use:drag={paneDrag}>
+    <div class="hang" class:top={fromTop} bind:offsetHeight={paneHeight} use:drag={paneDrag}>
     {#if shownPane === 'start'}
       <StartPane
         initial={active?.start ?? now}
@@ -413,7 +418,7 @@
         class="page"
         class:pushed={pane !== null && paneHost === 0}
         class:pulling={pulling && paneHost === 0}
-        style:--push="{paneHeight}px"
+        style:--push="{fromTop ? -paneHeight : paneHeight}px"
         style:--pull="{paneHost === 0 ? pull : 0}px"
         id="page-fast"
         role="tabpanel"
@@ -517,7 +522,7 @@
         class="page"
         class:pushed={pane !== null && paneHost === 1}
         class:pulling={pulling && paneHost === 1}
-        style:--push="{paneHeight}px"
+        style:--push="{fromTop ? -paneHeight : paneHeight}px"
         style:--pull="{paneHost === 1 ? pull : 0}px"
         id="page-calendar"
         role="tabpanel"
@@ -625,6 +630,12 @@
 
   .page-main {
     height: 100%;
+  }
+
+  /* A pane opened from the top hangs above the page instead, and pushes it down. */
+  .hang.top {
+    top: auto;
+    bottom: 100%;
   }
 
   /* Just below the page, as tall as its pane, at most the page's height. Vertical

@@ -3,11 +3,11 @@
   import Block from './Block.svelte'
 
   // One page beside the Fast page: a block that fills the page's height, its
-  // content scrolling inside the border. `edge` is set into its bottom edge.
-  let { title, children, edge }: { title: string; children: Snippet; edge?: Snippet } = $props()
+  // content scrolling inside the border.
+  let { title, children }: { title: string; children: Snippet } = $props()
 </script>
 
-<Block {title} class="page-block" actions={edge}>
+<Block {title} class="page-block">
   <div class="content">{@render children()}</div>
 </Block>
 

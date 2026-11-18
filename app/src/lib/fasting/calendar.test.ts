@@ -50,10 +50,10 @@ describe('calendar totals', () => {
     fast('2026-11-18T20:00', '2026-11-19T15:00'), // 19h, met
   ]
 
-  it('adds up each day, its deepest stage and whether all met their goals', () => {
+  it('adds up each day and its deepest stage', () => {
     const days = dayTotals(fasts)
-    expect(days.get('2026-11-17')).toEqual({ ms: 23 * 3_600_000, stage: 2, met: false })
-    expect(days.get('2026-11-19')).toMatchObject({ met: true })
+    expect(days.get('2026-11-17')).toEqual({ ms: 23 * 3_600_000, stage: 2 })
+    expect(days.get('2026-11-19')).toEqual({ ms: 19 * 3_600_000, stage: 2 })
   })
 
   it('adds up a week row and sums up a month', () => {

@@ -8,13 +8,14 @@
   import { carries, drag, type DragOptions } from '../ui/drag'
   import { clock, duration } from '../ui/fields'
   import Icon from '../ui/Icon.svelte'
-  import Page from '../ui/Page.svelte'
+  import Block from '../ui/Block.svelte'
 
-  // A month of fasts: each day that ended one in the colour of the deepest stage it
-  // reached, with its hours and a goal mark under it, week numbers and weekly totals
-  // as the settings say; the month's summary; and its fasts (or a tapped day's), newest
-  // first. Tapping the month or the year opens a pane to pick another (App). Delete
-  // takes effect at once; the entry turns into an Undo line until the page is left.
+  // Two panels. The Calendar: a month in which each day that ended a fast is in the
+  // colour of the deepest stage it reached, and week numbers
+  // and weekly totals as the settings say; tapping the month or the year opens a pane
+  // to pick another (App), and the stage legend sits in its bottom edge. The Fasts:
+  // the month's summary and its fasts (or a tapped day's), newest first. Delete takes
+  // effect at once; the entry turns into an Undo line until the page is left.
   let {
     fasts,
     scale,
@@ -61,7 +62,6 @@
   const key = (day: number) => dayKey(new Date(year, month, day))
   const todayKey = $derived(dayKey(now))
   const monthKey = $derived(key(1).slice(0, 7))
-  const sub = $derived(settings.dayHours || settings.goalMarks) // a second line under the days
   const summary = $derived(monthSummary(fasts, year, month))
   const hm = (ms: number) => {
     const minutes = Math.round(ms / 60_000)
@@ -126,7 +126,20 @@
   })
 </script>
 
-<Page title="Calendar">
+{#snippet legend()}
+  <!-- The stage colours, set into the edge between the calendar and the fasts. -->
+  <span class="legend" aria-label="Stage colours"
+    >{#each STAGES as stage (stage.id)}<span><span style:color="var(--{stage.id})">■</span> {stage.name.slice(0, 3).toLowerCase()}</span
+      >{/each}</span
+  >
+{/snippet}
+
+{#snippet addButton()}
+  <button type="button" class="word" onclick={() => onAdd(selected)}><span class="icon" aria-hidden="true">✚</span>add</button>
+{/snippet}
+
+<div class="layout">
+<Block title="Calendar" class="calendar-block" actions={legend}>
   <div class="swipe" bind:clientWidth={width} use:drag={monthDrag} style:transform="translateX({monthShift}px)">
     <div class="month">
       <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => move(-1)}>&lt;</button>
@@ -137,7 +150,7 @@
       <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => move(1)}>&gt;</button>
     </div>
 
-    <table class="grid" class:sub>
+    <table class="grid">
       <thead>
         <tr>
           {#if settings.weekNumbers}<th scope="col" class="side" aria-label="Week">wk</th>{/if}
@@ -162,28 +175,20 @@
                       class:selected={selected === k}
                       class:today={todayKey === k}
                       style:--stage="var(--{STAGES[total.stage].id})"
-                      aria-label="{longDate(new Date(year, month, day).getTime())}: {hoursOf(total.ms)} hours, {STAGES[total.stage]
-                        .name}, goal {total.met ? 'met' : 'not met'}"
+                      aria-label="{longDate(new Date(year, month, day).getTime())}: {hoursOf(total.ms)} hours, {STAGES[total.stage].name}"
                       aria-pressed={selected === k}
                       onclick={() => (selected = selected === k ? null : k)}
                     >
                       <span class="date">{day}</span>
-                      {#if sub}<span class="under"
-                          >{#if settings.dayHours}<span class="hours">{hoursOf(total.ms)}</span>{/if}{#if settings.goalMarks}<span
-                              class="mark"
-                              class:met={total.met}>•</span
-                            >{/if}</span
-                        >{/if}
                     </button>
                   {:else}
                     <span class="day muted" class:today={todayKey === k}>
                       <span class="date">{day}</span>
-                      {#if sub}<span class="under"> </span>{/if}
                     </span>
                   {/if}
                 {:else}
                   <!-- Holds the row's height, so short months keep the grid's size. -->
-                  <span class="day" aria-hidden="true"><span class="date"> </span>{#if sub}<span class="under"> </span>{/if}</span>
+                  <span class="day" aria-hidden="true"><span class="date"> </span></span>
                 {/if}
               </td>
             {/each}
@@ -196,7 +201,10 @@
       </tbody>
     </table>
   </div>
+</Block>
 
+<Block title="Fasts" class="fasts-block" headingRight={addButton}>
+  <div class="content">
   <div class="head">
     {#if selected}
       <p class="fields">{longDate(new Date(`${selected}T12:00`).getTime())} · {count === 1 ? '1 fast' : `${count} fasts`}</p>
@@ -205,7 +213,6 @@
     {:else}
       <p class="fields muted">{MONTHS[month]} · no fasts</p>
     {/if}
-    <button type="button" class="word" onclick={() => onAdd(selected)}><span class="icon" aria-hidden="true">✚</span>add</button>
   </div>
   {#if !selected && summary.count}
     <p class="fields muted summary">
@@ -245,17 +252,42 @@
     <hr class="split" />
     <p class="muted">No fasts {selected ? 'that day' : 'this month'}.</p>
   {/each}
-
-  {#snippet edge()}
-    <!-- The stage colours, set into the bottom edge. -->
-    <span class="legend" aria-label="Stage colours"
-      >{#each STAGES as stage (stage.id)}<span><span style:color="var(--{stage.id})">■</span> {stage.name.slice(0, 3).toLowerCase()}</span
-        >{/each}</span
-    >
-  {/snippet}
-</Page>
+  </div>
+</Block>
+</div>
 
 <style>
+  /* The two panels fill the page: the calendar as tall as it needs, the fasts the
+     rest, scrolling inside their border. The gap leaves room for the legend in the
+     calendar's bottom edge and the fasts' title in their top one. */
+  .layout {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.7em;
+  }
+
+  .layout > :global(.calendar-block) {
+    flex: none;
+  }
+
+  .layout > :global(.fasts-block) {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-top: 0.2em;
+  }
+
+  .content :global(p) {
+    margin: 0.3em 0;
+  }
+
   /* Swipeable areas: vertical drags still scroll the page. */
   .swipe {
     touch-action: pan-y;
@@ -336,15 +368,6 @@
     white-space: pre;
   }
 
-  .sub .day {
-    height: 2.7em;
-  }
-
-  .under {
-    font-size: 0.7em;
-    min-height: 1.1em;
-  }
-
   button.day {
     background: none;
     border-color: transparent;
@@ -353,18 +376,6 @@
   button.day .date {
     font-weight: 700;
     color: var(--stage);
-  }
-
-  .hours {
-    color: var(--stage);
-  }
-
-  .mark {
-    color: var(--bad);
-  }
-
-  .mark.met {
-    color: var(--ok);
   }
 
   button.day.selected {
@@ -385,7 +396,6 @@
     margin: 0 auto;
   }
 
-  .head,
   .entry.gone {
     display: flex;
     align-items: center;

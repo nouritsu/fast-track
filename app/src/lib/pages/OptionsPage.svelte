@@ -268,7 +268,7 @@
       >{weekStartName(settings.weekStart)}</button
     >
   </div>
-  {#each [['weekNumbers', 'Week numbers'], ['dayHours', 'Hours under days'], ['goalMarks', 'Goal marks'], ['weekTotals', 'Weekly totals']] as const as [key, name] (key)}
+  {#each [['weekNumbers', 'Week numbers'], ['weekTotals', 'Weekly totals']] as const as [key, name] (key)}
     <div class="row">
       <span>{name}</span>
       <button type="button" class="word" aria-pressed={settings[key]} onclick={() => tracker.setSettings({ [key]: !settings[key] })}
@@ -276,7 +276,7 @@
       >
     </div>
   {/each}
-  <p class="muted">Week numbers are ISO weeks. Goal marks are green when every fast that ended that day met its goal.</p>
+  <p class="muted">Week numbers are ISO weeks; a week's hours count the fasts that ended in it.</p>
   <hr class="split" />
 
   <h3>openScale</h3>
