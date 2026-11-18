@@ -14,7 +14,7 @@ jobs:
   release:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    # For a later job that publishes the APK to the F-Droid repo.
+    # The fdroid job below checks that the repo it builds has this version.
     outputs:
       apk-name: ${{ steps.sign.outputs.apk-name }}
       version: ${{ steps.version.outputs.version }}
@@ -155,3 +155,28 @@ jobs:
           gh release create "$TAG" --verify-tag --title "Fast Track $VERSION" \
             --notes-file "$RUNNER_TEMP/release-notes.md" \
             "out/apk/$APK_NAME" out/apk/SHA256SUMS
+
+  # Each of these follows the release on its own; neither waits for the other.
+  # Rebuilds the F-Droid repo with the new release and uploads it (fdroid.yml).
+  fdroid:
+    needs: release
+    uses: ./.github/workflows/fdroid.yml
+    permissions:
+      contents: read
+    with:
+      version: ${{ needs.release.outputs.version }}
+    secrets:
+      FDROID_KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
+      FDROID_KEYSTORE_PASSWORD: ${{ secrets.FDROID_KEYSTORE_PASSWORD }}
+      FDROID_KEY_ALIAS: ${{ secrets.FDROID_KEY_ALIAS }}
+      FDROID_KEY_PASSWORD: ${{ secrets.FDROID_KEY_PASSWORD }}
+      FDROID_SSH_KEY: ${{ secrets.FDROID_SSH_KEY }}
+      FDROID_SSH_KNOWN_HOSTS: ${{ secrets.FDROID_SSH_KNOWN_HOSTS }}
+
+  # Renders the screenshots again and opens a pull request if they changed (screenshots.yml).
+  screenshots:
+    needs: release
+    uses: ./.github/workflows/screenshots.yml
+    permissions:
+      contents: write
+      pull-requests: write
