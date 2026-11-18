@@ -6,6 +6,7 @@
 import { deepestStage, fastLength, percentOf, showWeight, summarize, type Fast, type Summary } from './fasts'
 import { STAGES } from './stages'
 import { dayKey, HOUR } from './time'
+import { hm } from '../ui/fields'
 
 /** The weekday a week starts on, as Date.getDay counts: Sunday 0, Monday 1, Saturday 6. */
 export type WeekStart = 0 | 1 | 6
@@ -112,11 +113,6 @@ export function foldLine(line: string): string {
   }
   parts.push(part)
   return parts.join('\r\n ')
-}
-
-const hm = (ms: number) => {
-  const minutes = Math.round(ms / 60_000)
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
 }
 
 /** The fasts as an iCalendar file: one event each, from start to end, named for its

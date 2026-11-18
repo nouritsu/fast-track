@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { spread, stageCells } from './progress'
+import { apportion, spread, stageCells } from './progress'
 
 // A 16h goal: stages start at 0, 4, 12 and 24 hours.
 const STARTS = [0, 4 / 16, 12 / 16, 24 / 16]
@@ -23,5 +23,13 @@ describe('progress line', () => {
     expect(wide.reduce((a, b) => a + b, 0)).toBe(42)
     expect(wide).toEqual([5, 9, 14, 14])
     expect(spread([1, 100], 3)).toEqual([1, 2])
+  })
+})
+
+describe('apportion', () => {
+  it('shares cells by size, exactly, with none for nothing', () => {
+    expect(apportion([92, 184, 105, 0], 40)).toEqual([10, 19, 11, 0])
+    expect(apportion([1, 1, 1], 10).reduce((a, b) => a + b, 0)).toBe(10)
+    expect(apportion([0, 0], 5)).toEqual([0, 0])
   })
 })

@@ -27,6 +27,18 @@ export function stageCells(starts: number[], colors: string[], progress: number,
   return runs
 }
 
+/** `cells` shared among `values` by size, the total exact (largest remainders take the
+ *  cells rounding leaves over), and a value of nothing getting none. */
+export function apportion(values: number[], cells: number): number[] {
+  const total = values.reduce((a, b) => a + Math.max(0, b), 0)
+  if (total <= 0) return values.map(() => 0)
+  const exact = values.map((v) => (Math.max(0, v) / total) * cells)
+  const counts = exact.map(Math.floor)
+  const order = exact.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0])
+  for (let k = 0, left = cells - counts.reduce((a, b) => a + b, 0); k < left; k++) counts[order[k][1]]++
+  return counts
+}
+
 /** `cells` shared among runs as their `spans` are, every run at least one cell, the
  *  total exact: largest remainders take the cells rounding leaves over. */
 export function spread(spans: number[], cells: number): number[] {

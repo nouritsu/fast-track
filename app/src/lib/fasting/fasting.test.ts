@@ -263,6 +263,8 @@ describe('storage and backup', () => {
     expect(toSettings({ exportOn: true, exportEvery: ' ' })).toMatchObject({ exportOn: true, exportEvery: 'daily' })
     expect(toSettings({ scaleUser: 2 }).scaleUser).toBe(2)
     expect(toSettings({ scaleUser: 'me' }).scaleUser).toBeNull()
+    expect(toSettings({ statsSpan: 90 }).statsSpan).toBe(90)
+    expect(toSettings({ statsSpan: 7 }).statsSpan).toBe(30)
   })
 
   it('round-trips a backup and merges by id', () => {

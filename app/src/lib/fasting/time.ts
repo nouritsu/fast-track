@@ -39,6 +39,13 @@ export const longDate = (at: number): string => {
   return `${WEEKDAY_LONG.format(d)} ${d.getDate()} ${MONTH.format(d)}`
 }
 
+/** "12 Sep", or "12 Sep 2025" outside the year of `now`. */
+export const dayMonth = (at: number, now: number): string => {
+  const d = new Date(at)
+  const year = d.getFullYear() === new Date(now).getFullYear() ? '' : ` ${d.getFullYear()}`
+  return `${d.getDate()} ${MONTH.format(d)}${year}`
+}
+
 /** "November 2026". */
 export const monthTitle = (year: number, month: number): string =>
   `${MONTH_LONG.format(new Date(year, month, 1))} ${year}`

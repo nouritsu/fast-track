@@ -178,8 +178,64 @@ Info page (the same content fills its page):
 ```
 
 
-Stats page: counts, streak, goal rate, average and longest, a sparkline of the last 14 fasts,
-hours in each stage, weight trend. Options page: theme, alerts, the status notification, kg or lb,
+Stats page: a column of panes that scrolls. The span (**30d 90d 1y all**) sits in Summary's top
+edge, is remembered, and sets what Length, Goal, Stages, Rhythm and Weight cover; Summary sets it
+against the same span before, and Records cover the whole history. The charts are drawn (SVG) on
+the text's grid in the stage colours; the length bands and the stage bar are text cells.
+
+```text
+╭─ Summary ─────────── 30d 90d 1y all ─╮
+│ 26 fasts · 448h · goal met 69%       │
+│ avg 17:13 · streak 1                 │
+│ prior 30d: 25 fasts · avg 16:30 · 64%│
+╰──────────────────────────────────────╯
+╭─ Length ───────────── median 16:51 ──╮
+│ 24h ─▆─────────────────────────────  │   each fast a bar in its stages'
+│ 12h ▇█▇█▇▇█▇▇█▇█▇█▇▇█▇▇█▇█▇█▇▇█▇     │   colours; a white mark at the
+│     ███████████████████████████████  │   goal of those that fell short
+│ 26 fasts · ━ goal missed             │
+│ avg 17:13 · max 34:25 · min 11:16    │
+│ <12h   █░░░░░░░░░░░░░░░░░░░░░░░   1  │
+│ 16–18h ████████████████████████  13  │
+╰──────────────────────────────────────╯
+╭─ Goal ───────────────────── 69% met ─╮
+│  Mo  ■ ■ □ ■ ■                       │   days in weeks, in the deepest
+│  We  ■ □ ■ ■ ■                       │   stage's colour: filled when a fast
+│  Fr  ■ ■ ■ ■                         │   met its goal, outlined when not
+│ best streak 8 days · 6.1 a week      │
+│ near misses 6 · avg 108% of goal     │
+╰──────────────────────────────────────╯
+╭─ Stages ───────────────────── 448h ──╮
+│ ████████████████████████████████████ │
+│ ■ Glucose      104h reached 100%     │
+│ ■ Ketosis      126h reached  96%     │
+╰──────────────────────────────────────╯
+╭─ Rhythm ─────────────────────────────╮
+│     ░░░░░░░░░░░░░░░░░░░░░░░░░░██████ │   the last 14 days in half hours,
+│  Mo ████████████░░░░░░░░░░░░░░██████ │   filled while fasting
+│     00     06     12     18       24 │
+│ starts ~20:24 ±0:44                  │
+│ ends   ~12:45 ±2:15                  │
+│ eating window 9:36 on average        │
+│  ▆  ▆  ▅  ▇  █  ▅  ▆                 │   average hours by weekday
+│  Mo Tu We Th Fr Sa Su                │
+╰──────────────────────────────────────╯
+╭─ Weight ─────────────────── 79.9 kg ─╮
+│ 80.5 ·‾‾‾\___  ·  ·                  │   weighings as dots, the trend
+│ 80.0      ‾‾‾‾‾‾‾‾‾‾‾\___            │   as a line
+│ -0.3 kg since 22 Oct · -0.1 kg/wk    │
+│ low 79.5 · high 80.3 · 12 weighings  │
+╰──────────────────────────────────────╯
+╭─ Records ───────────────── all time ─╮
+│ longest     35:07 14 Sep             │
+│ best streak 12 days 11 Jul–22 Jul    │
+│ best week   139h from 14 Sep         │
+│ in all      80 days of fasting       │
+│ 112 fasts since 10 Jul               │
+╰──────────────────────────────────────╯
+```
+
+Options page: theme, alerts, the status notification, kg or lb,
 weights from openScale, export and import, and regular exports on a calendar event schedule
 (systemd OnCalendar notation, said back in plain words).
 
