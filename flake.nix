@@ -1,5 +1,5 @@
 {
-  description = "Fast Track: a Svelte TUI Mocha app for Android";
+  description = "Fast Track: an offline intermittent-fasting tracker for Android";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
