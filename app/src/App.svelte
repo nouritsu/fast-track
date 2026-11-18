@@ -559,7 +559,7 @@
       </div>
 
       <div class="page" id="page-info" role="tabpanel" aria-labelledby="tab-info" inert={page !== 4}>
-        <InfoPage />
+        <InfoPage current={phase === 'running' && active ? stage : null} />
       </div>
     </div>
   </div>

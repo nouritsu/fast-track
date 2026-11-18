@@ -26,3 +26,15 @@ export function stageCells(starts: number[], colors: string[], progress: number,
   }
   return runs
 }
+
+/** `cells` shared among runs as their `spans` are, every run at least one cell, the
+ *  total exact: largest remainders take the cells rounding leaves over. */
+export function spread(spans: number[], cells: number): number[] {
+  const total = spans.reduce((a, b) => a + b, 0)
+  const free = Math.max(0, cells - spans.length) // one each first
+  const exact = spans.map((s) => (s / total) * free)
+  const counts = exact.map((x) => 1 + Math.floor(x))
+  const order = exact.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0])
+  for (let k = 0, left = cells - counts.reduce((a, b) => a + b, 0); k < left; k++) counts[order[k % order.length][1]]++
+  return counts
+}

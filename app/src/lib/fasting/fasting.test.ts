@@ -45,6 +45,16 @@ describe('stages', () => {
     expect([0, 3.9, 4, 11.9, 12, 23.9, 24, 100].map(stageIndex)).toEqual([0, 0, 1, 1, 2, 2, 3, 3])
   })
 
+  it('cites at least two NCBI records for every stage', () => {
+    for (const stage of STAGES) {
+      expect(stage.sources.length).toBeGreaterThanOrEqual(2)
+      for (const source of stage.sources) {
+        expect(source.url).toMatch(/^https:\/\/(pubmed\.ncbi\.nlm\.nih\.gov\/\d+|www\.ncbi\.nlm\.nih\.gov\/books\/NBK\d+)\/$/)
+        expect(source.title && source.who && source.where).toBeTruthy()
+      }
+    }
+  })
+
   it('spells out each stage span', () => {
     expect(STAGES.map((_, i) => stageSpan(i))).toEqual(['0–4h', '4–12h', '12–24h', '24h+'])
   })

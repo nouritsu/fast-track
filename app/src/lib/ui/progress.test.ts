@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { stageCells } from './progress'
+import { spread, stageCells } from './progress'
 
 // A 16h goal: stages start at 0, 4, 12 and 24 hours.
 const STARTS = [0, 4 / 16, 12 / 16, 24 / 16]
@@ -15,5 +15,13 @@ describe('progress line', () => {
     ])
     expect(stageCells(STARTS, COLORS, 2, 12).map((r) => r.color)).toEqual(['glucose', 'fat', 'ketosis'])
     expect(stageCells(STARTS, COLORS, 0, 12)).toEqual([{ text: '░'.repeat(12), color: null }])
+  })
+
+  it('spreads cells over runs by their spans, exactly and at least one each', () => {
+    expect(spread([4, 8, 12, 12], 36)).toEqual([4, 8, 12, 12])
+    const wide = spread([4, 8, 12, 12], 42)
+    expect(wide.reduce((a, b) => a + b, 0)).toBe(42)
+    expect(wide).toEqual([5, 9, 14, 14])
+    expect(spread([1, 100], 3)).toEqual([1, 2])
   })
 })
