@@ -5,6 +5,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
@@ -51,8 +52,9 @@
 
     <!-- navigator.vibrate, for haptics -->
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- Export writes Documents/FastTrack/. Android 11 and newer need no permission
-         for files the app creates; 10 and older ask for this one. -->
+    <!-- Export writes Documents/FastTrack/: Android 10 and older ask for this, 10 with
+         requestLegacyExternalStorage too; 11 and newer need neither.
+         https://capacitorjs.com/docs/apis/filesystem#android -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <!-- Weights from openScale (OpenScalePlugin): its own permission, which the user
          grants once, and visibility of its provider on Android 11 and newer. -->
