@@ -19,7 +19,7 @@ export function currentTheme(): Theme {
   return document.documentElement.dataset.theme === 'latte' ? 'latte' : 'mocha'
 }
 
-export function applyTheme(theme: Theme): void {
+function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme
 }
 

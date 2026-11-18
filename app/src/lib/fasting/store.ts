@@ -63,7 +63,7 @@ export function toFast(v: unknown): Fast | null {
   }
 }
 
-export function toActive(v: unknown): Active | null {
+function toActive(v: unknown): Active | null {
   const a = v as Partial<Active> | null
   return a && isNumber(a.start) && isNumber(a.goal) ? { start: a.start, goal: a.goal } : null
 }

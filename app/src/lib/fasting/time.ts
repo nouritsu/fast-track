@@ -18,7 +18,7 @@ export function dayKey(at: number | Date): string {
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`
 }
 
-export const sameDay = (a: number, b: number): boolean => dayKey(a) === dayKey(b)
+const sameDay = (a: number, b: number): boolean => dayKey(a) === dayKey(b)
 
 /** "Tue 06:30". */
 export const dayClock = (at: number): string => `${WEEKDAY.format(at)} ${clock(new Date(at))}`

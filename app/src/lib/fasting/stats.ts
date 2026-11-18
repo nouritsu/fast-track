@@ -138,7 +138,7 @@ export interface GridWeek {
 }
 
 /** The first day of the week `at` falls in, at noon. */
-export function weekOf(at: number, weekStart: WeekStart): Date {
+function weekOf(at: number, weekStart: WeekStart): Date {
   const d = new Date(at)
   d.setHours(12, 0, 0, 0)
   d.setDate(d.getDate() - ((d.getDay() - weekStart + 7) % 7))
