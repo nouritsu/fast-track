@@ -1,11 +1,13 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import { STAGES, stageSpan } from '../fasting/stages'
+  import Icon from '../ui/Icon.svelte'
   import Page from '../ui/Page.svelte'
 
-  // The stages of a fast as one bar, a segment for each, wide as the hours it spans:
-  // tapping one (or < >) shows what happens in it and papers to read. It opens on the
-  // stage the fast in progress is in. Then the app: version, source and credits.
+  // The stages of a fast as one text bar like the Fast page's, a cell an hour, each
+  // stage's run in its colour: the picked one solid, the others shaded. Tapping a run
+  // (or < >) shows what happens in it and papers to read; it opens on the stage the
+  // fast in progress is in. Then the app: version, source, its origin and credits.
   let { current = null }: { current?: number | null } = $props()
 
   let pick = $state(untrack(() => current ?? 0))
@@ -16,37 +18,38 @@
   const stage = $derived(STAGES[pick])
   const step = (by: -1 | 1) => (pick = (pick + by + STAGES.length) % STAGES.length)
 
-  // Each segment's width: the hours it spans, the open-ended last as wide as the one before.
+  // Each run's cells: the hours it spans, the open-ended last as long as the one before.
   const SPANS = STAGES.map((s, i) => (STAGES[i + 1]?.from ?? s.from + (s.from - STAGES[i - 1].from)) - s.from)
+  // The hours under the bar, each at the cell its stage starts on.
+  const TICKS = STAGES.reduce((line, s, i) => line.padEnd(s.from) + (i === STAGES.length - 1 ? `${s.from}h+` : `${s.from}h`), '')
 
   const SOURCE = 'https://github.com/nouritsu/fast-track'
+  const ORIGINAL = 'https://github.com/Darkrock-Studios/FastTrack'
 </script>
 
 <Page title="Info">
   <h3>Stages of a fast</h3>
   <div class="bar" role="tablist" aria-label="Stages of a fast">
-    {#each STAGES as s, i (s.id)}
-      <button
+    {#each STAGES as s, i (s.id)}<button
         type="button"
         role="tab"
-        class="segment"
-        class:on={pick === i}
+        class="run"
         aria-selected={pick === i}
         aria-label="{s.name}, {stageSpan(i)}{current === i ? ', now' : ''}"
-        style:--c="var(--{s.id})"
-        style:flex-grow={SPANS[i]}
-        onclick={() => (pick = i)}>{s.name.slice(0, 3).toLowerCase()}{current === i ? '•' : ''}</button
-      >
-    {/each}
+        style:color="var(--{s.id})"
+        onclick={() => (pick = i)}>{(pick === i ? '█' : '░').repeat(SPANS[i])}</button
+      >{/each}
   </div>
-  <div class="ticks" aria-hidden="true">
-    {#each STAGES as s, i (s.id)}<span style:flex-grow={SPANS[i]}>{s.from}h</span>{/each}
-  </div>
+  <p class="ticks" aria-hidden="true">{TICKS}</p>
 
   <div class="detail" role="tabpanel" aria-label={stage.name}>
     <div class="name">
       <button type="button" class="glyph" aria-label="Previous stage" onclick={() => step(-1)}>&lt;</button>
-      <span><span style:color="var(--{stage.id})">■ {stage.name}</span> <span class="muted">{stageSpan(pick)}</span></span>
+      <span
+        ><span style:color="var(--{stage.id})">■ {stage.name}</span> <span class="muted"
+          >{stageSpan(pick)}{current === pick ? ' · now' : ''}</span
+        ></span
+      >
       <button type="button" class="glyph" aria-label="Next stage" onclick={() => step(1)}>&gt;</button>
     </div>
     <p>{stage.term === stage.name ? '' : `${stage.term}. `}{stage.about}</p>
@@ -63,57 +66,63 @@
   <p class="muted">Times vary with the person, the last meal and activity. This is not medical advice.</p>
 
   <hr class="split" />
-  <p>Fast Track {__APP_VERSION__} · <a class="link" href={SOURCE} target="_blank" rel="noreferrer">source on GitHub</a></p>
-  <p class="muted">Based on the original Fast Track app.</p>
-  <p class="muted">
-    Fonts <a class="link" href="https://github.com/be5invis/Iosevka" target="_blank" rel="noreferrer">Iosevka</a> and
-    <a class="link" href="https://fonts.google.com/noto/specimen/Noto+Sans+Symbols+2" target="_blank" rel="noreferrer"
-      >Noto Sans Symbols 2</a
-    >
-    (SIL OFL 1.1), colours <a class="link" href="https://catppuccin.com" target="_blank" rel="noreferrer">Catppuccin</a> (MIT),
-    icons <a class="link" href="https://fonts.google.com/icons" target="_blank" rel="noreferrer">Material Icons</a> (Apache 2.0).
-  </p>
+  <ul class="credits">
+    <li>Fast Track {__APP_VERSION__}</li>
+    <li>
+      <a class="link" href={SOURCE} target="_blank" rel="noreferrer"><Icon name="github" /> source on GitHub</a>
+    </li>
+    <li>
+      <span class="muted">based on</span>
+      <a class="link" href={ORIGINAL} target="_blank" rel="noreferrer"><Icon name="github" /> Fast Track</a>
+      <span class="muted">by Dark Rock Studios (MIT)</span>
+    </li>
+    <li>
+      <span class="muted">fonts</span>
+      <a class="link" href="https://github.com/be5invis/Iosevka" target="_blank" rel="noreferrer">Iosevka</a>,
+      <a class="link" href="https://fonts.google.com/noto/specimen/Noto+Sans+Symbols+2" target="_blank" rel="noreferrer"
+        >Noto Sans Symbols 2</a
+      >
+      <span class="muted">(SIL OFL 1.1)</span>
+    </li>
+    <li>
+      <span class="muted">colours</span>
+      <a class="link" href="https://catppuccin.com" target="_blank" rel="noreferrer">Catppuccin</a>
+      <span class="muted">(MIT)</span>
+    </li>
+    <li>
+      <span class="muted">icons</span>
+      <a class="link" href="https://fonts.google.com/icons" target="_blank" rel="noreferrer">Material Icons</a>
+      <span class="muted">(Apache 2.0),</span>
+      <a class="link" href="https://primer.style/octicons" target="_blank" rel="noreferrer">Octicons</a>
+      <span class="muted">(MIT)</span>
+    </li>
+  </ul>
 </Page>
 
 <style>
-  /* The stages side by side, each as wide as its hours: the picked one filled with its
-     colour, the others a line of it under their name. */
+  /* The stages as a text bar, as the Fast page draws progress: one cell an hour. */
   .bar {
     display: flex;
-    gap: 2px;
-    margin-top: 0.4em;
+    margin-top: 0.5em;
+    font-variant-ligatures: none;
+    white-space: pre;
+    line-height: 1.2;
   }
 
-  .segment {
-    flex-basis: 0;
-    min-width: 0;
-    padding: 0.35em 0 0.25em;
+  .run {
+    padding: 0.3em 0;
     background: none;
     border: none;
-    border-bottom: 3px solid var(--c);
-    border-radius: 0.3em 0.3em 0 0;
-    color: var(--c);
-    white-space: nowrap;
-    overflow: hidden;
-    transition:
-      background-color 0.2s ease,
-      color 0.2s ease;
+    border-radius: 0;
+    color: inherit;
   }
 
-  .segment.on {
-    background: var(--c);
-    color: var(--bg);
-    font-weight: 700;
-  }
-
+  /* The same size as the bar, so each hour sits under the cell it names. */
   .ticks {
-    display: flex;
-    font-size: 0.8em;
+    margin: 0;
+    white-space: pre;
+    font-variant-ligatures: none;
     color: var(--muted);
-  }
-
-  .ticks span {
-    flex-basis: 0;
   }
 
   .detail {
@@ -143,5 +152,16 @@
 
   hr.split {
     margin: 0.8em 0 0.4em;
+  }
+
+  /* The app's own credits, a line each with room to tap. */
+  .credits {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .credits li {
+    margin: 0.7em 0;
   }
 </style>
