@@ -18,7 +18,6 @@ export interface Settings {
   weekStart: WeekStart // the calendar's first weekday (calendar.ts)
   weekNumbers: boolean // ISO week numbers before each week
   dayHours: boolean // fasting hours under each day
-  goalMarks: boolean // a dot under each fasted day: met its goal or not
   weekTotals: boolean // each week's fasting hours after it
 }
 
@@ -34,7 +33,6 @@ export const DEFAULT_SETTINGS: Settings = {
   weekStart: 1,
   weekNumbers: false,
   dayHours: true,
-  goalMarks: true,
   weekTotals: true,
 }
 
@@ -83,7 +81,6 @@ export function toSettings(v: unknown): Settings {
     weekStart: WEEK_STARTS.includes(s.weekStart as WeekStart) ? (s.weekStart as WeekStart) : DEFAULT_SETTINGS.weekStart,
     weekNumbers: typeof s.weekNumbers === 'boolean' ? s.weekNumbers : DEFAULT_SETTINGS.weekNumbers,
     dayHours: typeof s.dayHours === 'boolean' ? s.dayHours : DEFAULT_SETTINGS.dayHours,
-    goalMarks: typeof s.goalMarks === 'boolean' ? s.goalMarks : DEFAULT_SETTINGS.goalMarks,
     weekTotals: typeof s.weekTotals === 'boolean' ? s.weekTotals : DEFAULT_SETTINGS.weekTotals,
   }
 }

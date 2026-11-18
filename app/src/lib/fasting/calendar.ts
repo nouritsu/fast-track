@@ -1,9 +1,9 @@
 // The calendar's arithmetic: months as six week rows from any first weekday, ISO week
-// numbers, each day's and week's fasting hours and goal marks, a month's summary, and
+// numbers, each day's and week's fasting hours, a month's summary, and
 // the fasts as an iCalendar (.ics) file for other calendar apps. A fast belongs to the
 // day it ended on, as everywhere in the app.
 
-import { deepestStage, fastLength, metGoal, percentOf, showWeight, summarize, type Fast, type Summary } from './fasts'
+import { deepestStage, fastLength, percentOf, showWeight, summarize, type Fast, type Summary } from './fasts'
 import { STAGES } from './stages'
 import { dayKey, HOUR } from './time'
 
@@ -57,15 +57,14 @@ export function rowWeek(row: WeekRow): number {
 export interface DayTotal {
   ms: number // fasting time of the fasts ending that day
   stage: number // the deepest stage they reached
-  met: boolean // every one met its goal
 }
 
 export function dayTotals(fasts: Fast[]): Map<string, DayTotal> {
   const days = new Map<string, DayTotal>()
   for (const fast of fasts) {
     const key = dayKey(fast.end)
-    const day = days.get(key) ?? { ms: 0, stage: 0, met: true }
-    days.set(key, { ms: day.ms + fastLength(fast), stage: Math.max(day.stage, deepestStage(fast)), met: day.met && metGoal(fast) })
+    const day = days.get(key) ?? { ms: 0, stage: 0 }
+    days.set(key, { ms: day.ms + fastLength(fast), stage: Math.max(day.stage, deepestStage(fast)) })
   }
   return days
 }
