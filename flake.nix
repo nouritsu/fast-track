@@ -3,6 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
 
     # The dev shell is devenv in flake mode, so it keeps this nixpkgs and the packages below.
     devenv.url = "github:cachix/devenv";
@@ -21,122 +25,109 @@
     };
   };
 
-  outputs = inputs @ {
-    self,
-    nixpkgs,
-    devenv,
-    treefmt-nix,
-    ...
-  }: let
-    inherit (nixpkgs) lib;
+  outputs = inputs @ {flake-parts, ...}:
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      # The web app and the dev shell work on each of these; the APK and the tools around
+      # it only on x86_64-linux, the one system androidenv's SDK tools run on. nixpkgs
+      # unstable has dropped Intel Macs: https://nixos.org/manual/nixpkgs/unstable/release-notes#x86_64-darwin-26.11
+      systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
 
-    # androidenv's SDK tools only run on x86_64. `own` is this flake's packages.
-    forAllSystems = f:
-      lib.genAttrs ["x86_64-linux"] (system:
-        f {
+      # `nix fmt` and the treefmt check run the house formatters and lints, the ones
+      # the dev shell's git hook runs.
+      imports = [inputs.treefmt-nix.flakeModule];
+
+      perSystem = {
+        config,
+        lib,
+        pkgs,
+        system,
+        ...
+      }: let
+        own = config.packages;
+        android = system == "x86_64-linux";
+        # The Android SDK is unfree, and androidenv asks for its licence to be accepted.
+        androidPkgs = import inputs.nixpkgs {
           inherit system;
-          pkgs = nixpkgs.legacyPackages.${system};
-          own = self.packages.${system};
-        });
-
-    # The house formatters and lints, the ones the dev shell's git hook runs.
-    treefmt = forAllSystems ({pkgs, ...}:
-      treefmt-nix.lib.evalModule pkgs {
-        projectRootFile = "flake.nix";
-        imports = ["${inputs.conf-nixos}/templates/base/treefmt.nix"];
-      });
-  in {
-    packages = forAllSystems ({
-      system,
-      pkgs,
-      ...
-    }: let
-      # The Android SDK is unfree, and androidenv asks for its licence to be accepted.
-      androidPkgs = import nixpkgs {
-        inherit system;
-        config = {
-          allowUnfree = true;
-          android_sdk.accept_license = true;
+          config = {
+            allowUnfree = true;
+            android_sdk.accept_license = true;
+          };
         };
-      };
-    in rec {
-      # Font subset and launcher icons; in development: nix build .#app-assets -o app/public/generated
-      app-assets = pkgs.callPackage ./nix/app-assets.nix {};
-      app = pkgs.callPackage ./nix/app.nix {assets = app-assets;};
-      # Store screenshots of the web build; `nix run .#screenshots` puts them in fastlane/.
-      screenshots = pkgs.callPackage ./nix/screenshots.nix {web = app;};
-      # Unsigned; `nix run .#apk` signs it and can install it.
-      apk = androidPkgs.callPackage ./nix/apk.nix {
-        assets = app-assets;
-        web = app;
-      };
-      default = app;
-    });
+      in {
+        treefmt = {
+          projectRootFile = "flake.nix";
+          imports = ["${inputs.conf-nixos}/templates/base/treefmt.nix"];
+        };
 
-    apps = forAllSystems ({
-      pkgs,
-      own,
-      ...
-    }: {
-      apk = {
-        type = "app";
-        program = lib.getExe (pkgs.callPackage ./nix/apk-app.nix {inherit (own) apk;});
-        meta.description = "Sign the APK with the debug key or a release keystore, and optionally adb install it";
-      };
-      screenshots = {
-        type = "app";
-        program = lib.getExe own.screenshots.update;
-        meta.description = "Render the store screenshots and copy them to fastlane/metadata";
-      };
-      fdroid-repo = {
-        type = "app";
-        program = lib.getExe (pkgs.callPackage ./nix/fdroid-repo.nix {});
-        meta.description = "Build the F-Droid repo site from signed APKs into out/fdroid";
-      };
-    });
-
-    devShells = forAllSystems ({pkgs, ...}: {
-      # Needs impure eval for the project root: `nix develop --no-pure-eval`.
-      default = devenv.lib.mkShell {
-        inherit inputs pkgs;
-        modules = [
-          "${inputs.conf-nixos}/templates/base/devenv.nix"
+        packages =
           {
-            packages = [
-              # App; qrencode prints the link app/phone.fish serves
-              pkgs.nodejs
-              pkgs.qrencode
-              # APK: Nix builds it (nix run .#apk); adb installs it
-              pkgs.android-tools
-            ];
+            # Font subset and launcher icons; in development: nix build .#app-assets -o app/public/generated
+            app-assets = pkgs.callPackage ./nix/app-assets.nix {};
+            app = pkgs.callPackage ./nix/app.nix {assets = own.app-assets;};
+            default = own.app;
           }
-        ];
+          // lib.optionalAttrs android {
+            # Store screenshots of the web build; `nix run .#screenshots` puts them in fastlane/.
+            screenshots = pkgs.callPackage ./nix/screenshots.nix {web = own.app;};
+            # Unsigned; `nix run .#apk` signs it and can install it.
+            apk = androidPkgs.callPackage ./nix/apk.nix {
+              assets = own.app-assets;
+              web = own.app;
+            };
+          };
+
+        apps = lib.optionalAttrs android {
+          apk = {
+            type = "app";
+            program = lib.getExe (pkgs.callPackage ./nix/apk-app.nix {inherit (own) apk;});
+            meta.description = "Sign the APK with the debug key or a release keystore, and optionally adb install it";
+          };
+          screenshots = {
+            type = "app";
+            program = lib.getExe own.screenshots.update;
+            meta.description = "Render the store screenshots and copy them to fastlane/metadata";
+          };
+          fdroid-repo = {
+            type = "app";
+            program = lib.getExe (pkgs.callPackage ./nix/fdroid-repo.nix {});
+            meta.description = "Build the F-Droid repo site from signed APKs into out/fdroid";
+          };
+        };
+
+        # Needs impure eval for the project root: `nix develop --no-pure-eval`.
+        devShells.default = inputs.devenv.lib.mkShell {
+          inherit inputs pkgs;
+          modules = [
+            "${inputs.conf-nixos}/templates/base/devenv.nix"
+            {
+              packages = [
+                # App; qrencode prints the link app/phone.fish serves
+                pkgs.nodejs
+                pkgs.qrencode
+                # APK: Nix builds it (nix run .#apk); adb installs it
+                pkgs.android-tools
+              ];
+            }
+          ];
+        };
+
+        checks =
+          {
+            app = own.app.overrideAttrs {
+              pname = "app-check";
+              buildPhase = ''
+                runHook preBuild
+                npm run check
+                npm test
+                runHook postBuild
+              '';
+              installPhase = "touch $out";
+            };
+          }
+          // lib.optionalAttrs android {
+            # Gradle builds offline from nix/apk-deps.json.
+            inherit (own) apk;
+          };
       };
-    });
-
-    formatter = forAllSystems ({system, ...}: treefmt.${system}.config.build.wrapper);
-
-    checks = forAllSystems ({
-      system,
-      own,
-      ...
-    }: {
-      # Formats a copy of the tree and fails on any diff.
-      formatting = treefmt.${system}.config.build.check self;
-
-      app = own.app.overrideAttrs {
-        pname = "app-check";
-        buildPhase = ''
-          runHook preBuild
-          npm run check
-          npm test
-          runHook postBuild
-        '';
-        installPhase = "touch $out";
-      };
-
-      # Gradle builds offline from nix/apk-deps.json.
-      inherit (own) apk;
-    });
-  };
+    };
 }

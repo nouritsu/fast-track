@@ -54,7 +54,7 @@ The APK is signed with certificate SHA-256 `88d04121c1abf9be4278f78f90cb58cfaef4
 
 ### Build from source
 
-The build needs [Nix](https://nixos.org/download) with flakes, on x86_64 Linux.
+The build needs [Nix](https://nixos.org/download) with flakes. The APK builds on x86_64 Linux; the web app and the dev shell also work on aarch64 Linux and Apple Silicon Macs.
 
 ```sh
 git clone https://github.com/nouritsu/fast-track
