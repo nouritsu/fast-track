@@ -8,9 +8,9 @@ import type { Fast } from './fasts'
 import { toFast, toSettings, type Settings } from './store'
 import { dayKey } from './time'
 
-export const FORMAT = 'fast-track-backup'
+const FORMAT = 'fast-track-backup'
 export const VERSION = 1
-export const FOLDER = 'FastTrack'
+const FOLDER = 'FastTrack'
 
 export interface Backup {
   format: typeof FORMAT

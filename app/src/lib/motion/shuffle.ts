@@ -7,7 +7,7 @@ const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const LOWER = 'abcdefghijklmnopqrstuvwxyz'
 const DIGITS = '0123456789'
 
-export const FRAME_MS = 40 // glyphs change at most this often: a terminal's pace, not the display's
+const FRAME_MS = 40 // glyphs change at most this often: a terminal's pace, not the display's
 export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export interface ShufflePlan {

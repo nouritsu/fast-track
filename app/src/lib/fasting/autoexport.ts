@@ -7,7 +7,7 @@ import { Preferences } from '@capacitor/preferences'
 import { parseSchedule, upcomingRuns } from './schedule'
 import type { Settings } from './store'
 
-export const PLAN_RUNS = 400
+const PLAN_RUNS = 400
 const PLAN_KEY = 'exportPlan'
 const RESULT_KEY = 'autoExport'
 

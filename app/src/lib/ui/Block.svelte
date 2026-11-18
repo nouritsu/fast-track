@@ -6,15 +6,11 @@
   import type { Snippet } from 'svelte'
 
   // A ratatui-style block: a rounded 1px border with titles set into its top edge.
-  // `heading` replaces the left title when it needs markup (a live value), and
-  // `headingRight` the right one. `tone` fades the border, and a .value in the
-  // title, to ok, warn or bad. `actions` are buttons set into the bottom edge, the
-  // way the titles sit in the top one.
+  // `headingRight` replaces the right title when it needs markup (a live value).
+  // `actions` are buttons set into the bottom edge, the way the titles sit in the top one.
   let {
     title = '',
     titleRight = '',
-    tone = '',
-    heading,
     headingRight,
     actions,
     children,
@@ -22,8 +18,6 @@
   }: {
     title?: string
     titleRight?: string
-    tone?: Tone
-    heading?: Snippet
     headingRight?: Snippet
     actions?: Snippet
     children: Snippet
@@ -31,14 +25,8 @@
   } = $props()
 </script>
 
-<section
-  class="block {className}"
-  class:with-actions={actions}
-  style:--block-border={tone ? `var(--${tone})` : undefined}
->
-  {#if heading}
-    <h2 class="title left">{@render heading()}</h2>
-  {:else if title}
+<section class="block {className}" class:with-actions={actions}>
+  {#if title}
     <h2 class="title left">{title}</h2>
   {/if}
   {#if headingRight}

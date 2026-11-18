@@ -114,16 +114,6 @@ export function eatingLeft(fasts: Fast[], now: number): number {
   return Math.max(0, last.end + (24 - last.goal) * HOUR - now)
 }
 
-/** The deepest stage reached by the fasts ending on each day. */
-export function deepestByDay(fasts: Fast[]): Map<string, number> {
-  const days = new Map<string, number>()
-  for (const fast of fasts) {
-    const key = dayKey(fast.end)
-    days.set(key, Math.max(days.get(key) ?? 0, deepestStage(fast)))
-  }
-  return days
-}
-
 /** The first of `fasts` other than `id` that shares time with [start, end). */
 export function overlapping(fasts: Fast[], start: number, end: number, id = ''): Fast | null {
   return fasts.find((f) => f.id !== id && f.start < end && start < f.end) ?? null
