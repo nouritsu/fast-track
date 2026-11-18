@@ -3,7 +3,7 @@
   import { GOALS, invalidTimes, overlapping, parseWeight, stepGoal, weightNumber, type Fast } from '../fasting/fasts'
   import { scaleWeightFor, type ScaleWeight } from '../fasting/openscale'
   import { dayClock, floorMinute, longDate, shortDate, stepDay, stepHour, stepMinute } from '../fasting/time'
-  import { duration } from '../ui/fields'
+  import { duration, two } from '../ui/fields'
   import Pane from '../ui/Pane.svelte'
   import Stepper from '../ui/Stepper.svelte'
 
@@ -48,7 +48,6 @@
       (weightBad ? `That is not a weight in ${unit}.` : null),
   )
 
-  const two = (n: number) => String(n).padStart(2, '0')
   type Move = (t: number, n: number) => number
   const stepStart = (move: Move) => (d: -1 | 1) => (start = Math.min(move(start, d), latest))
   const stepEnd = (move: Move) => (d: -1 | 1) => (end = Math.min(move(end, d), latest))

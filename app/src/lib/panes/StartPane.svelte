@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { dayClock, floorMinute, HOUR, shortDate, stepDay, stepHour, stepMinute } from '../fasting/time'
-  import { duration } from '../ui/fields'
+  import { dayClock, floorMinute, HOUR, MINUTE, shortDate, stepDay, stepHour, stepMinute } from '../fasting/time'
+  import { duration, two } from '../ui/fields'
   import Pane from '../ui/Pane.svelte'
   import Stepper from '../ui/Stepper.svelte'
 
@@ -27,12 +27,11 @@
 
   let at = $state(untrack(() => floorMinute(initial)))
   const latest = $derived(floorMinute(now))
-  const first = $derived(Math.min(latest, Math.ceil(earliest / 60_000) * 60_000)) // the next whole minute
+  const first = $derived(Math.min(latest, Math.ceil(earliest / MINUTE) * MINUTE)) // the next whole minute
   const shown = $derived(Math.max(first, Math.min(at, latest)))
 
   const step = (move: (t: number, n: number) => number) => (direction: -1 | 1) =>
     (at = Math.max(first, Math.min(move(shown, direction), latest)))
-  const two = (n: number) => String(n).padStart(2, '0')
   const date = $derived(new Date(shown))
 </script>
 

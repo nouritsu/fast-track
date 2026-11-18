@@ -1,12 +1,14 @@
 // Times and dates as the app shows and steps them. Everything is local time;
 // stored times are epoch milliseconds.
 
-import { clock } from '../ui/fields'
+import { clock, two } from '../ui/fields'
 
 export const MINUTE = 60_000
 export const HOUR = 60 * MINUTE
+export const DAY = 24 * HOUR
 
-const two = (n: number) => String(n).padStart(2, '0')
+export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
 const format = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en', options)
 const WEEKDAY = format({ weekday: 'short' })
 const WEEKDAY_LONG = format({ weekday: 'long' })
@@ -19,6 +21,9 @@ export function dayKey(at: number | Date): string {
 }
 
 const sameDay = (a: number, b: number): boolean => dayKey(a) === dayKey(b)
+
+/** Noon on the day a day key names: inside that day whatever DST does to its ends. */
+export const noonOf = (key: string): number => new Date(`${key}T12:00`).getTime()
 
 /** "Tue 06:30". */
 export const dayClock = (at: number): string => `${WEEKDAY.format(at)} ${clock(new Date(at))}`

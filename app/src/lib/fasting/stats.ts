@@ -7,9 +7,8 @@ import { weekdayHeads, type WeekStart } from './calendar'
 import { deepestStage, fastLength, metGoal, progressOf, type Fast } from './fasts'
 import type { ScaleWeight } from './openscale'
 import { STAGES, stageIndex } from './stages'
-import { dayKey, HOUR, stepDay } from './time'
-
-const DAY = 24 * HOUR
+import { DAY, dayKey, HOUR, noonOf, stepDay } from './time'
+import { two } from '../ui/fields'
 
 /** The spans the Summary's corner offers, in days; 0 is the whole history. */
 export const SPANS = [30, 90, 365, 0] as const
@@ -88,15 +87,13 @@ export interface Run {
   to: string | null
 }
 
-const noon = (key: string) => new Date(`${key}T12:00`)
-
 /** The longest run of days in a row with a fast that met its goal ending on them; the
  *  latest of equal runs. */
 export function bestStreak(fasts: Fast[]): Run {
   const met = new Set(fasts.filter(metGoal).map((f) => dayKey(f.end)))
   let best: Run = { days: 0, from: null, to: null }
   for (const key of met) {
-    const day = noon(key)
+    const day = new Date(noonOf(key))
     day.setDate(day.getDate() - 1)
     if (met.has(dayKey(day))) continue // not the first day of its run
     let days = 0
@@ -316,4 +313,4 @@ export function records(fasts: Fast[], weekStart: WeekStart): Records {
 
 /** Whole minutes after midnight as HH:MM. */
 export const clockOfDay = (minutes: number): string =>
-  `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+  `${two(Math.floor(minutes / 60) % 24)}:${two(minutes % 60)}`

@@ -4,7 +4,7 @@
   import { weightOf, type ScaleWeight } from '../fasting/openscale'
   import { STAGES } from '../fasting/stages'
   import type { Settings } from '../fasting/store'
-  import { dayKey, longDate, nearClock } from '../fasting/time'
+  import { dayKey, longDate, MONTHS, nearClock, noonOf } from '../fasting/time'
   import { carries, drag, type DragOptions } from '../ui/drag'
   import { clock, duration, hm } from '../ui/fields'
   import Icon from '../ui/Icon.svelte'
@@ -55,7 +55,6 @@
     if (!visible) removed = []
   })
 
-  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   const days = $derived(dayTotals(fasts))
   const rows = $derived(monthRows(year, month, settings.weekStart))
   const heads = $derived(weekdayHeads(settings.weekStart))
@@ -203,7 +202,7 @@
   <div class="content">
   <div class="head">
     {#if selected}
-      <p class="fields">{longDate(new Date(`${selected}T12:00`).getTime())} · {count === 1 ? '1 fast' : `${count} fasts`}</p>
+      <p class="fields">{longDate(noonOf(selected))} · {count === 1 ? '1 fast' : `${count} fasts`}</p>
     {:else if summary.count}
       <p class="fields">{MONTHS[month]} · {summary.count === 1 ? '1 fast' : `${summary.count} fasts`} · {hoursOf(summary.total)}h</p>
     {:else}

@@ -38,8 +38,8 @@
     within,
     type Span,
   } from '../fasting/stats'
-  import { dayMonth, HOUR, MINUTE, shortDate, stepDay } from '../fasting/time'
-  import { hm, pad } from '../ui/fields'
+  import { DAY, dayMonth, HOUR, MINUTE, noonOf, shortDate, stepDay } from '../fasting/time'
+  import { hm, pad, two } from '../ui/fields'
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
 
@@ -67,8 +67,6 @@
     now: number
     onSpan: (span: Span) => void
   } = $props()
-
-  const DAY = 24 * HOUR
 
   // To the minute: the clock ticks several times a second, and nothing here needs it.
   const minute = $derived(Math.floor(now / MINUTE) * MINUTE)
@@ -187,7 +185,6 @@
 
   // Records: the whole history.
   const record = $derived(records(fasts, weekStart))
-  const noonOf = (key: string) => new Date(`${key}T12:00`).getTime()
   const label = (text: string) => text.padEnd(12)
 </script>
 
@@ -361,7 +358,7 @@
               x={gutter + (h / 24) * plot}
               y={stripDays * ROW + 8}
               text-anchor={h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}
-              dominant-baseline="central">{String(h).padStart(2, '0')}</text
+              dominant-baseline="central">{two(h)}</text
             >
           {/each}
         </svg>

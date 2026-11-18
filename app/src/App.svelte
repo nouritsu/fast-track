@@ -14,7 +14,7 @@
   } from './lib/fasting/fasts'
   import { NAME_WIDTH, STAGES, stageIndex } from './lib/fasting/stages'
   import { Tracker } from './lib/fasting/tracker.svelte'
-  import { dayClock, floorMinute, HOUR, nearClock } from './lib/fasting/time'
+  import { dayClock, floorMinute, HOUR, nearClock, noonOf } from './lib/fasting/time'
   import { reducedMotion } from './lib/motion/shuffle'
   import CalendarPage from './lib/pages/CalendarPage.svelte'
   import InfoPage from './lib/pages/InfoPage.svelte'
@@ -366,7 +366,7 @@
 
   /** A blank fast to log afterwards: ending at noon on `day` (or now), as long as the goal. */
   function newFast(day: string | null): Fast {
-    const end = Math.min(floorMinute(now), day ? new Date(`${day}T12:00`).getTime() : Infinity)
+    const end = Math.min(floorMinute(now), day ? noonOf(day) : Infinity)
     const goalHours = settings.goal
     return { id: crypto.randomUUID(), start: end - goalHours * HOUR, end, goal: goalHours, note: '', weight: null }
   }
