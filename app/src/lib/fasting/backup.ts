@@ -53,10 +53,10 @@ export function mergeFasts(fasts: Fast[], incoming: Fast[]): { fasts: Fast[]; ad
 }
 
 /** Saves the file where the user can reach it; returns where it went. */
-export async function saveBackupFile(name: string, text: string): Promise<string> {
+export async function saveBackupFile(name: string, text: string, type = 'application/json'): Promise<string> {
   if (!Capacitor.isNativePlatform()) {
     // Development in a browser: an ordinary download.
-    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+    const url = URL.createObjectURL(new Blob([text], { type }))
     const link = Object.assign(document.createElement('a'), { href: url, download: name })
     link.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)

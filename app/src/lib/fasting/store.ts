@@ -3,6 +3,7 @@
 // kilobytes of JSON, read once at start and written whole on every change.
 
 import { Preferences } from '@capacitor/preferences'
+import { WEEK_STARTS, type WeekStart } from './calendar'
 import { DEFAULT_GOAL, type Active, type Fast } from './fasts'
 
 export interface Settings {
@@ -14,6 +15,11 @@ export interface Settings {
   exportOn: boolean // regular exports (autoexport.ts)
   exportEvery: string // when, as a systemd calendar expression (schedule.ts)
   scaleUser: number | null // the openScale user whose weights to read (openscale.ts), or none
+  weekStart: WeekStart // the calendar's first weekday (calendar.ts)
+  weekNumbers: boolean // ISO week numbers before each week
+  dayHours: boolean // fasting hours under each day
+  goalMarks: boolean // a dot under each fasted day: met its goal or not
+  weekTotals: boolean // each week's fasting hours after it
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -25,6 +31,11 @@ export const DEFAULT_SETTINGS: Settings = {
   exportOn: false,
   exportEvery: 'daily',
   scaleUser: null,
+  weekStart: 1,
+  weekNumbers: false,
+  dayHours: true,
+  goalMarks: true,
+  weekTotals: true,
 }
 
 export interface Saved {
@@ -69,6 +80,11 @@ export function toSettings(v: unknown): Settings {
     exportOn: typeof s.exportOn === 'boolean' ? s.exportOn : DEFAULT_SETTINGS.exportOn,
     exportEvery: typeof s.exportEvery === 'string' && s.exportEvery.trim() ? s.exportEvery : DEFAULT_SETTINGS.exportEvery,
     scaleUser: isNumber(s.scaleUser) ? s.scaleUser : null,
+    weekStart: WEEK_STARTS.includes(s.weekStart as WeekStart) ? (s.weekStart as WeekStart) : DEFAULT_SETTINGS.weekStart,
+    weekNumbers: typeof s.weekNumbers === 'boolean' ? s.weekNumbers : DEFAULT_SETTINGS.weekNumbers,
+    dayHours: typeof s.dayHours === 'boolean' ? s.dayHours : DEFAULT_SETTINGS.dayHours,
+    goalMarks: typeof s.goalMarks === 'boolean' ? s.goalMarks : DEFAULT_SETTINGS.goalMarks,
+    weekTotals: typeof s.weekTotals === 'boolean' ? s.weekTotals : DEFAULT_SETTINGS.weekTotals,
   }
 }
 

@@ -22,7 +22,9 @@
   import StatsPage from './lib/pages/StatsPage.svelte'
   import EditPane from './lib/panes/EditPane.svelte'
   import GoalPane from './lib/panes/GoalPane.svelte'
+  import MonthPane from './lib/panes/MonthPane.svelte'
   import StartPane from './lib/panes/StartPane.svelte'
+  import YearPane from './lib/panes/YearPane.svelte'
   import { currentTheme, revealTheme, saveTheme, THEMES } from './lib/theme'
   import Block, { type Tone } from './lib/ui/Block.svelte'
   import Hero from './lib/ui/Hero.svelte'
@@ -42,7 +44,7 @@
   // the current page: the page slides up and off the top, pushed by the pane.
   type Phase = 'loading' | 'ready' | 'running' | 'done'
   type PageId = 'fast' | 'calendar' | 'stats' | 'options' | 'info'
-  type PaneId = 'start' | 'goal' | 'edit'
+  type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year'
   type HeroMode = 'left' | 'elapsed'
 
   const TABS: Tab<PageId>[] = [
@@ -66,6 +68,16 @@
   let now = $state(Date.now())
   let theme = $state(currentTheme()) // what the theme button shows; the page follows
   let switching = false
+  // The month the calendar shows: here, so its month and year panes can change it.
+  let calYear = $state(new Date().getFullYear())
+  let calMonth = $state(new Date().getMonth())
+  const calToday = () => {
+    const d = new Date()
+    calYear = d.getFullYear()
+    calMonth = d.getMonth()
+    closePane()
+  }
+
   let pane = $state<PaneId | null>(null) // the open pane
   let shownPane = $state<PaneId | null>(null) // the pane drawn; it stays while the page slides back
   let paneHost = $state<number | null>(null) // the page it hangs below
@@ -374,6 +386,10 @@
         onChange={(g) => attempt(() => tracker.setGoal(g))}
         onClose={closePane}
       />
+    {:else if shownPane === 'month'}
+      <MonthPane month={calMonth} onPick={(m) => ((calMonth = m), closePane())} onToday={calToday} onClose={closePane} />
+    {:else if shownPane === 'year'}
+      <YearPane year={calYear} onPick={(y) => (calYear = y)} onToday={calToday} onClose={closePane} />
     {:else if shownPane === 'edit' && editing}
       <EditPane
         fast={editing.fast}
@@ -514,7 +530,12 @@
           scale={tracker.scale}
           unit={settings.unit}
           {now}
+          {settings}
+          bind:year={calYear}
+          bind:month={calMonth}
           shown={page === 1}
+          onPickMonth={() => openPane('month')}
+          onPickYear={() => openPane('year')}
           onEdit={(fast) => openEdit(fast, false)}
           onAdd={(day) => openEdit(newFast(day), true)}
           onDelete={(fast) => attempt(() => tracker.remove(fast.id))}

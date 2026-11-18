@@ -27,6 +27,7 @@
     "U+25F7" # ◷ Start time
     "U+29D7" # ⧗ Goal
     "U+2715" # ✕ cancel, close
+    "U+2302" # ⌂ today (the calendar's month and year panes)
     "U+25B7" # ▷ start
     "U+2713" # ✓ save
     "U+271A" # ✚ add
