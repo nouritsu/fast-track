@@ -8,6 +8,7 @@ import {
   daysIn,
   eatingWindow,
   goalStats,
+  latestWeighing,
   lengthBands,
   median,
   priorWindow,
@@ -195,6 +196,14 @@ describe('weight', () => {
     ])
     // Without openScale, the scale's weights saved in the fasts stand in.
     expect(weighings(fasts, [], window).map((w) => w.kg)).toEqual([80, 79.5])
+  })
+
+  it('finds the latest weighing, from a fast or the scale', () => {
+    const scale = [{ at: at('2026-11-02T08:00'), kg: 80 }]
+    const typed = fast('2026-11-02T20:00', '2026-11-03T12:00', 16, { weight: 79.5 })
+    expect(latestWeighing([typed], scale)).toEqual({ at: at('2026-11-03T12:00'), kg: 79.5 })
+    expect(latestWeighing([], scale)).toEqual(scale[0])
+    expect(latestWeighing([fast('2026-11-02T20:00', '2026-11-03T12:00')], [])).toBeNull()
   })
 
   it('smooths the trend by the days between weighings', () => {

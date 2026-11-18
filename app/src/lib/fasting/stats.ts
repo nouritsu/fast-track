@@ -252,6 +252,10 @@ export function weighings(fasts: Fast[], scale: ScaleWeight[], window: Window): 
   return [...scale.filter((w) => inside(w.at)), ...typed].sort((a, b) => a.at - b.at)
 }
 
+/** The latest weighing the app knows of, in all the history, or null. */
+export const latestWeighing = (fasts: Fast[], scale: ScaleWeight[]): ScaleWeight | null =>
+  weighings(fasts, scale, { from: -Infinity, to: Infinity }).at(-1) ?? null
+
 /** A trend through the weighings that daily swings of water barely move: smoothing
  *  constant 0.9 a day, as in The Hacker's Diet: https://www.fourmilab.ch/hackdiet/e4/signalnoise.html */
 export function weightTrend(points: ScaleWeight[]): ScaleWeight[] {
