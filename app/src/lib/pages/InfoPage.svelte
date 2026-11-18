@@ -21,14 +21,14 @@
   const stage = $derived(STAGES[pick])
   const step = (by: -1 | 1) => (pick = (pick + by + STAGES.length) % STAGES.length)
 
-  // Each stage's hours, the open-ended last as long as the one before.
-  const SPANS = STAGES.map((s, i) => (STAGES[i + 1]?.from ?? s.from + (s.from - STAGES[i - 1].from)) - s.from)
+  // Each stage's length in hours, the open-ended last as long as the one before.
+  const LENGTHS = STAGES.map((s, i) => (STAGES[i + 1]?.from ?? s.from + (s.from - STAGES[i - 1].from)) - s.from)
 
   // As many cells as the width holds: the bar's width over a character's (Measure).
   let width = $state(0)
   let ch = $state(0)
   const cells = $derived(ch ? Math.max(STAGES.length * 3, Math.floor(width / ch)) : 36)
-  const counts = $derived(spread(SPANS, cells))
+  const counts = $derived(spread(LENGTHS, cells))
   // The hours under the bar, each at the cell its stage starts on.
   const ticks = $derived(
     STAGES.reduce((line, s, i) => {

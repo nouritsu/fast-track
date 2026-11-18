@@ -80,8 +80,8 @@ export function lengthBands(fasts: Fast[]): Band[] {
 
 // Goals -----------------------------------------------------------------------------
 
-/** A run of days in a row, as day keys, or none. */
-export interface Run {
+/** A streak: days in a row, as day keys, or none. */
+export interface Streak {
   days: number
   from: string | null
   to: string | null
@@ -89,9 +89,9 @@ export interface Run {
 
 /** The longest run of days in a row with a fast that met its goal ending on them; the
  *  latest of equal runs. */
-export function bestStreak(fasts: Fast[]): Run {
+export function bestStreak(fasts: Fast[]): Streak {
   const met = new Set(fasts.filter(metGoal).map((f) => dayKey(f.end)))
-  let best: Run = { days: 0, from: null, to: null }
+  let best: Streak = { days: 0, from: null, to: null }
   for (const key of met) {
     const day = new Date(noonOf(key))
     day.setDate(day.getDate() - 1)
@@ -284,7 +284,7 @@ export function weeklyRate(points: ScaleWeight[]): number | null {
 
 export interface Records {
   longest: Fast | null
-  streak: Run
+  streak: Streak
   week: { start: number; ms: number } | null // the week with the most fasting
   total: number // ms
   first: Fast | null
