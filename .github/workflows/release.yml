@@ -36,8 +36,16 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Check the tagged commit is on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error title=Tag is not on main::$GITHUB_SHA is not in main's history. Merge it into main, then tag the merged commit."
+            exit 1
+          fi
+
       # Before the Nix steps, so a missing secret fails in seconds, not after the cache restore.
-      - name: Write the release keystore
+      # Nothing is written to disk here; the keystore is decoded right before it is used.
+      - name: Check the release secrets
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -54,8 +62,7 @@ jobs:
             echo "::error title=Release secrets missing::Add these repository secrets: ${missing[*]}"
             exit 1
           fi
-          umask 077
-          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"; then
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > /dev/null; then
             echo "::error title=Bad keystore secret::ANDROID_KEYSTORE_BASE64 is not valid base64"
             exit 1
           fi
@@ -72,6 +79,19 @@ jobs:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock', 'nix/**', 'app/package-lock.json') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-
           save: false
+
+      # The checks CI runs, so a commit whose tests fail is never released. They build
+      # the APK too, which the signing step below reuses.
+      - name: Check the flake
+        run: nix flake check --no-pure-eval -L
+
+      # The keystore is on disk only from here to the removal step below.
+      - name: Write the release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
 
       # The passwords stay in the environment: apksigner reads them from there.
       - name: Build and sign the APK
