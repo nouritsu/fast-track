@@ -212,9 +212,9 @@
 
 <div class="panes">
   {#if !fasts.length}
-    <Block title="Statistics" class="pane"><p class="muted">No fasts yet.</p></Block>
+    <Block title="Statistics"><p class="muted">No fasts yet.</p></Block>
   {:else}
-    <Block title="Summary" headingRight={spans} class="pane">
+    <Block title="Summary" headingRight={spans}>
       <div class="measure" aria-hidden="true" bind:clientWidth={width}><span bind:clientWidth={tenChars}>0000000000</span></div>
       {#if sum.count}
         <p class="fields">{plural(sum.count, 'fast')} · {Math.round(sum.total / HOUR)}h · goal met {percent(sum.goalRate)}</p>
@@ -230,7 +230,7 @@
     </Block>
 
     {#if sum.count && width}
-      <Block title="Length" titleRight="median {hm(median(lengths))}" class="pane">
+      <Block title="Length" titleRight="median {hm(median(lengths))}">
         <svg
           class="chart"
           width={width}
@@ -274,7 +274,7 @@
         </div>
       </Block>
 
-      <Block title="Goal" titleRight="{percent(sum.goalRate)} met" class="pane">
+      <Block title="Goal" titleRight="{percent(sum.goalRate)} met">
         <svg
           class="chart"
           width={width}
@@ -318,7 +318,7 @@
         <p class="fields">near misses {goals.near} · avg {percent(goals.progress)} of goal</p>
       </Block>
 
-      <Block title="Stages" titleRight="{Math.round(sum.total / HOUR)}h" class="pane">
+      <Block title="Stages" titleRight="{Math.round(sum.total / HOUR)}h">
         <p class="fields stagebar" aria-hidden="true">
           {#each STAGES as stage, i (stage.id)}<span style:color="var(--{stage.id})">{'█'.repeat(runs[i])}</span>{/each}
         </p>
@@ -331,7 +331,7 @@
         {/each}
       </Block>
 
-      <Block title="Rhythm" class="pane">
+      <Block title="Rhythm">
         <svg
           class="chart"
           width={width}
@@ -395,7 +395,7 @@
       </Block>
     {/if}
 
-    <Block title="Weight" titleRight={trend.length ? `${weightNumber(trend[trend.length - 1].kg, unit)} ${unit}` : ''} class="pane">
+    <Block title="Weight" titleRight={trend.length ? `${weightNumber(trend[trend.length - 1].kg, unit)} ${unit}` : ''}>
       {#if points.length && width}
         <svg
           class="chart"
@@ -438,7 +438,7 @@
       {/if}
     </Block>
 
-    <Block title="Records" titleRight="all time" class="pane">
+    <Block title="Records" titleRight="all time">
       {#if record.longest}
         <p class="fields">{label('longest')}{hm(fastLength(record.longest))} <span class="muted">{dayMonth(record.longest.end, minute)}</span></p>
       {/if}

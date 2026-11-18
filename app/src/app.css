@@ -259,19 +259,9 @@ button.primary {
   border-color: var(--accent);
 }
 
-/* Already used this round (a hint taken, a filter on). */
-button.used {
-  border-style: dashed;
-}
-
-/* Shows a change on the pressed button for a moment (src/lib/ui/flash.svelte.ts):
-   a cost in the bad colour, a plain count (.plain) in the accent. */
+/* Cancel, armed for the second press that discards the fast (App). */
 button.flash {
   color: var(--bad);
-}
-
-button.flash.plain {
-  color: var(--accent);
 }
 
 /* Buttons set into a block's bottom edge (Block's `actions`): words on the border
@@ -502,11 +492,6 @@ h3 {
 table {
   border-collapse: collapse;
   margin-top: 0.8em;
-}
-
-caption {
-  text-align: left;
-  color: var(--muted);
 }
 
 th,
