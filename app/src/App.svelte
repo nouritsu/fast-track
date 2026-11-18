@@ -582,7 +582,7 @@
           {settings}
           bind:year={calYear}
           bind:month={calMonth}
-          shown={page === 1}
+          visible={page === 1}
           onPickMonth={() => openPane('month')}
           onPickYear={() => openPane('year')}
           onEdit={(fast) => openEdit(fast, false)}

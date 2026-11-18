@@ -24,7 +24,7 @@
     settings,
     year = $bindable(),
     month = $bindable(),
-    shown: visible,
+    visible,
     onPickMonth,
     onPickYear,
     onEdit,
@@ -39,7 +39,7 @@
     settings: Settings
     year: number
     month: number // 0–11
-    shown: boolean // the page is in view; leaving it clears the Undo lines
+    visible: boolean // the page is in view; leaving it clears the Undo lines
     onPickMonth: () => void
     onPickYear: () => void
     onEdit: (fast: Fast) => void
@@ -71,7 +71,7 @@
   })
 
   // Deleted fasts stay in their place in the list as Undo lines.
-  const shown = $derived(
+  const entries = $derived(
     [...fasts.map((fast) => ({ fast, gone: false })), ...removed.map((fast) => ({ fast, gone: true }))]
       .filter(({ fast }) => (selected ? dayKey(fast.end) === selected : dayKey(fast.end).startsWith(monthKey)))
       .sort((a, b) => b.fast.end - a.fast.end),
@@ -93,7 +93,7 @@
     onRestore(fast)
   }
 
-  const count = $derived(shown.filter((s) => !s.gone).length)
+  const count = $derived(entries.filter((s) => !s.gone).length)
 
   // Swipes: sideways on the month changes it; left on a fast deletes it (with Undo).
   // Both keep the press from the page swipe.
@@ -215,7 +215,7 @@
     </p>
   {/if}
 
-  {#each shown as { fast, gone } (fast.id)}
+  {#each entries as { fast, gone } (fast.id)}
     <hr class="split" />
     {#if gone}
       <div class="entry gone">
