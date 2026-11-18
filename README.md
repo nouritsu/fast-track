@@ -79,6 +79,7 @@ Your fasts stay on the phone. The app can't go online, and nothing leaves the ph
 | Permission | Why |
 | --- | --- |
 | `POST_NOTIFICATIONS` | Stage alerts and the status notification |
+| `POST_PROMOTED_NOTIFICATIONS` | The status notification as a chip in the status bar on Android 16 and newer; switch it off for the app in Android's settings |
 | `SCHEDULE_EXACT_ALARM` | Status updates and regular exports on time; without it they run a little late |
 | `RECEIVE_BOOT_COMPLETED` | Sets those alarms again after a restart |
 | `WAKE_LOCK` | Brought in by Capacitor's notification plugin, for scheduled notifications |

@@ -2,6 +2,7 @@ package com.nouritsu.fasttrack;
 
 import android.Manifest;
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -12,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.text.format.DateFormat;
 import android.text.format.DateUtils;
+import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.ProgressStyle;
 import androidx.core.app.NotificationManagerCompat;
@@ -36,12 +38,15 @@ import org.json.JSONObject;
  * (https://developer.android.com/develop/ui/views/notifications/progress-centric), and older
  * versions get the plain progress bar the compat class falls back to. A fast's bar spans the
  * goal, and once past it the next whole 12 hours; the eating window's spans the window and drains.
+ * Both ask Android 16 to promote them to a Live Update, a chip in the status bar that shows the
+ * timer (https://developer.android.com/develop/ui/views/notifications/live-update).
  */
 final class FastStatus {
 
     static final String CHANNEL = "status";
     static final int ID = 100; // apart from the stage alerts, ids 1 to 4
     static final String PREFS = "CapacitorStorage"; // what Capacitor Preferences saves
+    private static final String TAG = "FastStatus";
     private static final long MINUTE = 60_000L;
     private static final long HOUR = 3_600_000L;
     private static final long EXTEND = 12 * HOUR; // how far past the goal the bar reaches, in steps
@@ -73,20 +78,23 @@ final class FastStatus {
             long start = active.optLong("start");
             double goal = active.optDouble("goal", 16);
             long goalAt = start + Math.round(goal * HOUR);
+            boolean ahead = now < goalAt; // the goal is still to come
             int stage = stageAt((now - start) / (double) HOUR);
             long stageEnd = stage + 1 < STARTS.length ? start + STARTS[stage + 1] * HOUR : 0;
             // The bar spans the goal; past it, up to the next whole 12 hours, so the tracker keeps moving.
-            long barEnd = now < goalAt ? goalAt : start + ((now - start) / EXTEND + 1) * EXTEND;
-            StringBuilder text = new StringBuilder(now < goalAt ? "Goal " + time(context, goalAt) : "Goal reached");
+            long barEnd = ahead ? goalAt : start + ((now - start) / EXTEND + 1) * EXTEND;
+            StringBuilder text = new StringBuilder(ahead ? "Goal " + time(context, goalAt) : "Goal reached");
             if (stageEnd > 0) text.append(" · ").append(STAGES[stage + 1]).append(' ').append(time(context, stageEnd));
             span = Math.max(1, minutes(barEnd - start));
             builder
                 .setContentTitle("Fasting · " + STAGES[stage])
                 .setContentText(text)
-                .setWhen(start)
+                // Time left to the goal, then time past it, which a Live Update's chip shows too.
+                .setWhen(goalAt)
                 .setUsesChronometer(true)
+                .setChronometerCountDown(ahead)
                 .setStyle(fastBar(context, settings, span, minutes(now - start), minutes(goalAt - start)));
-            next = earliest(earliest(now < goalAt ? goalAt : 0, stageEnd), now < goalAt ? 0 : barEnd);
+            next = earliest(earliest(ahead ? goalAt : 0, stageEnd), ahead ? 0 : barEnd);
         } else {
             JSONObject last = lastFast(prefs.getString("fasts", null));
             if (last == null) {
@@ -116,8 +124,14 @@ final class FastStatus {
             }
         }
 
+        // A fast and an eating window are in progress, which a closed window is not.
+        builder.setRequestPromotedOngoing(span > 0);
         try {
-            manager.notify(ID, builder.build());
+            Notification notification = builder.build();
+            if (span > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA && !notification.hasPromotableCharacteristics()) {
+                Log.w(TAG, "Not eligible for a Live Update");
+            }
+            manager.notify(ID, notification);
         } catch (SecurityException e) {
             return; // permission withdrawn between the check and here
         }
