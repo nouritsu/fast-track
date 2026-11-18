@@ -1,5 +1,6 @@
 package com.nouritsu.fasttrack;
 
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
@@ -16,6 +17,17 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(OpenScalePlugin.class);
         super.onCreate(savedInstanceState);
         preferFastestRefreshRate();
+    }
+
+    /**
+     * The status notification's stage colours follow day and night (FastColors), and a manifest
+     * receiver can't hear of the switch (ACTION_CONFIGURATION_CHANGED goes only to registered
+     * ones), so while the app is in memory this redraws it at once. Otherwise the next refresh does.
+     */
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        FastStatus.update(this);
     }
 
     /**
