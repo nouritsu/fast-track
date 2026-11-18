@@ -1,0 +1,22 @@
+# fdroidserver's config for the repo at fdroid.nouritsu.com; nix run .#fdroid-repo builds
+# it (nix/fdroid-repo.nix). Every key is explained in fdroidserver's example config:
+# https://gitlab.com/fdroid/fdroidserver/-/blob/master/examples/config.yml
+repo_url: https://fdroid.nouritsu.com/repo
+repo_name: Fast Track
+repo_description: >-
+  Fast Track, an intermittent fasting tracker, as built and signed by its author.
+  Source: https://github.com/nouritsu/fast-track
+
+# The newest three versions stay in repo/; older ones move to archive/, a second repo
+# clients can add to downgrade. .github/workflows/fdroid.yml downloads twice this many
+# releases, so the archive keeps as many again.
+archive_older: 3
+archive_name: Fast Track archive
+archive_description: Older versions of Fast Track.
+
+# The repo's signing key. nix/fdroid-repo.nix sets these variables from its arguments
+# and passes the passwords through, so no path or password is written here.
+keystore: {env: FAST_TRACK_REPO_KEYSTORE}
+repo_keyalias: {env: FAST_TRACK_REPO_KEY_ALIAS}
+keystorepass: {env: FAST_TRACK_REPO_KEYSTORE_PASS}
+keypass: {env: FAST_TRACK_REPO_KEY_PASS}

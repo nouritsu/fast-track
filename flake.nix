@@ -88,6 +88,11 @@
         program = lib.getExe own.screenshots.update;
         meta.description = "Render the store screenshots and copy them to fastlane/metadata";
       };
+      fdroid-repo = {
+        type = "app";
+        program = lib.getExe (pkgs.callPackage ./nix/fdroid-repo.nix {});
+        meta.description = "Build the F-Droid repo site from signed APKs into out/fdroid";
+      };
     });
 
     devShells = forAllSystems ({pkgs, ...}: {
