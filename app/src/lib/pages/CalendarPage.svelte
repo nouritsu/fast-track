@@ -148,16 +148,17 @@
     <table class="grid">
       <thead>
         <tr>
-          {#if settings.weekNumbers}<th scope="col" class="side" aria-label="Week">wk</th>{/if}
+          <th scope="col" class="side" aria-label="Week" aria-hidden={!settings.weekNumbers}>{settings.weekNumbers ? 'wk' : ''}</th>
           {#each heads as d (d)}<th scope="col">{d}</th>{/each}
-          {#if settings.weekTotals}<th scope="col" class="side" aria-label="Hours that week">h</th>{/if}
+          <th scope="col" class="side" aria-label="Hours that week" aria-hidden={!settings.weekTotals}>{settings.weekTotals ? 'h' : ''}</th>
         </tr>
       </thead>
       <tbody>
         {#each rows as row, w (w)}
           {@const inMonth = row.days.some((d) => d !== null)}
+          {@const ms = settings.weekTotals && inMonth ? weekTotal(fasts, row) : 0}
           <tr>
-            {#if settings.weekNumbers}<th scope="row" class="side muted">{inMonth ? rowWeek(row) : ''}</th>{/if}
+            <th scope="row" class="side muted" aria-hidden={!settings.weekNumbers}>{settings.weekNumbers && inMonth ? rowWeek(row) : ''}</th>
             {#each row.days as day, d (d)}
               <td>
                 {#if day !== null}
@@ -187,10 +188,7 @@
                 {/if}
               </td>
             {/each}
-            {#if settings.weekTotals}
-              {@const ms = inMonth ? weekTotal(fasts, row) : 0}
-              <td class="side muted">{ms ? `${hoursOf(ms)}h` : ''}</td>
-            {/if}
+            <td class="side muted" aria-hidden={!settings.weekTotals}>{ms ? `${hoursOf(ms)}h` : ''}</td>
           </tr>
         {/each}
       </tbody>
@@ -333,10 +331,11 @@
     font-size: 0.85em;
   }
 
-  /* Week numbers before a week, its hours after it. */
+  /* Week numbers before a week, its hours after it. Both columns are always there and as
+     wide as each other, so the seven days stay in the middle whichever is on. */
   .side {
     font-size: 0.8em;
-    min-width: 3.5ch;
+    width: 4ch;
   }
 
   /* Every day the same box, button or not, blank or not: the grid never changes height. */
