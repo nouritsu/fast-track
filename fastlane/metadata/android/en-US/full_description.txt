@@ -1,0 +1,45 @@
+Fast Track times intermittent fasts and keeps their history on your phone. It looks like a terminal: text in the Iosevka font and boxes drawn with lines, in Catppuccin Mocha (dark) or Latte (light).
+
+Fasting
+* Start a fast now, or from an earlier time.
+* Set a goal from 12 to 24 hours by the hour, or 30, 36, 42, 48, 60 or 72 hours.
+* The timer shows the time left or the time elapsed; tap it to switch. Past the goal it counts on.
+* A progress line in the colours of the four stages: Glucose, Fat burning, Ketosis and Autophagy.
+* See the stage you are in, and when the next stage or the goal comes.
+* While fasting, move the start or change the goal. Cancel asks first.
+* At the end, add a note and your weight.
+* Between fasts, the eating window counts down.
+
+Notifications
+* Stage alerts: a notification when a stage begins and when the goal is reached.
+* Status notification: one that stays, saying whether you are fasting or eating, the stage, and a running timer.
+* Both work with the app closed, and both can be turned off.
+
+Calendar
+* A month at a time; each day that ended a fast is in the colour of the deepest stage it reached.
+* ISO week numbers and weekly totals if you want them; weeks start on Monday, Sunday or Saturday.
+* Tap a day to see its fasts. Log a fast afterwards, edit one (note, weight, start, end, goal), or delete one, with undo.
+
+Stats
+* Over 30 days, 90 days, a year or all time, set against the same span before.
+* Length: each fast as a bar in its stages' colours, and how long fasts tend to be.
+* Goal: how often you met it, your best streak, and near misses.
+* Stages: the hours spent in each, and how often each was reached.
+* Rhythm: the last 14 days by the half hour, usual start and end times, the eating window, and hours by weekday.
+* Weight: weighings and their trend, and the change per week.
+* Records: longest fast, best streak, best week.
+
+Weight
+* In kg or lb.
+* Type it in, or take it from openScale. With your permission the app reads openScale's weighings and gives each fast the one during it, else the closest to its end within 12 hours. A weight you type in wins.
+
+Your data
+* Export every fast and the settings to a JSON file in Documents/FastTrack/, and import it again. Import only adds fasts the app does not have.
+* Export the fasts as an .ics file for any calendar app.
+* Regular exports on a schedule in systemd's calendar notation (daily, weekly, Mon..Fri 08:00), said back in plain words. They run with the app closed.
+* Works offline, with no account, no ads and no analytics. Your fasts stay on the phone unless you export them.
+
+Info
+* What happens in each stage, with papers to read. Times vary with the person; this is not medical advice.
+
+Fast Track is free software under the GPL-3.0-or-later. It is based on Fast Track by Dark Rock Studios (MIT).
