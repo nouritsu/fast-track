@@ -5,6 +5,7 @@
   import { STAGES } from '../fasting/stages'
   import type { Settings } from '../fasting/store'
   import { dayKey, longDate, MONTHS, nearClock, noonOf } from '../fasting/time'
+  import { reducedMotion } from '../motion/shuffle'
   import { carries, drag, type DragOptions } from '../ui/drag'
   import { clock, duration, hm } from '../ui/fields'
   import Icon from '../ui/Icon.svelte'
@@ -56,11 +57,10 @@
   })
 
   const days = $derived(dayTotals(fasts))
-  const rows = $derived(monthRows(year, month, settings.weekStart))
   const heads = $derived(weekdayHeads(settings.weekStart))
-  const key = (day: number) => dayKey(new Date(year, month, day))
+  const key = (y: number, m: number, day: number) => dayKey(new Date(y, m, day))
   const todayKey = $derived(dayKey(now))
-  const monthKey = $derived(key(1).slice(0, 7))
+  const monthKey = $derived(key(year, month, 1).slice(0, 7))
   const summary = $derived(monthSummary(fasts, year, month))
 
   // The month or the year changed elsewhere (its pane): no day stays picked.
@@ -95,18 +95,64 @@
 
   const count = $derived(entries.filter((s) => !s.gone).length)
 
-  // Swipes: sideways on the month changes it; left on a fast deletes it (with Undo).
+  // The grids of the month before, the month shown and the month after sit side by
+  // side in a strip, the header staying where it is. A drag moves the strip one to one;
+  // let go, it slides on to a neighbour (whose month is then the one shown, and the strip
+  // is back in place) or springs back. Only its transform changes as it moves.
+  const around = $derived(
+    ([-1, 0, 1] as const).map((by) => {
+      const d = new Date(year, month + by, 1)
+      return { by, year: d.getFullYear(), month: d.getMonth() }
+    }),
+  )
+  let shift = $state(0) // the drag's offset, in px
+  let going = $state<-1 | 0 | 1>(0) // the neighbour it slides to: 1 the next month, -1 the one before
+  let sliding = $state(false) // on its way to rest, with the slide's easing
+  let slideTimer = 0
+
+  /** Slides the strip from where it is to a neighbour's grid, or back to the shown one. */
+  function glide(by: -1 | 0 | 1) {
+    if (reducedMotion()) {
+      shift = 0
+      if (by) move(by)
+      return
+    }
+    if (!by && !shift) return
+    sliding = true
+    going = by
+    shift = 0
+    slideTimer = window.setTimeout(settle, 400) // for a transitionend that never comes
+  }
+
+  /** The strip is at rest: a neighbour's month becomes the one shown, the strip goes back. */
+  function settle() {
+    clearTimeout(slideTimer)
+    if (!sliding) return
+    const by = going
+    sliding = false
+    going = 0
+    shift = 0
+    if (by) move(by)
+  }
+
+  function slid(event: TransitionEvent) {
+    if (event.target === event.currentTarget && event.propertyName === 'transform') settle()
+  }
+
+  /** The buttons slide the grid too; one still sliding is left to finish. */
+  function step(by: -1 | 1) {
+    if (!sliding && !shift) glide(by)
+  }
+
+  // Swipes: sideways on the month slides it; left on a fast deletes it (with Undo).
   // Both keep the press from the page swipe.
   let width = $state(1)
-  let monthShift = $state(0)
   const monthDrag: DragOptions = {
     axis: 'x',
     claim: true,
-    onMove: (dx) => (monthShift = dx / 3),
-    onEnd: (dx, velocity) => {
-      monthShift = 0
-      if (carries(dx, width, velocity, 0.2)) move(dx < 0 ? 1 : -1)
-    },
+    onStart: settle, // a drag takes over from a slide still going
+    onMove: (dx) => (shift = Math.max(-width, Math.min(width, dx))),
+    onEnd: (dx, velocity) => glide(carries(dx, width, velocity, 0.2) ? (dx < 0 ? 1 : -1) : 0),
   }
 
   let swiping = $state<{ id: string; dx: number } | null>(null)
@@ -133,66 +179,83 @@
   <button type="button" class="word" onclick={() => onAdd(selected)}><span class="icon" aria-hidden="true">✚</span>add</button>
 {/snippet}
 
+{#snippet grid(y: number, m: number)}
+  {@const rows = monthRows(y, m, settings.weekStart)}
+  <table class="grid">
+    <thead>
+      <tr>
+        <th scope="col" class="side" aria-label="Week" aria-hidden={!settings.weekNumbers}>{settings.weekNumbers ? 'wk' : ''}</th>
+        {#each heads as d (d)}<th scope="col">{d}</th>{/each}
+        <th scope="col" class="side" aria-label="Hours that week" aria-hidden={!settings.weekTotals}>{settings.weekTotals ? 'h' : ''}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {#each rows as row, w (w)}
+        {@const inMonth = row.days.some((d) => d !== null)}
+        {@const ms = settings.weekTotals && inMonth ? weekTotal(fasts, row) : 0}
+        <tr>
+          <th scope="row" class="side muted" aria-hidden={!settings.weekNumbers}>{settings.weekNumbers && inMonth ? rowWeek(row) : ''}</th>
+          {#each row.days as day, d (d)}
+            <td>
+              {#if day !== null}
+                {@const k = key(y, m, day)}
+                {@const total = days.get(k)}
+                {#if total}
+                  <button
+                    type="button"
+                    class="day"
+                    class:selected={selected === k}
+                    class:today={todayKey === k}
+                    style:--stage="var(--{STAGES[total.stage].id})"
+                    aria-label="{longDate(new Date(y, m, day).getTime())}: {hoursOf(total.ms)} hours, {STAGES[total.stage].name}"
+                    aria-pressed={selected === k}
+                    onclick={() => (selected = selected === k ? null : k)}
+                  >
+                    <span class="date">{day}</span>
+                  </button>
+                {:else}
+                  <span class="day muted" class:today={todayKey === k}>
+                    <span class="date">{day}</span>
+                  </span>
+                {/if}
+              {:else}
+                <!-- Holds the row's height, so short months keep the grid's size. -->
+                <span class="day" aria-hidden="true"><span class="date"> </span></span>
+              {/if}
+            </td>
+          {/each}
+          <td class="side muted" aria-hidden={!settings.weekTotals}>{ms ? `${hoursOf(ms)}h` : ''}</td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+{/snippet}
+
 <div class="layout">
 <Block title="Calendar" class="calendar-block" actions={legend}>
-  <div class="swipe" bind:clientWidth={width} use:drag={monthDrag} style:transform="translateX({monthShift}px)">
+  <div class="swipe" bind:clientWidth={width} use:drag={monthDrag}>
     <div class="month">
-      <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => move(-1)}>&lt;</button>
+      <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => step(-1)}>&lt;</button>
       <span class="when">
         <button type="button" class="word" data-pane="month" aria-label="Pick a month: {MONTHS[month]}" onclick={onPickMonth}>{MONTHS[month]}</button>
         <button type="button" class="word" data-pane="year" aria-label="Pick a year: {year}" onclick={onPickYear}>{year}</button>
       </span>
-      <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => move(1)}>&gt;</button>
+      <button type="button" class="glyph" aria-label="Next month" title="Next month" onclick={() => step(1)}>&gt;</button>
     </div>
 
-    <table class="grid">
-      <thead>
-        <tr>
-          <th scope="col" class="side" aria-label="Week" aria-hidden={!settings.weekNumbers}>{settings.weekNumbers ? 'wk' : ''}</th>
-          {#each heads as d (d)}<th scope="col">{d}</th>{/each}
-          <th scope="col" class="side" aria-label="Hours that week" aria-hidden={!settings.weekTotals}>{settings.weekTotals ? 'h' : ''}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each rows as row, w (w)}
-          {@const inMonth = row.days.some((d) => d !== null)}
-          {@const ms = settings.weekTotals && inMonth ? weekTotal(fasts, row) : 0}
-          <tr>
-            <th scope="row" class="side muted" aria-hidden={!settings.weekNumbers}>{settings.weekNumbers && inMonth ? rowWeek(row) : ''}</th>
-            {#each row.days as day, d (d)}
-              <td>
-                {#if day !== null}
-                  {@const k = key(day)}
-                  {@const total = days.get(k)}
-                  {#if total}
-                    <button
-                      type="button"
-                      class="day"
-                      class:selected={selected === k}
-                      class:today={todayKey === k}
-                      style:--stage="var(--{STAGES[total.stage].id})"
-                      aria-label="{longDate(new Date(year, month, day).getTime())}: {hoursOf(total.ms)} hours, {STAGES[total.stage].name}"
-                      aria-pressed={selected === k}
-                      onclick={() => (selected = selected === k ? null : k)}
-                    >
-                      <span class="date">{day}</span>
-                    </button>
-                  {:else}
-                    <span class="day muted" class:today={todayKey === k}>
-                      <span class="date">{day}</span>
-                    </span>
-                  {/if}
-                {:else}
-                  <!-- Holds the row's height, so short months keep the grid's size. -->
-                  <span class="day" aria-hidden="true"><span class="date"> </span></span>
-                {/if}
-              </td>
-            {/each}
-            <td class="side muted" aria-hidden={!settings.weekTotals}>{ms ? `${hoursOf(ms)}h` : ''}</td>
-          </tr>
+    <div class="viewport">
+      <div
+        class="strip"
+        class:sliding
+        style:transform="translateX(calc({-100 - 100 * going}% + {shift}px))"
+        ontransitionend={slid}
+      >
+        {#each around as m (m.year * 12 + m.month)}
+          <!-- The neighbours wait out of sight: nothing in them is reached by touch or keys. -->
+          <div class="panel" inert={m.by !== 0}>{@render grid(m.year, m.month)}</div>
         {/each}
-      </tbody>
-    </table>
+      </div>
+    </div>
   </div>
 </Block>
 
@@ -312,6 +375,26 @@
   .when {
     display: flex;
     gap: 1ch;
+  }
+
+  /* The month grids side by side, one panel wide each; only the strip moves, and only by
+     transform, so a drag costs the compositor and nothing else. The ends are clipped. */
+  .viewport {
+    overflow-x: clip;
+  }
+
+  .strip {
+    display: flex;
+    will-change: transform;
+  }
+
+  .strip.sliding {
+    transition: transform var(--slide);
+  }
+
+  .panel {
+    flex: 0 0 100%;
+    min-width: 0;
   }
 
   .grid {
