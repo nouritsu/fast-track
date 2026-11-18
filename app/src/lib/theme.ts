@@ -3,6 +3,7 @@
 // The theme button switches between them and saves the choice.
 
 import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core'
+import { reducedMotion } from './motion/shuffle'
 
 export type Theme = 'latte' | 'mocha'
 export const THEMES: Theme[] = ['latte', 'mocha']
@@ -67,7 +68,7 @@ export function revealFrames(grow: boolean): { circle: Keyframe[]; view: Keyfram
  *  goes out. Without view transitions, or with reduced motion, the switch is instant. */
 export async function revealTheme(theme: Theme, origin: HTMLElement): Promise<void> {
   const root = document.documentElement
-  if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!document.startViewTransition || reducedMotion()) {
     applyTheme(theme)
     paintStatusBar()
     return

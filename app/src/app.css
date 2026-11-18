@@ -114,6 +114,7 @@
 :root {
   --radius: 0.6em;
   --column: 30rem; /* the shell's width on screens wider than a phone */
+  --slide: 0.2s cubic-bezier(0.2, 0, 0, 1); /* the pages' slide; the tab line keeps pace */
   /* The app draws under the system bars. Capacitor's SystemBars sets
      --safe-area-inset-* where the WebView's env() values are wrong. */
   --inset-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
@@ -385,6 +386,22 @@ button.gate {
 
 .panes > * {
   flex: none;
+}
+
+/* A block's content that scrolls inside its border, up and down only: inside a
+   scroller the WebView ignores .pages' own pan-y, takes a sideways drag and cancels
+   the swipe. */
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding-top: 0.3em;
+}
+
+.scroller p {
+  margin: 0.3em 0;
 }
 
 /* A rule across a block, border to border, like a ratatui split. */

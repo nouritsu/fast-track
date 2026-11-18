@@ -1,11 +1,12 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { GOALS, invalidTimes, overlapping, parseWeight, stepGoal, weightNumber, type Fast } from '../fasting/fasts'
+  import { invalidTimes, overlapping, parseWeight, weightNumber, type Fast } from '../fasting/fasts'
   import { scaleWeightFor, type ScaleWeight } from '../fasting/openscale'
-  import { dayClock, floorMinute, longDate, shortDate, stepDay, stepHour, stepMinute } from '../fasting/time'
+  import { dayClock, floorMinute, longDate } from '../fasting/time'
   import { duration } from '../ui/fields'
+  import GoalStepper from '../ui/GoalStepper.svelte'
   import Pane from '../ui/Pane.svelte'
-  import Stepper from '../ui/Stepper.svelte'
+  import TimeSteppers from '../ui/TimeSteppers.svelte'
 
   // A finished fast, or a new one logged afterwards: its note, the weight at its end,
   // when it began and ended, and its goal.
@@ -48,11 +49,6 @@
       (weightBad ? `That is not a weight in ${unit}.` : null),
   )
 
-  const two = (n: number) => String(n).padStart(2, '0')
-  type Move = (t: number, n: number) => number
-  const stepStart = (move: Move) => (d: -1 | 1) => (start = Math.min(move(start, d), latest))
-  const stepEnd = (move: Move) => (d: -1 | 1) => (end = Math.min(move(end, d), latest))
-
   function save() {
     if (problem) return
     // A weight synced from the scale stays marked so while it is left as it was.
@@ -84,23 +80,13 @@
   {/if}
 
   <h3>Start</h3>
-  <Stepper label="Day" value={shortDate(start)} onStep={stepStart(stepDay)} atEnd={stepDay(start, 1) > latest} />
-  <Stepper label="Hour" value={two(new Date(start).getHours())} onStep={stepStart(stepHour)} atEnd={stepHour(start, 1) > latest} />
-  <Stepper label="Min" value={two(new Date(start).getMinutes())} onStep={stepStart(stepMinute)} atEnd={start >= latest} />
+  <TimeSteppers at={start} {latest} onChange={(t) => (start = t)} />
 
   <h3>End</h3>
-  <Stepper label="Day" value={shortDate(end)} onStep={stepEnd(stepDay)} atEnd={stepDay(end, 1) > latest} />
-  <Stepper label="Hour" value={two(new Date(end).getHours())} onStep={stepEnd(stepHour)} atEnd={stepHour(end, 1) > latest} />
-  <Stepper label="Min" value={two(new Date(end).getMinutes())} onStep={stepEnd(stepMinute)} atEnd={end >= latest} />
+  <TimeSteppers at={end} {latest} onChange={(t) => (end = t)} />
 
   <h3>Goal</h3>
-  <Stepper
-    label="Goal"
-    value="{String(goal).padStart(2)}h"
-    onStep={(d) => (goal = stepGoal(goal, d))}
-    atStart={goal <= GOALS[0]}
-    atEnd={goal >= GOALS[GOALS.length - 1]}
-  />
+  <GoalStepper {goal} onChange={(g) => (goal = g)} />
 
   {#if problem}
     <p class="problem" role="alert">{problem}</p>

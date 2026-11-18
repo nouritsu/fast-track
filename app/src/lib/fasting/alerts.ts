@@ -5,6 +5,7 @@
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { milestones, type Active } from './fasts'
 import { STAGES } from './stages'
+import { HOUR } from './time'
 
 export interface Alert {
   id: number
@@ -18,7 +19,7 @@ const IDS = [1, 2, 3, 4]
 
 /** The alerts still to come for `active` after `now`. */
 export function plannedAlerts(active: Active, now: number): Alert[] {
-  const goalAt = active.start + active.goal * 3_600_000
+  const goalAt = active.start + active.goal * HOUR
   return milestones(active)
     // A stage that begins at the goal is announced by the goal's alert alone.
     .filter((m) => m.stage === null || m.at !== goalAt)

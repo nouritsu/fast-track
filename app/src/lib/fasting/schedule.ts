@@ -4,6 +4,9 @@
 // "[weekdays] [[year-]month-day] [hour:minute[:second]]" where each field is *, a
 // number, a list (1,15), a range (9..17) or a repetition (*/2, 0/15). Times are local.
 
+import { MONTHS } from './time'
+import { two } from '../ui/fields'
+
 export interface Field {
   values: number[] // sorted, all the values it matches
   any: boolean // every value of its range
@@ -34,7 +37,6 @@ const SHORTHANDS: Record<string, string> = {
 }
 
 const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 export class ScheduleError extends Error {}
 
@@ -158,8 +160,6 @@ export function upcomingRuns(cal: Calendar, from: Date, count: number): number[]
 }
 
 // Plain English ----------------------------------------------------------------
-
-const two = (n: number) => String(n).padStart(2, '0')
 
 /** "a", "a and b", "a, b and c". */
 export function listed(words: string[]): string {

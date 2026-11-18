@@ -52,8 +52,8 @@ export function mergeFasts(fasts: Fast[], incoming: Fast[]): { fasts: Fast[]; ad
   return { fasts: [...fasts, ...fresh], added: fresh.length }
 }
 
-/** Saves the file where the user can reach it; returns where it went. */
-export async function saveBackupFile(name: string, text: string, type = 'application/json'): Promise<string> {
+/** Saves an export (a backup or an .ics file) where the user can reach it; returns where it went. */
+export async function saveExportFile(name: string, text: string, type = 'application/json'): Promise<string> {
   if (!Capacitor.isNativePlatform()) {
     // Development in a browser: an ordinary download.
     const url = URL.createObjectURL(new Blob([text], { type }))

@@ -38,10 +38,11 @@
     within,
     type Span,
   } from '../fasting/stats'
-  import { dayMonth, HOUR, MINUTE, shortDate, stepDay } from '../fasting/time'
-  import { hm, pad } from '../ui/fields'
+  import { DAY, dayMonth, HOUR, MINUTE, noonOf, shortDate, stepDay } from '../fasting/time'
+  import { hm, pad, two } from '../ui/fields'
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
+  import Measure from '../ui/Measure.svelte'
 
   // The history in panes, one block each, scrolling as a column. Summary's top edge
   // picks the span the panes cover (remembered in the settings) and sets it against the
@@ -68,8 +69,6 @@
     onSpan: (span: Span) => void
   } = $props()
 
-  const DAY = 24 * HOUR
-
   // To the minute: the clock ticks several times a second, and nothing here needs it.
   const minute = $derived(Math.floor(now / MINUTE) * MINUTE)
   const range = $derived(spanWindow(fasts, span, minute))
@@ -83,11 +82,11 @@
   const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
   const percent = (share: number) => `${Math.round(share * 100)}%`
 
-  // The panes' inner width and a character's, measured off ten of them: charts are
-  // drawn in pixels to that width, and text bars in as many cells as fit.
+  // The panes' inner width and a character's (Measure): charts are drawn in pixels to
+  // that width, and text bars in as many cells as fit.
   let width = $state(0)
-  let tenChars = $state(0)
-  const ch = $derived(tenChars ? tenChars / 10 : 8)
+  let measured = $state(0)
+  const ch = $derived(measured || 8)
   const cells = $derived(Math.max(20, Math.floor(width / ch)))
   const gutter = $derived(5 * ch) // left of each chart, for its labels
   const plot = $derived(Math.max(0, width - gutter))
@@ -187,7 +186,6 @@
 
   // Records: the whole history.
   const record = $derived(records(fasts, weekStart))
-  const noonOf = (key: string) => new Date(`${key}T12:00`).getTime()
   const label = (text: string) => text.padEnd(12)
 </script>
 
@@ -215,7 +213,7 @@
     <Block title="Statistics"><p class="muted">No fasts yet.</p></Block>
   {:else}
     <Block title="Summary" headingRight={spans}>
-      <div class="measure" aria-hidden="true" bind:clientWidth={width}><span bind:clientWidth={tenChars}>0000000000</span></div>
+      <Measure bind:width bind:ch={measured} />
       {#if sum.count}
         <p class="fields">{plural(sum.count, 'fast')} · {Math.round(sum.total / HOUR)}h · goal met {percent(sum.goalRate)}</p>
         <p class="fields">avg {hm(sum.average)} · streak {streak(fasts, minute)}</p>
@@ -361,7 +359,7 @@
               x={gutter + (h / 24) * plot}
               y={stripDays * ROW + 8}
               text-anchor={h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}
-              dominant-baseline="central">{String(h).padStart(2, '0')}</text
+              dominant-baseline="central">{two(h)}</text
             >
           {/each}
         </svg>
@@ -463,20 +461,6 @@
 </div>
 
 <style>
-  /* The panes' inner width, and a character's off ten of them. */
-  .measure {
-    position: relative;
-    height: 0;
-  }
-
-  .measure span {
-    position: absolute;
-    visibility: hidden;
-    pointer-events: none;
-    white-space: pre;
-    font-variant-ligatures: none;
-  }
-
   /* The spans in Summary's top edge: the one shown in the accent, bold. The tap area
      reaches above and below the line without moving the words off it. */
   .spans {

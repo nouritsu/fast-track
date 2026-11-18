@@ -4,7 +4,7 @@
   import { weightOf, type ScaleWeight } from '../fasting/openscale'
   import { STAGES } from '../fasting/stages'
   import type { Settings } from '../fasting/store'
-  import { dayKey, longDate, nearClock } from '../fasting/time'
+  import { dayKey, longDate, MONTHS, nearClock, noonOf } from '../fasting/time'
   import { carries, drag, type DragOptions } from '../ui/drag'
   import { clock, duration, hm } from '../ui/fields'
   import Icon from '../ui/Icon.svelte'
@@ -24,7 +24,7 @@
     settings,
     year = $bindable(),
     month = $bindable(),
-    shown: visible,
+    visible,
     onPickMonth,
     onPickYear,
     onEdit,
@@ -39,7 +39,7 @@
     settings: Settings
     year: number
     month: number // 0–11
-    shown: boolean // the page is in view; leaving it clears the Undo lines
+    visible: boolean // the page is in view; leaving it clears the Undo lines
     onPickMonth: () => void
     onPickYear: () => void
     onEdit: (fast: Fast) => void
@@ -55,7 +55,6 @@
     if (!visible) removed = []
   })
 
-  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   const days = $derived(dayTotals(fasts))
   const rows = $derived(monthRows(year, month, settings.weekStart))
   const heads = $derived(weekdayHeads(settings.weekStart))
@@ -72,7 +71,7 @@
   })
 
   // Deleted fasts stay in their place in the list as Undo lines.
-  const shown = $derived(
+  const entries = $derived(
     [...fasts.map((fast) => ({ fast, gone: false })), ...removed.map((fast) => ({ fast, gone: true }))]
       .filter(({ fast }) => (selected ? dayKey(fast.end) === selected : dayKey(fast.end).startsWith(monthKey)))
       .sort((a, b) => b.fast.end - a.fast.end),
@@ -94,7 +93,7 @@
     onRestore(fast)
   }
 
-  const count = $derived(shown.filter((s) => !s.gone).length)
+  const count = $derived(entries.filter((s) => !s.gone).length)
 
   // Swipes: sideways on the month changes it; left on a fast deletes it (with Undo).
   // Both keep the press from the page swipe.
@@ -200,10 +199,10 @@
 </Block>
 
 <Block title="Fasts" class="fasts-block" headingRight={addButton}>
-  <div class="content">
+  <div class="content scroller">
   <div class="head">
     {#if selected}
-      <p class="fields">{longDate(new Date(`${selected}T12:00`).getTime())} · {count === 1 ? '1 fast' : `${count} fasts`}</p>
+      <p class="fields">{longDate(noonOf(selected))} · {count === 1 ? '1 fast' : `${count} fasts`}</p>
     {:else if summary.count}
       <p class="fields">{MONTHS[month]} · {summary.count === 1 ? '1 fast' : `${summary.count} fasts`} · {hoursOf(summary.total)}h</p>
     {:else}
@@ -216,7 +215,7 @@
     </p>
   {/if}
 
-  {#each shown as { fast, gone } (fast.id)}
+  {#each entries as { fast, gone } (fast.id)}
     <hr class="split" />
     {#if gone}
       <div class="entry gone">
@@ -272,18 +271,8 @@
     min-height: 0;
   }
 
-  /* Scrolls up and down only, so a sideways drag stays a page swipe (Page.svelte). */
   .content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    touch-action: pan-y;
     padding-top: 0.2em;
-  }
-
-  .content :global(p) {
-    margin: 0.3em 0;
   }
 
   /* Swipeable areas: vertical drags still scroll the page. */
@@ -307,6 +296,7 @@
 
   .entry {
     position: relative;
+    padding: 0.5em 0 0.2em;
     background: var(--bg);
     transition: transform 0.2s ease;
   }
@@ -409,10 +399,6 @@
 
   p.summary {
     white-space: normal;
-  }
-
-  .entry {
-    padding: 0.5em 0 0.2em;
   }
 
   .entry .title {

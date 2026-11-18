@@ -14,7 +14,7 @@
   } from './lib/fasting/fasts'
   import { NAME_WIDTH, STAGES, stageIndex } from './lib/fasting/stages'
   import { Tracker } from './lib/fasting/tracker.svelte'
-  import { dayClock, floorMinute, HOUR, nearClock } from './lib/fasting/time'
+  import { dayClock, floorMinute, HOUR, nearClock, noonOf } from './lib/fasting/time'
   import { reducedMotion } from './lib/motion/shuffle'
   import CalendarPage from './lib/pages/CalendarPage.svelte'
   import InfoPage from './lib/pages/InfoPage.svelte'
@@ -366,18 +366,16 @@
 
   /** A blank fast to log afterwards: ending at noon on `day` (or now), as long as the goal. */
   function newFast(day: string | null): Fast {
-    const end = Math.min(floorMinute(now), day ? new Date(`${day}T12:00`).getTime() : Infinity)
+    const end = Math.min(floorMinute(now), day ? noonOf(day) : Infinity)
     const goalHours = settings.goal
     return { id: crypto.randomUUID(), start: end - goalHours * HOUR, end, goal: goalHours, note: '', weight: null }
   }
-
-  const closeEdit = closePane
 
   function saveEdit(fast: Fast) {
     attempt(async () => {
       await tracker.save(fast)
       if (ended?.id === fast.id) ended = fast
-      closeEdit()
+      closePane()
     })
   }
 
@@ -448,7 +446,7 @@
         unit={settings.unit}
         {now}
         onSave={saveEdit}
-        onClose={closeEdit}
+        onClose={closePane}
       />
     {/if}
     </div>
@@ -584,7 +582,7 @@
           {settings}
           bind:year={calYear}
           bind:month={calMonth}
-          shown={page === 1}
+          visible={page === 1}
           onPickMonth={() => openPane('month')}
           onPickYear={() => openPane('year')}
           onEdit={(fast) => openEdit(fast, false)}
@@ -647,7 +645,7 @@
   .track {
     display: flex;
     height: 100%;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: transform var(--slide);
   }
 
   /* Under the finger, the track and a pulled page follow it without easing. */

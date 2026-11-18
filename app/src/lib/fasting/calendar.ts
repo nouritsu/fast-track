@@ -5,7 +5,7 @@
 
 import { deepestStage, fastLength, percentOf, showWeight, summarize, type Fast, type Summary } from './fasts'
 import { STAGES } from './stages'
-import { dayKey, HOUR } from './time'
+import { DAY, dayKey, HOUR } from './time'
 import { hm } from '../ui/fields'
 
 /** The weekday a week starts on, as Date.getDay counts: Sunday 0, Monday 1, Saturday 6. */
@@ -45,7 +45,7 @@ export function isoWeek(at: Date): number {
   const weekday = d.getUTCDay() || 7
   d.setUTCDate(d.getUTCDate() + 4 - weekday) // the Thursday of its week
   const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1)
-  return Math.ceil(((d.getTime() - yearStart) / 86_400_000 + 1) / 7)
+  return Math.ceil(((d.getTime() - yearStart) / DAY + 1) / 7)
 }
 
 /** A row's week number: the ISO week of its Thursday, whatever day the row starts on. */

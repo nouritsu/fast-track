@@ -2,9 +2,10 @@
 // HOLD_MS, a step every REPEAT_MS until it is released or becomes disabled. A press
 // that turns into a drag (a swipe, a scrub) neither repeats nor steps.
 
+import { SLOP_PX } from './drag'
+
 const HOLD_MS = 450
 const REPEAT_MS = 90
-const DRIFT_PX = 10 // as drag.ts's SLOP_PX
 
 export function hold(node: HTMLButtonElement, step: () => void) {
   let current = step
@@ -32,7 +33,7 @@ export function hold(node: HTMLButtonElement, step: () => void) {
     }, HOLD_MS)
   }
   const drift = (event: PointerEvent) => {
-    if (!from || Math.hypot(event.clientX - from.x, event.clientY - from.y) < DRIFT_PX) return
+    if (!from || Math.hypot(event.clientX - from.x, event.clientY - from.y) < SLOP_PX) return
     stop()
     repeated = true
   }

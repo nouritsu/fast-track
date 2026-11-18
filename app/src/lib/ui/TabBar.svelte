@@ -102,8 +102,8 @@
     border-radius: 1px;
     background: var(--accent);
     transition:
-      transform 0.2s cubic-bezier(0.2, 0, 0, 1),
-      width 0.2s cubic-bezier(0.2, 0, 0, 1);
+      transform var(--slide),
+      width var(--slide);
   }
 
   @media (prefers-reduced-motion: reduce) {
