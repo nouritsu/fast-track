@@ -635,16 +635,6 @@
    "jar": "sha256-1Cm5MS3/oFAzgdHuGxipmb2QHnRWYSsvtIxqXVosr4g=",
    "pom": "sha256-QdmxPdex7v2JYLq0S1/QiN7vFueNVr6LlVdc8UVjrgk="
   },
-  "com/google/android/gms#strict-version-matcher-plugin/1.2.4": {
-   "jar": "sha256-3xtItno8X+pyZ+nlHSDeR1eBi26O1XZITHTJbqKVEgA=",
-   "module": "sha256-W/ThPqqW+o8eWxxG6epdvdOORWUyR7RJ1jvkn1Z3kqw=",
-   "pom": "sha256-Ihy7TNpqqRBzw7xi31oNpgXA/nF5qLdPCVWC0cKclMw="
-  },
-  "com/google/gms#google-services/4.4.4": {
-   "jar": "sha256-emV53+46ob0FZNcvnJHXW95xW0S8SE7vyYSEHGQlQM0=",
-   "module": "sha256-Nes/eI1qB5E0va8xXVFP0IUrbTYMMbgha23ZgGe3Qe0=",
-   "pom": "sha256-LYP3S19R9IilVFMTsbduJdNhD86wSxDzuRgl1t3JW/0="
-  },
   "com/google/testing/platform#core-proto/0.0.9-alpha03": {
    "jar": "sha256-0AHrDMu/yMueqhk6NY5jcSl0Y5d1ZHvpSasjLCsptAc=",
    "pom": "sha256-O7RSgN8d0clrmgFySmFFZrfWDTNFP81SwsdB+ZmcOk4="
@@ -1345,9 +1335,6 @@
   "org/jetbrains/kotlin#kotlin-stdlib-jdk8/1.6.21": {
    "jar": "sha256-2rRUibR3NtWfzkS4BnbxlHqba8qxD9YOh4qDvYKmlUw=",
    "pom": "sha256-g2oReaCNJJFGl9JhLgO4SKCHyAy0sMoj+c+rJH86dcQ="
-  },
-  "org/jetbrains/kotlin#kotlin-stdlib-jdk8/1.7.10": {
-   "pom": "sha256-WStSUvAY49vv7KGlNf0jFd2ny5573loG1rQZzzZD1H0="
   },
   "org/jetbrains/kotlin#kotlin-stdlib-jdk8/1.8.0": {
    "pom": "sha256-K7bHVRuXx7oCn5hmWC56oZ1jq/1M1T2j/AxGLzq1/CY="
