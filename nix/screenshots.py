@@ -183,7 +183,7 @@ def shoot(browser, origin: str, tab: str, actions: list[str], theme: str) -> byt
         page.goto(origin + "/")
         page.get_by_text("left of 16h").wait_for()  # the fast in progress has loaded
         if theme == "latte":
-            open_tab(page, "Options").get_by_role("button", name="Theme: Mocha").click()
+            open_tab(page, "Options").get_by_role("button", name="Flavour: Mocha").click()
         shown = open_tab(page, tab)
         for action in actions:
             verb, _, name = action.partition(" ")
