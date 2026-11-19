@@ -401,6 +401,18 @@ button.gate {
   flex: none;
 }
 
+/* A block that unfolds below the one that opens it (src/lib/motion/unfold.ts): the gap
+   above it is inside it, so it starts from nothing and pushes the column down. */
+.panes > .unfold {
+  margin-top: -1.6em;
+}
+
+.unfold::before {
+  content: '';
+  display: block;
+  height: 1.6em;
+}
+
 /* A block's content that scrolls inside its border, up and down only: inside a
    scroller the WebView ignores .pages' own pan-y, takes a sideways drag and cancels
    the swipe. */

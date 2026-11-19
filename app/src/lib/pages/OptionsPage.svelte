@@ -20,16 +20,24 @@
   import HeightStepper from '../ui/HeightStepper.svelte'
   import Icon from '../ui/Icon.svelte'
   import type { ThemeChoice } from '../theme'
+  import { unfold } from '../motion/unfold'
+  import ColoursBlock from './ColoursBlock.svelte'
 
   // A pane a category: the theme and colours, the weight unit and BMI, the notifications,
   // the calendar, weights from openScale, the backup with its regular exports, and privacy.
-  // Toggles show the current state.
+  // Toggles show the current state. Colours unfolds below General, pushing the rest down,
+  // and folds away again when the page is left.
   let {
     tracker,
     choice,
+    visible,
     onTheme,
-    onColours,
-  }: { tracker: Tracker; choice: ThemeChoice; onTheme: (button: HTMLElement) => void; onColours: () => void } = $props()
+  }: { tracker: Tracker; choice: ThemeChoice; visible: boolean; onTheme: (button: HTMLElement) => void } = $props()
+
+  let colours = $state(false)
+  $effect(() => {
+    if (!visible) colours = false
+  })
 
   const THEMES: Record<ThemeChoice, { name: string; icon: IconName }> = {
     mocha: { name: 'Mocha', icon: 'dark_mode' },
@@ -302,13 +310,19 @@
       </button>
     </div>
     <!-- The whole row opens the pane; the button inside is what a keyboard or screen reader finds. -->
-    <div class="row" role="presentation" onclick={onColours}>
+    <div class="row" role="presentation" onclick={() => (colours = !colours)}>
       <span>Colours</span>
-      <button type="button" class="word" aria-label="Colours">
+      <button type="button" class="word" aria-label="Colours" aria-expanded={colours}>
         {#each COLOR_KEYS as key (key)}<span style:color="var(--{key})" aria-hidden="true">■</span>{/each}
       </button>
     </div>
   </Block>
+
+  {#if colours}
+    <div class="unfold" transition:unfold>
+      <ColoursBlock colors={settings.colors} onChange={(colors) => tracker.setSettings({ colors })} onClose={() => (colours = false)} />
+    </div>
+  {/if}
 
   <Block title="Display" icon="text_fields">
     {@render choose('textSize', 'Text size', TEXT_SIZES, true)}
