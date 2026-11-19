@@ -1,24 +1,31 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import { drag, stepsAt } from './drag'
   import { tick } from './haptics'
   import { hold } from './hold'
 
   // A field set with < > instead of typing, TUI style: a muted label, the value at a
-  // fixed width, and the two glyph buttons, which repeat while held. A sideways swipe
-  // across the row scrubs it: a step every STEP_PX, right for later, with a tick.
+  // fixed width (or `children`, when it needs markup), and the two glyph buttons, which
+  // repeat while held. A sideways swipe across the row scrubs it: a step every STEP_PX,
+  // right for later, with a tick. `onStep` is told when a step is one of a repeat or a
+  // scrub, not a tap.
   const STEP_PX = 28
   let {
     label,
-    value,
+    value = '',
+    children,
+    labelWidth = 5,
     width = 10,
     onStep,
     atStart = false,
     atEnd = false,
   }: {
     label: string
-    value: string
+    value?: string
+    children?: Snippet // in place of `value`
+    labelWidth?: number // the label's width in characters
     width?: number // the value's width in characters, so nothing moves as it changes
-    onStep: (direction: -1 | 1) => void
+    onStep: (direction: -1 | 1, repeating: boolean) => void
     atStart?: boolean
     atEnd?: boolean
   } = $props()
@@ -32,7 +39,7 @@
       while (taken !== want) {
         const direction = want > taken ? 1 : -1
         if ((direction > 0 && atEnd) || (direction < 0 && atStart)) return
-        onStep(direction)
+        onStep(direction, true)
         taken += direction
         tick()
       }
@@ -42,13 +49,23 @@
 </script>
 
 <div class="stepper" use:drag={scrub}>
-  <span class="label muted">{label}</span>
-  <span class="setting" style:min-width="{width}ch">{value}</span>
-  <button type="button" class="glyph" aria-label="{label} earlier" title="{label} earlier" disabled={atStart} use:hold={() => onStep(-1)}
-    >&lt;</button
+  <span class="label muted" style:width="{labelWidth}ch">{label}</span>
+  <span class="setting" style:min-width="{width}ch">{#if children}{@render children()}{:else}{value}{/if}</span>
+  <button
+    type="button"
+    class="glyph"
+    aria-label="{label} earlier"
+    title="{label} earlier"
+    disabled={atStart}
+    use:hold={(repeating) => onStep(-1, repeating)}>&lt;</button
   >
-  <button type="button" class="glyph" aria-label="{label} later" title="{label} later" disabled={atEnd} use:hold={() => onStep(1)}
-    >&gt;</button
+  <button
+    type="button"
+    class="glyph"
+    aria-label="{label} later"
+    title="{label} later"
+    disabled={atEnd}
+    use:hold={(repeating) => onStep(1, repeating)}>&gt;</button
   >
 </div>
 
@@ -59,10 +76,6 @@
     align-items: center;
     gap: 1ch;
     margin: 0.25em 0;
-  }
-
-  .label {
-    min-width: 5ch;
   }
 
   .setting {

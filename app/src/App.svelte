@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Capacitor } from '@capacitor/core'
   import { onMount } from 'svelte'
+  import { applyColors, saveColors } from './lib/colors'
   import { askAlerts } from './lib/fasting/alerts'
   import {
     deepestStage,
@@ -20,13 +21,14 @@
   import InfoPage from './lib/pages/InfoPage.svelte'
   import OptionsPage from './lib/pages/OptionsPage.svelte'
   import StatsPage from './lib/pages/StatsPage.svelte'
+  import ColoursPane from './lib/panes/ColoursPane.svelte'
   import EditPane from './lib/panes/EditPane.svelte'
   import GoalPane from './lib/panes/GoalPane.svelte'
   import LicencesPane from './lib/panes/LicencesPane.svelte'
   import MonthPane from './lib/panes/MonthPane.svelte'
   import StartPane from './lib/panes/StartPane.svelte'
   import YearPane from './lib/panes/YearPane.svelte'
-  import { currentTheme, revealTheme, saveTheme, THEMES } from './lib/theme'
+  import { currentTheme, revealTheme, savedChoice, saveTheme, setTheme, shownTheme, systemDark, THEME_CHOICES, watchSystem } from './lib/theme'
   import Block, { type Tone } from './lib/ui/Block.svelte'
   import Hero from './lib/ui/Hero.svelte'
   import ShuffleText from './lib/ui/ShuffleText.svelte'
@@ -41,12 +43,13 @@
   // swipe. The Fast page is one panel: the fast's status at its top, the goal's share
   // in its top edge, a coloured progress line under the timer, and its buttons in its
   // bottom edge. A fast starts at the gate (now) or from Start at (earlier), runs until
-  // End fast, and ends on "Done!". Start time, Goal, Edit fast and Info's licences open
-  // as panes hung below the page, which slides up and off the top, pushed by the pane;
+  // End fast, and ends on "Done!". Start time, Goal, Edit fast, Options' colours and
+  // Info's licences open as panes hung below the page, which slides up and off the top,
+  // pushed by the pane;
   // the calendar's month and year panes hang above it and push it down.
   type Phase = 'loading' | 'ready' | 'running' | 'done'
   type PageId = 'fast' | 'calendar' | 'stats' | 'options' | 'info'
-  type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year' | 'licences'
+  type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year' | 'licences' | 'colours'
   type HeroMode = 'left' | 'elapsed'
 
   const TABS: Tab<PageId>[] = [
@@ -68,7 +71,8 @@
   let revealed = $state(false) // the hero has locked; the detail settles in
   let ended = $state<Fast | null>(null) // the fast the ending shows
   let now = $state(Date.now())
-  let theme = $state(currentTheme()) // what the theme button shows; the page follows
+  let choice = $state(savedChoice()) // what the theme button shows
+  let theme = $state(currentTheme()) // the theme shown; the page follows the button a beat late
   let switching = false
   // The month the calendar shows: here, so its month and year panes can change it.
   let calYear = $state(new Date().getFullYear())
@@ -137,8 +141,18 @@
   const shownStart = $derived(phase === 'done' && ended ? ended.start : (active?.start ?? now))
   const shownEnd = $derived(phase === 'done' && ended ? ended.end : shownStart + goal * HOUR)
 
+  // The picked colours reach the page once the settings have loaded, and are kept for
+  // the next start's first paint (index.html). Until then it wears the last ones.
+  $effect(() => {
+    if (!tracker.loaded) return
+    applyColors(settings.colors)
+    saveColors(settings.colors)
+  })
+
   onMount(() => {
     const timer = setInterval(() => (now = Date.now()), 200)
+    const unwatch = watchSystem(follow)
+    follow()
     attempt(async () => {
       await tracker.load()
       if (tracker.active) begin()
@@ -151,6 +165,7 @@
     document.addEventListener('visibilitychange', back)
     return () => {
       clearInterval(timer)
+      unwatch()
       document.removeEventListener('visibilitychange', back)
     }
   })
@@ -381,13 +396,29 @@
     })
   }
 
-  // The button takes the new theme first, then the page follows in a circle from it.
+  // The button cycles Mocha, Latte and System. When that changes the theme shown, the
+  // button takes the new one first and the page follows in a circle from it.
   function switchTheme(button: HTMLElement) {
     if (switching) return
+    choice = THEME_CHOICES[(THEME_CHOICES.indexOf(choice) + 1) % THEME_CHOICES.length]
+    saveTheme(choice)
+    const shown = shownTheme(choice, systemDark())
+    if (shown === theme) return
     switching = true
-    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]
-    saveTheme(theme)
-    revealTheme(theme, button).finally(() => (switching = false))
+    theme = shown
+    revealTheme(shown, button).finally(() => {
+      switching = false
+      follow()
+    })
+  }
+
+  /** Shows what the choice calls for. System follows the device as it changes, at once,
+   *  with no reveal; after a reveal it catches up with a change made meanwhile. */
+  function follow() {
+    const shown = shownTheme(choice, systemDark())
+    if (switching || shown === theme) return
+    theme = shown
+    setTheme(shown)
   }
 </script>
 
@@ -452,6 +483,8 @@
       />
     {:else if shownPane === 'licences'}
       <LicencesPane onClose={closePane} />
+    {:else if shownPane === 'colours'}
+      <ColoursPane colors={settings.colors} onChange={(colors) => attempt(() => tracker.setSettings({ colors }))} onClose={closePane} />
     {/if}
     </div>
     {/key}
@@ -612,8 +645,21 @@
         />
       </div>
 
-      <div class="page" id="page-options" role="tabpanel" aria-labelledby="tab-options" inert={page !== 3}>
-        <OptionsPage {tracker} {theme} onTheme={switchTheme} />
+      <div
+        class="page"
+        class:pushed={pane !== null && paneHost === 3}
+        class:pulling={pulling && paneHost === 3}
+        style:--push="{fromTop ? -paneHeight : paneHeight}px"
+        style:--pull="{paneHost === 3 ? pull : 0}px"
+        id="page-options"
+        role="tabpanel"
+        aria-labelledby="tab-options"
+        inert={page !== 3}
+      >
+        <div class="page-main" inert={pane !== null && paneHost === 3}>
+        <OptionsPage {tracker} {choice} onTheme={switchTheme} onColours={() => openPane('colours')} />
+        </div>
+        {@render hangingPane(3)}
       </div>
 
       <div
@@ -653,10 +699,12 @@
   }
 
   /* The pages sit side by side; the track slides to the current one. Vertical
-     scrolling stays with the page, horizontal drags come here as swipes. */
+     scrolling stays with the page, horizontal drags come here as swipes. Clipped, not
+     hidden: focus moving into a pane must not scroll the track out of line. */
   .pages {
+    min-width: 0;
     min-height: 0;
-    overflow: hidden;
+    overflow: clip;
     touch-action: pan-y;
   }
 

@@ -3,6 +3,7 @@
 // kilobytes of JSON, read once at start and written whole on every change.
 
 import { Preferences } from '@capacitor/preferences'
+import { DEFAULT_COLORS, toColors, type Colors } from '../colors'
 import { WEEK_STARTS, type WeekStart } from './calendar'
 import { DEFAULT_GOAL, type Active, type Fast } from './fasts'
 import { SPANS, type Span } from './stats'
@@ -24,6 +25,7 @@ export interface Settings {
   keepOneFile: boolean // exports replace one fast-track.json instead of making a file a day (backup.ts, FastExport.java)
   bmi: boolean // show BMI, from the latest weight and the height (fasts.ts)
   height: number | null // in cm, whichever unit it is shown in; none until set
+  colors: Colors // the accent and the stages' colours, by Catppuccin name (colors.ts; FastColors.java reads them)
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -43,6 +45,7 @@ export const DEFAULT_SETTINGS: Settings = {
   keepOneFile: false,
   bmi: false,
   height: null,
+  colors: { ...DEFAULT_COLORS },
 }
 
 export interface Saved {
@@ -95,6 +98,7 @@ export function toSettings(v: unknown): Settings {
     keepOneFile: s.keepOneFile === true,
     bmi: s.bmi === true,
     height: isNumber(s.height) && s.height > 0 ? s.height : null,
+    colors: toColors(s.colors),
   }
 }
 

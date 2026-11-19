@@ -13,6 +13,7 @@
 
 <Stepper
   label="Height"
+  labelWidth={6}
   value={showHeight(height, unit)}
   onStep={(d) => onChange(stepHeight(height, d, unit))}
   atStart={heightAtLimit(height, -1, unit)}

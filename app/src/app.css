@@ -88,9 +88,9 @@
   --ctp-crust: #11111b;
 }
 
-/* What the app draws with; components use these, never --ctp-* or hex. Mauve is
-   the one accent. --ok/--warn/--bad colour live values and their block's border.
-   Declared with the palette, so an element with its own theme resolves them in it. */
+/* What the app draws with; components use these, never --ctp-* or hex.
+   --ok/--warn/--bad colour live values and their block's border. Declared with the
+   palette, so an element with its own theme resolves them in it. */
 :root,
 [data-theme] {
   --bg: var(--ctp-base);
@@ -99,16 +99,25 @@
   --border: var(--ctp-overlay0);
   --button: var(--ctp-surface0);
   --button-border: var(--ctp-surface2);
-  --accent: var(--ctp-mauve);
   --ok: var(--ctp-green);
   --warn: var(--ctp-yellow);
   --bad: var(--ctp-red);
-  /* The stages of a fast (src/lib/fasting/stages.ts), each named by its id. */
-  --glucose: var(--ctp-blue);
-  --fat: var(--ctp-peach); /* Catppuccin's orange */
-  --ketosis: var(--ctp-red);
-  --autophagy: var(--ctp-mauve);
   color: var(--fg);
+}
+
+/* The accent and the stages of a fast (src/lib/fasting/stages.ts), each named by its id,
+   are the user's picks (src/lib/colors.ts): an unlayered rule of the same selector, which
+   beats this layer wherever it sits, so the first paint needs no script order to win.
+   These are the defaults. */
+@layer defaults {
+  :root,
+  [data-theme] {
+    --accent: var(--ctp-mauve);
+    --glucose: var(--ctp-blue);
+    --fat: var(--ctp-peach); /* Catppuccin's orange */
+    --ketosis: var(--ctp-red);
+    --autophagy: var(--ctp-mauve);
+  }
 }
 
 :root {
