@@ -688,6 +688,7 @@
           weekStart={settings.weekStart}
           span={settings.statsSpan}
           {now}
+          visible={current === 'stats'}
           panes={settings.statsPanes}
           hiddenPanes={settings.hiddenStats}
           onArrange={(statsPanes, hiddenStats) => attempt(() => tracker.setSettings({ statsPanes, hiddenStats }))}
