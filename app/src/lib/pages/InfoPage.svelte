@@ -4,15 +4,16 @@
   import Icon from '../ui/Icon.svelte'
   import Measure from '../ui/Measure.svelte'
   import { spread } from '../ui/progress'
-  import Page from '../ui/Page.svelte'
+  import Block from '../ui/Block.svelte'
   import ShuffleText from '../ui/ShuffleText.svelte'
 
   // The stages of a fast as one text bar like the Fast page's, as wide as the page:
   // as many cells as fit, shared among the stages by the hours they span, each run in
   // its stage's colour, the picked one solid and the others shaded. Tapping a run
   // (or < >) shows what happens in it and papers to read; it opens on the stage the
-  // fast in progress is in. Then the app: version, source, its origin, credits and
-  // licences, which open in a pane (App).
+  // fast in progress is in. It fills what the page leaves, scrolling inside its border,
+  // so stepping through the stages moves nothing else. Below it, as tall as it needs,
+  // the app: version, source, its origin, credits and licences, which open in a pane (App).
   let { current = null, onLicences }: { current?: number | null; onLicences: () => void } = $props()
 
   let pick = $state(untrack(() => current ?? 0))
@@ -43,8 +44,9 @@
   const ORIGINAL = 'https://github.com/Darkrock-Studios/FastTrack'
 </script>
 
-<Page title="Info" icon="info">
-  <h3>Stages of a fast</h3>
+<div class="layout">
+<Block title="Stages of a fast" icon="layers" class="stages-block">
+  <div class="scroller">
   <Measure bind:width bind:ch />
   <div class="bar" role="tablist" aria-label="Stages of a fast">
     {#each STAGES as s, i (s.id)}<button
@@ -81,8 +83,10 @@
     </ul>
   </div>
   <p class="muted">Times vary with the person, the last meal and activity. This is not medical advice.</p>
+  </div>
+</Block>
 
-  <hr class="split" />
+<Block title="About" icon="info" class="about-block">
   <ul class="credits">
     <li>
       Fast Track {__APP_VERSION__} ·
@@ -115,9 +119,28 @@
       <button type="button" class="link" onclick={onLicences}>third-party notices</button>
     </li>
   </ul>
-</Page>
+</Block>
+</div>
 
 <style>
+  /* The stages take what the page leaves and scroll inside; About keeps to its lines at
+     the bottom. The gap leaves room for About's title in its top edge. */
+  .layout {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.7em;
+  }
+
+  .layout > :global(.stages-block) {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .layout > :global(.about-block) {
+    flex: none;
+  }
+
   /* The stages as a text bar, as the Fast page draws progress. */
   .bar {
     display: flex;
@@ -167,10 +190,6 @@
     font-size: 0.9em;
   }
 
-  hr.split {
-    margin: 0.8em 0 0.4em;
-  }
-
   /* The app's own credits, a line each with room to tap. */
   .credits {
     margin: 0;
@@ -180,5 +199,13 @@
 
   .credits li {
     margin: 0.7em 0;
+  }
+
+  .credits li:first-child {
+    margin-top: 0.1em;
+  }
+
+  .credits li:last-child {
+    margin-bottom: 0.1em;
   }
 </style>
