@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- icon.svg as one colour on transparent, for Android's themed icons: the block,
+       its border broken for the title pill, and the fork and spoon. -->
+  <path d="M260 150H354a22 22 0 0 1 22 22V340a22 22 0 0 1-22 22H158a22 22 0 0 1-22-22V172a22 22 0 0 1 22-22h6" fill="none" stroke="#fff" stroke-width="14"/>
+  <rect x="172" y="143" width="80" height="14" rx="7" fill="#fff"/>
+  <g transform="translate(196 202) scale(5) translate(2.5 0)" fill="#fff">
+    <path d="M8.28 3c-.4 0-.72.32-.72.72V7h-.84V3.72C6.72 3.32 6.4 3 6 3s-.72.32-.72.72V7h-.84V3.72c0-.4-.32-.72-.72-.72S3 3.32 3 3.72V9c0 1.1.9 2 2 2v10h2V11c1.1 0 2-.9 2-2V3.72c0-.4-.32-.72-.72-.72z"/>
+    <path d="M16 7.08c0 1.77-.84 3.25-2 3.82V21h-2V10.9c-1.16-.57-2-2.05-2-3.82C10.01 4.83 11.35 3 13 3c1.66 0 3 1.83 3 4.08z"/>
+  </g>
+</svg>
