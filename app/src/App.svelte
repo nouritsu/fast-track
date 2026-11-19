@@ -2,6 +2,7 @@
   import { Capacitor } from '@capacitor/core'
   import { onMount } from 'svelte'
   import { applyColors, saveColors } from './lib/colors'
+  import { applyDisplay, buzzFor, reduceQuery, stillFor, systemPrefs, textScale, type SystemPrefs } from './lib/display'
   import { askAlerts } from './lib/fasting/alerts'
   import {
     deepestStage,
@@ -15,6 +16,7 @@
   } from './lib/fasting/fasts'
   import { NAME_WIDTH, STAGES, stageIndex } from './lib/fasting/stages'
   import { Tracker } from './lib/fasting/tracker.svelte'
+  import { PAGE_NAMES, shownPages, startPageOf, type PageId } from './lib/layout'
   import { dayClock, floorMinute, HOUR, nearClock, noonOf } from './lib/fasting/time'
   import { reducedMotion } from './lib/motion/shuffle'
   import CalendarPage from './lib/pages/CalendarPage.svelte'
@@ -33,11 +35,11 @@
   import Hero from './lib/ui/Hero.svelte'
   import Icon from './lib/ui/Icon.svelte'
   import ShuffleText from './lib/ui/ShuffleText.svelte'
-  import TabBar, { type Tab } from './lib/ui/TabBar.svelte'
+  import TabBar from './lib/ui/TabBar.svelte'
   import TypeText from './lib/ui/TypeText.svelte'
   import { carries, drag, resist, type DragOptions } from './lib/ui/drag'
   import { dashes, duration } from './lib/ui/fields'
-  import { buzz } from './lib/ui/haptics'
+  import { buzz, setHaptics } from './lib/ui/haptics'
   import { stageCells } from './lib/ui/progress'
 
   // Fast Track: five pages side by side, switched by the tabs along the bottom or a
@@ -49,17 +51,9 @@
   // pushed by the pane;
   // the calendar's month and year panes hang above it and push it down.
   type Phase = 'loading' | 'ready' | 'running' | 'done'
-  type PageId = 'fast' | 'calendar' | 'stats' | 'options' | 'info'
   type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year' | 'licences' | 'colours'
   type HeroMode = 'left' | 'elapsed'
 
-  const TABS: Tab<PageId>[] = [
-    { id: 'fast', label: 'Fast' },
-    { id: 'calendar', label: 'Calendar' },
-    { id: 'stats', label: 'Stats' },
-    { id: 'options', label: 'Options' },
-    { id: 'info', label: 'Info' },
-  ]
   const COLORS = STAGES.map((s) => s.id)
   const DISARM_MS = 3000 // Cancel stays armed this long for the second press
   const DRAW_MS = 700 // the progress line draws in while the hero shuffles in, within its 700 ms
@@ -67,7 +61,8 @@
   const DATE_FRAME = '[]%·: ' // "Tue 06:30" dashes to "--- --:--"
 
   const tracker = new Tracker()
-  let page = $state(0)
+  // The page in view, by id: reordering the tabs or hiding one keeps it in view.
+  let current = $state<PageId>('fast')
   let phase = $state<Phase>('loading')
   let revealed = $state(false) // the hero has locked; the detail settles in
   let ended = $state<Fast | null>(null) // the fast the ending shows
@@ -87,7 +82,7 @@
 
   let pane = $state<PaneId | null>(null) // the open pane
   let shownPane = $state<PaneId | null>(null) // the pane drawn; it stays while the page slides back
-  let paneHost = $state<number | null>(null) // the page it hangs below
+  let paneHost = $state<PageId | null>(null) // the page it hangs below
   let paneTimer = 0
   let paneHeight = $state(0) // the open pane's height: how far it pushes its page
   // Panes opened from the top of a page hang above it and push it down: the calendar's
@@ -103,6 +98,11 @@
 
   const active = $derived(tracker.active)
   const settings = $derived(tracker.settings)
+  // The pages along the tabs, in the user's order (Options' Pages); `page` is where the
+  // current one sits among them.
+  const order = $derived(shownPages(settings.pages, settings.hiddenPages))
+  const page = $derived(Math.max(0, order.indexOf(current)))
+  const tabs = $derived(order.map((id) => ({ id, label: PAGE_NAMES[id] })))
   const goal = $derived(phase === 'running' ? (active?.goal ?? settings.goal) : phase === 'done' && ended ? ended.goal : settings.goal)
   // Until the hero locks on a fast started now, nothing has elapsed.
   const elapsed = $derived(
@@ -150,23 +150,45 @@
     saveColors(settings.colors)
   })
 
+  // Text size, motion and haptics, from the settings and, where they follow the system,
+  // what the phone says (read again whenever the app comes back to the front).
+  let system = $state<SystemPrefs | null>(null)
+  let reduce = $state(reduceQuery().matches)
+  const readSystem = () => void systemPrefs().then((prefs) => (system = prefs))
+  $effect(() => {
+    if (!tracker.loaded || !system) return
+    applyDisplay(textScale(settings.textSize, system), stillFor(settings.motion, system, reduce))
+    setHaptics(buzzFor(settings.haptics, system))
+  })
+
   onMount(() => {
     const timer = setInterval(() => (now = Date.now()), 200)
     const unwatch = watchSystem(follow)
     follow()
+    readSystem()
+    const query = reduceQuery()
+    const motion = () => (reduce = query.matches)
+    query.addEventListener('change', motion)
     attempt(async () => {
       await tracker.load()
+      current = startPageOf(tracker.settings.startPage, order)
       if (tracker.active) begin()
     }).finally(() => {
       // Storage that fails to load still leaves a working gate; the alert says why.
       if (phase === 'loading') phase = 'ready'
     })
-    // Back in front, read openScale again: a weighing may have come in meanwhile.
-    const back = () => document.visibilityState === 'visible' && void tracker.loadScale()
+    // Back in front, read openScale and the phone's settings again: a weighing may have
+    // come in meanwhile, or the font size changed.
+    const back = () => {
+      if (document.visibilityState !== 'visible') return
+      void tracker.loadScale()
+      readSystem()
+    }
     document.addEventListener('visibilitychange', back)
     return () => {
       clearInterval(timer)
       unwatch()
+      query.removeEventListener('change', motion)
       document.removeEventListener('visibilitychange', back)
     }
   })
@@ -202,7 +224,7 @@
 
   // A pane belongs to the page it was opened on; turning the page closes it.
   function go(index: number) {
-    page = Math.min(TABS.length - 1, Math.max(0, index))
+    current = order[Math.min(order.length - 1, Math.max(0, index))]
     clearTimeout(paneTimer)
     pane = shownPane = paneHost = editing = null
   }
@@ -211,7 +233,7 @@
   function openPane(id: PaneId) {
     clearTimeout(paneTimer)
     pane = shownPane = id
-    paneHost = page
+    paneHost = current
   }
 
   /** Slides the page back down; the pane goes once it is out of sight. */
@@ -277,7 +299,7 @@
   let dragX = $state(0)
   let paging = $state(false)
   let pagesEl = $state<HTMLElement>()
-  const pastEnd = (dx: number) => (page === 0 && dx > 0) || (page === TABS.length - 1 && dx < 0)
+  const pastEnd = (dx: number) => (page === 0 && dx > 0) || (page === order.length - 1 && dx < 0)
 
   const pageDrag: DragOptions = {
     axis: 'x',
@@ -437,7 +459,7 @@
 
 <!-- A pane hangs below the page that opened it; the page slides up by the pane's
      height to show it. Tapping what is left of the page closes it. -->
-{#snippet hangingPane(host: number)}
+{#snippet hangingPane(host: PageId)}
   {#if paneHost === host}
     {#if pane}<button
         type="button"
@@ -498,16 +520,18 @@
     <div class="track" class:dragging={paging} style:transform="translateX(calc({-page * 100}% + {dragX}px))">
       <div
         class="page"
-        class:pushed={pane !== null && paneHost === 0}
-        class:pulling={pulling && paneHost === 0}
+        class:pushed={pane !== null && paneHost === 'fast'}
+        class:pulling={pulling && paneHost === 'fast'}
         style:--push="{fromTop ? -paneHeight : paneHeight}px"
-        style:--pull="{paneHost === 0 ? pull : 0}px"
+        style:--pull="{paneHost === 'fast' ? pull : 0}px"
+        style:order={order.indexOf('fast')}
+        class:gone={!order.includes('fast')}
         id="page-fast"
         role="tabpanel"
         aria-labelledby="tab-fast"
-        inert={page !== 0}
+        inert={current !== 'fast'}
       >
-        <div class="page-main" inert={pane !== null && paneHost === 0}>
+        <div class="page-main" inert={pane !== null && paneHost === 'fast'}>
         <Block title="Fast" icon="timer" class="page-block">
           {#snippet headingRight()}Goal <span class="value" style:--block-border={tone ? `var(--${tone})` : undefined}
               ><ShuffleText text={dashed ? '--' : `${percent}%`} staggerMs={120} /></span
@@ -599,21 +623,23 @@
           {/snippet}
         </Block>
         </div>
-        {@render hangingPane(0)}
+        {@render hangingPane('fast')}
       </div>
 
       <div
         class="page"
-        class:pushed={pane !== null && paneHost === 1}
-        class:pulling={pulling && paneHost === 1}
+        class:pushed={pane !== null && paneHost === 'calendar'}
+        class:pulling={pulling && paneHost === 'calendar'}
         style:--push="{fromTop ? -paneHeight : paneHeight}px"
-        style:--pull="{paneHost === 1 ? pull : 0}px"
+        style:--pull="{paneHost === 'calendar' ? pull : 0}px"
+        style:order={order.indexOf('calendar')}
+        class:gone={!order.includes('calendar')}
         id="page-calendar"
         role="tabpanel"
         aria-labelledby="tab-calendar"
-        inert={page !== 1}
+        inert={current !== 'calendar'}
       >
-        <div class="page-main" inert={pane !== null && paneHost === 1}>
+        <div class="page-main" inert={pane !== null && paneHost === 'calendar'}>
         <CalendarPage
           fasts={tracker.fasts}
           scale={tracker.scale}
@@ -622,7 +648,7 @@
           {settings}
           bind:year={calYear}
           bind:month={calMonth}
-          visible={page === 1}
+          visible={current === 'calendar'}
           onPickMonth={() => openPane('month')}
           onPickYear={() => openPane('year')}
           onEdit={(fast) => openEdit(fast, false)}
@@ -631,10 +657,18 @@
           onRestore={(fast) => attempt(() => tracker.save(fast))}
         />
         </div>
-        {@render hangingPane(1)}
+        {@render hangingPane('calendar')}
       </div>
 
-      <div class="page" id="page-stats" role="tabpanel" aria-labelledby="tab-stats" inert={page !== 2}>
+      <div
+        class="page"
+        style:order={order.indexOf('stats')}
+        class:gone={!order.includes('stats')}
+        id="page-stats"
+        role="tabpanel"
+        aria-labelledby="tab-stats"
+        inert={current !== 'stats'}
+      >
         <StatsPage
           fasts={tracker.fasts}
           active={tracker.active}
@@ -650,41 +684,45 @@
 
       <div
         class="page"
-        class:pushed={pane !== null && paneHost === 3}
-        class:pulling={pulling && paneHost === 3}
+        class:pushed={pane !== null && paneHost === 'options'}
+        class:pulling={pulling && paneHost === 'options'}
         style:--push="{fromTop ? -paneHeight : paneHeight}px"
-        style:--pull="{paneHost === 3 ? pull : 0}px"
+        style:--pull="{paneHost === 'options' ? pull : 0}px"
+        style:order={order.indexOf('options')}
+        class:gone={!order.includes('options')}
         id="page-options"
         role="tabpanel"
         aria-labelledby="tab-options"
-        inert={page !== 3}
+        inert={current !== 'options'}
       >
-        <div class="page-main" inert={pane !== null && paneHost === 3}>
+        <div class="page-main" inert={pane !== null && paneHost === 'options'}>
         <OptionsPage {tracker} {choice} onTheme={switchTheme} onColours={() => openPane('colours')} />
         </div>
-        {@render hangingPane(3)}
+        {@render hangingPane('options')}
       </div>
 
       <div
         class="page"
-        class:pushed={pane !== null && paneHost === 4}
-        class:pulling={pulling && paneHost === 4}
+        class:pushed={pane !== null && paneHost === 'info'}
+        class:pulling={pulling && paneHost === 'info'}
         style:--push="{fromTop ? -paneHeight : paneHeight}px"
-        style:--pull="{paneHost === 4 ? pull : 0}px"
+        style:--pull="{paneHost === 'info' ? pull : 0}px"
+        style:order={order.indexOf('info')}
+        class:gone={!order.includes('info')}
         id="page-info"
         role="tabpanel"
         aria-labelledby="tab-info"
-        inert={page !== 4}
+        inert={current !== 'info'}
       >
-        <div class="page-main" inert={pane !== null && paneHost === 4}>
+        <div class="page-main" inert={pane !== null && paneHost === 'info'}>
         <InfoPage current={phase === 'running' && active ? stage : null} onLicences={() => openPane('licences')} />
         </div>
-        {@render hangingPane(4)}
+        {@render hangingPane('info')}
       </div>
     </div>
   </div>
 
-  <TabBar tabs={TABS} current={page} onSelect={go} />
+  <TabBar {tabs} current={page} onSelect={go} />
 </main>
 
 {#if failure}<p class="alert" role="alert">{failure}</p>{/if}
@@ -723,10 +761,8 @@
     transition: none;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .track {
-      transition: none;
-    }
+  :global(:root[data-still]) .track {
+    transition: none;
   }
 
   /* Room above each block for the titles in its top edge, and below it for the
@@ -740,6 +776,11 @@
     position: relative;
     /* Back down when a pane closes: easing in, like falling back. */
     transition: transform 0.24s cubic-bezier(0.32, 0, 0.67, 0);
+  }
+
+  /* A page left off the tabs (Options' Pages) takes no room in the track. */
+  .page.gone {
+    display: none;
   }
 
   /* A pane hangs below the page (Pane.svelte); opening it pushes the page up by the
@@ -794,11 +835,9 @@
     border-radius: 0;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .page,
-    .page.pushed {
-      transition: none;
-    }
+  :global(:root[data-still]) .page,
+  :global(:root[data-still]) .page.pushed {
+    transition: none;
   }
 
   .summary {

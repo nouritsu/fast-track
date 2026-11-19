@@ -476,10 +476,8 @@ hr.split {
   opacity: 1;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .settle {
-    transition: none;
-  }
+:root[data-still] .settle {
+  transition: none;
 }
 
 /* Large accent text for the ending ("Done!"). */

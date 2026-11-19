@@ -8,7 +8,9 @@ const LOWER = 'abcdefghijklmnopqrstuvwxyz'
 const DIGITS = '0123456789'
 
 const FRAME_MS = 40 // glyphs change at most this often: a terminal's pace, not the display's
-export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+// Whether to hold motion still: data-still on the root, which display.ts sets from the
+// Motion setting (System follows the phone and the browser) and index.html before paint.
+export const reducedMotion = () => document.documentElement.hasAttribute('data-still')
 
 export interface ShufflePlan {
   lockAt: number[] // ms after the start at which each character is final

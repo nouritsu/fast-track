@@ -12,6 +12,8 @@
   import { dayClock, dayKey, shortDate } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
   import { COLOR_KEYS } from '../colors'
+  import { SWITCHABLE, TEXT_SIZES } from '../display'
+  import { FIXED_PAGES, moveIn, PAGE_NAMES, shownPages, startPageOf, type PageId } from '../layout'
   import type { IconName } from '../ui/Icon.svelte'
   import Block from '../ui/Block.svelte'
   import ShuffleText from '../ui/ShuffleText.svelte'
@@ -233,6 +235,28 @@
     })
   }
 
+  // Display: each word steps to the next choice.
+  const capital = (word: string) => word[0].toUpperCase() + word.slice(1)
+  function cycle(key: 'textSize' | 'motion' | 'haptics', choices: readonly string[]) {
+    const next = choices[(choices.indexOf(settings[key]) + 1) % choices.length]
+    void tracker.setSettings({ [key]: next })
+  }
+
+  // Pages: shown or not, their order along the tabs, and the one the app opens on, from
+  // those that show.
+  const startPage = $derived(startPageOf(settings.startPage, shownPages(settings.pages, settings.hiddenPages)))
+
+  function showPage(id: PageId, hidden: boolean) {
+    void tracker.setSettings({ hiddenPages: hidden ? settings.hiddenPages.filter((p) => p !== id) : [...settings.hiddenPages, id] })
+  }
+
+  const movePage = (id: PageId, by: -1 | 1) => void tracker.setSettings({ pages: moveIn(settings.pages, id, by) })
+
+  function nextStartPage() {
+    const shown = shownPages(settings.pages, settings.hiddenPages)
+    void tracker.setSettings({ startPage: shown[(shown.indexOf(startPage) + 1) % shown.length] })
+  }
+
   /** The calendar's next first weekday: Monday, Sunday, Saturday. */
   const nextWeekStart = () => WEEK_STARTS[(WEEK_STARTS.indexOf(settings.weekStart) + 1) % WEEK_STARTS.length]
 
@@ -259,6 +283,16 @@
   </div>
 {/snippet}
 
+<!-- A setting of a few choices: its name, and the word to press for the next one. -->
+{#snippet choose(key: 'textSize' | 'motion' | 'haptics', name: string, choices: readonly string[], first = false)}
+  <div class="row" class:first>
+    <span>{name}</span>
+    <button type="button" class="word" aria-label="{name}: {settings[key]}" onclick={() => cycle(key, choices)}
+      ><ShuffleText text={capital(settings[key])} /></button
+    >
+  </div>
+{/snippet}
+
 <!-- A pane a category, in one scrolling column like Stats (app.css .panes). -->
 <div class="panes">
   <Block title="General" icon="tune">
@@ -275,6 +309,47 @@
         {#each COLOR_KEYS as key (key)}<span style:color="var(--{key})" aria-hidden="true">■</span>{/each}
       </button>
     </div>
+  </Block>
+
+  <Block title="Display" icon="text_fields">
+    {@render choose('textSize', 'Text size', TEXT_SIZES, true)}
+    {@render choose('motion', 'Motion', SWITCHABLE)}
+    {@render choose('haptics', 'Haptics', SWITCHABLE)}
+    <p class="muted">System follows the phone: its font size, Remove animations, and touch feedback.</p>
+  </Block>
+
+  <Block title="Pages" icon="tab">
+    {#each settings.pages as id, i (id)}
+      {@const fixed = FIXED_PAGES.includes(id)}
+      {@const hidden = !fixed && settings.hiddenPages.includes(id)}
+      <div class="row" class:first={i === 0}>
+        <span class="page-name" class:muted={hidden}>{PAGE_NAMES[id]}</span>
+        {#if fixed}
+          <span class="muted always">always</span>
+        {:else}
+          <button type="button" class="word" aria-label="Show {PAGE_NAMES[id]}" aria-pressed={!hidden} onclick={() => showPage(id, hidden)}
+            ><ShuffleText text={hidden ? 'off' : 'on'} /></button
+          >
+        {/if}
+        <span class="moves">
+          <button type="button" class="glyph" aria-label="Move {PAGE_NAMES[id]} up" disabled={i === 0} onclick={() => movePage(id, -1)}
+            ><Icon name="keyboard_arrow_up" /></button
+          >
+          <button
+            type="button"
+            class="glyph"
+            aria-label="Move {PAGE_NAMES[id]} down"
+            disabled={i === settings.pages.length - 1}
+            onclick={() => movePage(id, 1)}><Icon name="keyboard_arrow_down" /></button
+          >
+        </span>
+      </div>
+    {/each}
+    <div class="row">
+      <span>Opens on</span>
+      <button type="button" class="word" onclick={nextStartPage}><ShuffleText text={PAGE_NAMES[startPage]} /></button>
+    </div>
+    <p class="muted">The tabs follow this order; Fast and Options always show.</p>
   </Block>
 
   <Block title="Body" icon="accessibility_new">
@@ -403,6 +478,20 @@
     align-items: center;
     justify-content: space-between;
     margin-top: 0.4em;
+  }
+
+  /* Pages: the name, whether it shows, then the moves at the right edge. */
+  .page-name {
+    flex: 1;
+  }
+
+  .always {
+    padding: 0 0.3ch;
+  }
+
+  .moves {
+    display: flex;
+    margin-right: -0.6ch;
   }
 
   .row.first {

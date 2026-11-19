@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1e1e2e" />
     <script>
-      // The theme and the colours before the first paint: the saved choices, else Mocha and
-      // the default colours (src/lib/theme.ts, src/lib/colors.ts).
+      // The theme, the colours, the text's size and motion before the first paint: the saved
+      // choices, else Mocha, the default colours, the normal size and the browser's motion
+      // (src/lib/theme.ts, src/lib/colors.ts, src/lib/display.ts).
       {
         const read = (key) => {
           try {
@@ -33,6 +34,15 @@
           style.textContent = `:root,[data-theme]{${picked.join(';')}}`
           document.head.append(style)
         }
+
+        let display
+        try {
+          display = JSON.parse(read('display'))
+        } catch {}
+        const scale = Number(display?.scale)
+        if (scale > 0) document.documentElement.style.fontSize = `${16 * scale}px`
+        const still = typeof display?.still === 'boolean' ? display.still : matchMedia('(prefers-reduced-motion: reduce)').matches
+        if (still) document.documentElement.dataset.still = ''
       }
     </script>
     <title>Fast Track</title>
