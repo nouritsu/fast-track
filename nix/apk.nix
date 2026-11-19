@@ -13,7 +13,11 @@
   jdk21,
   nodejs,
   web,
+  # A build that installs beside the release one, as "Fast Track (debug)" with its own id
+  # and storage (app/android/app/build.gradle): `nix run .#apk-debug -- --install`.
+  debugApp ? false,
 }: let
+  name = "fast-track${lib.optionalString debugApp "-debug"}";
   buildToolsVersion = "35.0.0"; # AGP 8.13's default; any other makes it reach for the network
   android = androidenv.composeAndroidPackages {
     platformVersions = ["36"];
@@ -40,7 +44,7 @@
       part 0 * 10000 + minor * 100 + patch;
 in
   stdenv.mkDerivation (finalAttrs: {
-    pname = "fast-track-apk";
+    pname = "${name}-apk";
     inherit version;
     src = ../app;
 
@@ -59,17 +63,20 @@ in
     };
 
     ANDROID_HOME = sdk;
-    gradleFlags = [
-      "-Dorg.gradle.java.home=${jdk21}"
-      # The aapt2 AGP fetches from Maven is linked for FHS systems and fails on NixOS.
-      "-Pandroid.aapt2FromMavenOverride=${sdk}/build-tools/${buildToolsVersion}/aapt2"
-      "-PversionCode=${toString versionCode}"
-      "-PversionName=${finalAttrs.version}"
-      # Release lint looks up newer library versions in Google's Maven indexes, which
-      # change upstream every few days; pinning them broke the build within a week.
-      "-x"
-      "lintVitalRelease"
-    ];
+    gradleFlags =
+      [
+        "-Dorg.gradle.java.home=${jdk21}"
+        # The aapt2 AGP fetches from Maven is linked for FHS systems and fails on NixOS.
+        "-Pandroid.aapt2FromMavenOverride=${sdk}/build-tools/${buildToolsVersion}/aapt2"
+        "-PversionCode=${toString versionCode}"
+        "-PversionName=${finalAttrs.version}"
+        # Release lint looks up newer library versions in Google's Maven indexes, which
+        # change upstream every few days; pinning them broke the build within a week.
+        "-x"
+        "lintVitalRelease"
+      ]
+      # Only when wanted: Gradle reads any value, "false" too, as set.
+      ++ lib.optional debugApp "-PdebugApp=true";
     gradleBuildTask = "assembleRelease";
     # Android variants make the default nixDownloadDeps ambiguous; record a real build.
     gradleUpdateTask = finalAttrs.gradleBuildTask;
@@ -85,11 +92,15 @@ in
     installPhase = ''
       runHook preInstall
       install -Dm644 app/build/outputs/apk/release/app-release-unsigned.apk \
-        $out/fast-track-${finalAttrs.version}-unsigned.apk
+        $out/${name}-${finalAttrs.version}-unsigned.apk
       runHook postInstall
     '';
 
-    passthru = {inherit sdk buildToolsVersion versionCode;};
+    # The signed APK's name in out/apk/ (nix/apk-app.nix).
+    passthru = {
+      inherit sdk buildToolsVersion versionCode;
+      signedName = "${name}-${finalAttrs.version}.apk";
+    };
 
     meta.license = lib.licenses.gpl3Plus;
     meta.sourceProvenance = with lib.sourceTypes; [

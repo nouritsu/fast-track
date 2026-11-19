@@ -1,4 +1,5 @@
 # `nix run .#apk -- [--keystore PATH --alias NAME] [--install]`: signs the APK with a
+# (`nix run .#apk-debug` does the same for the debug build, beside the release one)
 # release key, or with this machine's Android debug key when no keystore is given,
 # writes it to out/apk/, and optionally adb installs it. Release passwords come from
 # FAST_TRACK_KEYSTORE_PASS and FAST_TRACK_KEY_PASS.
@@ -62,7 +63,7 @@ writers.writeFishBin "fast-track-apk" ''
   end
 
   set -l unsigned ${apk}/*.apk
-  set -l signed $root/out/apk/fast-track-${apk.version}.apk
+  set -l signed $root/out/apk/${apk.signedName}
   mkdir -p (path dirname $signed)
   apksigner sign --ks $keystore --ks-key-alias $key_alias \
       --ks-pass env:FAST_TRACK_KEYSTORE_PASS --key-pass env:FAST_TRACK_KEY_PASS \

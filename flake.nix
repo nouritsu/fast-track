@@ -74,6 +74,12 @@
               assets = own.app-assets;
               web = own.app;
             };
+            # Installs beside the release app as "Fast Track (debug)": `nix run .#apk-debug -- --install`.
+            apk-debug = androidPkgs.callPackage ./nix/apk.nix {
+              assets = own.app-assets;
+              web = own.app;
+              debugApp = true;
+            };
           };
 
         apps = lib.optionalAttrs android {
@@ -81,6 +87,11 @@
             type = "app";
             program = lib.getExe (pkgs.callPackage ./nix/apk-app.nix {inherit (own) apk;});
             meta.description = "Sign the APK with the debug key or a release keystore, and optionally adb install it";
+          };
+          apk-debug = {
+            type = "app";
+            program = lib.getExe (pkgs.callPackage ./nix/apk-app.nix {apk = own.apk-debug;});
+            meta.description = "Sign the debug build, which installs beside the release app, and optionally adb install it";
           };
           screenshots = {
             type = "app";
