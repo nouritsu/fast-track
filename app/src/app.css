@@ -285,6 +285,12 @@ button.edge {
   white-space: nowrap;
 }
 
+/* One set into a block's top edge instead (a pane's Close, at the right): the same tap
+   area, its words on the line with the title's. */
+.title button.edge {
+  margin: -0.6em -0.7ch;
+}
+
 button.edge.primary {
   color: var(--accent);
   font-weight: 700;
