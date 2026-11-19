@@ -699,10 +699,12 @@
   }
 
   /* The pages sit side by side; the track slides to the current one. Vertical
-     scrolling stays with the page, horizontal drags come here as swipes. */
+     scrolling stays with the page, horizontal drags come here as swipes. Clipped, not
+     hidden: focus moving into a pane must not scroll the track out of line. */
   .pages {
+    min-width: 0;
     min-height: 0;
-    overflow: hidden;
+    overflow: clip;
     touch-action: pan-y;
   }
 
