@@ -18,7 +18,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.ProgressStyle;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.drawable.IconCompat;
 import java.util.Date;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,7 +33,7 @@ import org.json.JSONObject;
  * rebuilds it while the app is closed, and a lazier one every few minutes moves the bar. The
  * stage boundaries mirror src/lib/fasting/stages.ts.
  *
- * <p>The bar is a {@link ProgressStyle}: Android 16 draws its segments, points and tracker
+ * <p>The bar is a {@link ProgressStyle}: Android 16 draws its coloured segments and points
  * (https://developer.android.com/develop/ui/views/notifications/progress-centric), and older
  * versions get the plain progress bar the compat class falls back to. A fast's bar spans the
  * goal, and once past it the next whole 12 hours; the eating window's spans the window and drains.
@@ -70,7 +69,9 @@ final class FastStatus {
         createChannel(context);
 
         long now = System.currentTimeMillis();
-        NotificationCompat.Builder builder = builder(context);
+        // The icon in the app's accent; the notification itself keeps the system's colours, as
+        // a Live Update must (not colorized).
+        NotificationCompat.Builder builder = builder(context).setColor(FastColors.accent(context, settings));
         long next; // when the notification next changes, or 0 for never
         int span = 0; // the bar's length in minutes, or 0 for no bar
         JSONObject active = parseObject(prefs.getString("active", null));
@@ -112,7 +113,7 @@ final class FastStatus {
                     .setWhen(windowEnd)
                     .setUsesChronometer(true)
                     .setChronometerCountDown(true)
-                    .setStyle(windowBar(context, span, minutes(windowEnd - now)));
+                    .setStyle(windowBar(context, settings, span, minutes(windowEnd - now)));
                 next = windowEnd;
             } else {
                 builder
@@ -169,31 +170,47 @@ final class FastStatus {
     }
 
     /**
-     * A fast's bar over `span` minutes: a segment for each stage in the span, in the stage's
-     * colour, the tracker `at` now and a point at the `goal`. Both are in minutes from the start.
+     * A fast's bar over `span` minutes, drawn like the app's progress line: the time fasted, up
+     * to `at` now, in the colours of the stages it went through, and the rest muted, with a
+     * point in a stage's colour where each one still ahead begins and one in the accent at the
+     * `goal`. All in minutes from the start.
      */
     private static ProgressStyle fastBar(Context context, JSONObject settings, int span, int at, int goal) {
         int[] colors = FastColors.stages(context, settings);
-        ProgressStyle bar = bar(context, span, at);
+        int now = Math.max(0, Math.min(at, span));
+        ProgressStyle bar = bar(span, now);
         for (int i = 0; i < STARTS.length; i++) {
             int from = STARTS[i] * 60;
-            int to = i + 1 < STARTS.length ? Math.min(STARTS[i + 1] * 60, span) : span;
+            int to = Math.min(i + 1 < STARTS.length ? STARTS[i + 1] * 60 : span, now);
             if (to > from) bar.addProgressSegment(new ProgressStyle.Segment(to - from).setColor(colors[i]));
         }
-        // The goal's point keeps the system's colour.
-        return bar.addProgressPoint(new ProgressStyle.Point(Math.max(0, Math.min(goal, span))));
+        if (span > now) bar.addProgressSegment(new ProgressStyle.Segment(span - now).setColor(FastColors.rest(context)));
+        int goalAt = Math.max(0, Math.min(goal, span));
+        for (int i = 1; i < STARTS.length; i++) {
+            int from = STARTS[i] * 60;
+            if (from > now && from <= span && from != goalAt) bar.addProgressPoint(new ProgressStyle.Point(from).setColor(colors[i]));
+        }
+        return bar.addProgressPoint(new ProgressStyle.Point(goalAt).setColor(FastColors.accent(context, settings)));
     }
 
-    /** The eating window's bar: one segment in the system's colour, with `left` minutes of `span` to go. */
-    private static ProgressStyle windowBar(Context context, int span, int left) {
-        return bar(context, span, left).addProgressSegment(new ProgressStyle.Segment(span));
+    /** The eating window's bar over `span` minutes: the `left` still to go in the accent, the
+     *  rest muted, so it drains towards the next fast. */
+    private static ProgressStyle windowBar(Context context, JSONObject settings, int span, int left) {
+        int remaining = Math.max(0, Math.min(left, span));
+        ProgressStyle bar = bar(span, remaining);
+        if (remaining > 0) bar.addProgressSegment(new ProgressStyle.Segment(remaining).setColor(FastColors.accent(context, settings)));
+        if (span > remaining) bar.addProgressSegment(new ProgressStyle.Segment(span - remaining).setColor(FastColors.rest(context)));
+        return bar;
     }
 
-    /** A bar of `span` minutes with the tracker `at` one of them. */
-    private static ProgressStyle bar(Context context, int span, int at) {
-        // The tracker is drawn over the stage colours, so it takes a colour that reads on them.
-        IconCompat tracker = IconCompat.createWithResource(context, icon(context)).setTint(FastColors.onStage(context));
-        return new ProgressStyle().setProgress(Math.max(0, Math.min(at, span))).setProgressTrackerIcon(tracker);
+    /**
+     * A bar of `span` minutes at `at`, which shows in the segments' own colours, as the app's
+     * line does: Android's fading of what lies ahead turned the pastel stage colours grey on the
+     * shade, and its tracker icon sat on the bar like a box. Below Android 16 it is a plain bar
+     * filled to `at`.
+     */
+    private static ProgressStyle bar(int span, int at) {
+        return new ProgressStyle().setStyledByProgress(false).setProgress(at);
     }
 
     private static void createChannel(Context context) {
