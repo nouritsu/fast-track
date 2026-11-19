@@ -32,6 +32,6 @@ jobs:
           branch: update-screenshots
           delete-branch: true
           add-paths: fastlane/metadata/android/en-US/images/phoneScreenshots
-          commit-message: Update the screenshots
-          title: Update the screenshots
+          commit-message: "chore(screenshots): update store screenshots"
+          title: "chore(screenshots): update store screenshots"
           body: Rendered by `nix run .#screenshots`.
