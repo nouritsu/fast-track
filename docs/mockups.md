@@ -3,11 +3,18 @@
 Drawn at 44 columns, about what a 375 px phone shows. Brackets are buttons, and the words in a
 block's borders are buttons too. The running app is the reference where they differ.
 
+The icons are Material Icons, drawn as SVG in the accent: on the buttons, and before each
+block's title (a timer for Fast, a lock for Privacy, a trophy for Records). The mockups draw the
+buttons' with the nearest symbol and leave the titles' out. Values that change in place (a word
+button, a stepper's value on a tap, the calendar's month, Stats' numbers as the span changes)
+shuffle their letters into the new text.
+
 ## Layout
 
 Five pages side by side — **Fast │ Calendar │ Stats │ Options │ Info** — switched by the tabs along
 the bottom (the accent line under the current one slides with the page) or by swiping left and
-right. Start time, Goal, Edit fast and Info's Licences open as panes that hang below the page:
+right. Options' Pages block reorders the tabs, hides Calendar, Stats or Info, and picks the page
+the app opens on. Start time, Goal, Edit fast, Options' Colours and Info's Licences open as panes that hang below the page:
 each rises the size of its panel and pushes the page up and off the top, with **✕ Close** and its
 own button in its bottom edge, and drops back when closed. The calendar's Month and Year panes
 hang above the page instead and push it down. With one open, tapping the button of another that
@@ -45,7 +52,7 @@ Waiting. **Start!** starts a fast now; **◷ Start at** starts one that began ea
  ‾‾‾‾
 ```
 
-Fasting. Tap the timer to switch between time left and time elapsed; past the goal it counts up
+Fasting. The timer is in the colour of the stage the fast is in. Tap it to switch between time left and time elapsed; past the goal it counts up
 as `+0:42:10`. **✕ Cancel** asks **Discard?** first; **◷ Start** moves the start; **⧗ 16h**
 changes the goal.
 
@@ -132,9 +139,13 @@ the year opens a pane above the page to pick one, which jumps there without slid
 ended a fast are in the colour of the deepest stage it reached, and tapping one lists only its
 fasts; the stage colours sit in the block's bottom edge. Options adds ISO week numbers (**wk**)
 before each week and its hours (**h**) after it, hanging outside the seven days, which stay in
-the middle either way. Fasts sums up the month, then lists its fasts: **✚ add** logs one
-afterwards, ✎ edits one (note, weight, start, end, goal), and ✕ or a swipe to the left deletes
-it, leaving a line with **↺ undo** until you leave the page. ✎ and ✕ are Material icons.
+the middle either way. Today is in the accent and underlined in it. Fasts sums up the month,
+its numbers in the accent and the goal's share green when met, yellow from half and red below,
+then lists its fasts, each with a bar down its left edge in its deepest stage's colour: from and
+to, its length, a progress line to its goal in the stage colours with the share beside it, the
+time in its deepest stage, how far past the goal or short of it, its weight and, with BMI on,
+◆ and the BMI. **✚ add** logs one afterwards, ✎ edits one (note, weight, start, end, goal), and
+✕ or a swipe to the left deletes it, leaving a line with **↺ undo** until you leave the page.
 
 ```text
 ╭─ Calendar ───────────────────────────────╮
@@ -151,16 +162,18 @@ it, leaving a line with **↺ undo** until you leave the page. ✎ and ✕ are M
 │ November · 21 fasts · 381h               │
 │ avg 18:09 · goal met 81% · longest 23:57 │
 ├──────────────────────────────────────────┤
-│ Wednesday 25 Nov                     ✎ ✕ │
-│ Tue 18:33 → 11:03 · 16:30:05             │
-│ Ketosis · 103% of 16h · 79.9 kg          │
-│ ¶ Hungry around the 14th hour            │
+│▎Wednesday 25 Nov                     ✎ ✕ │
+│▎from Tue 18:33 to 11:03 · 16:30:05       │
+│▎██████████████████████████  103% of 16h  │
+│▎Ketosis 4:30 · +0:30 · 79.9 kg ◆ 24.7    │
+│▎¶ Hungry around the 14th hour            │
 ├──────────────────────────────────────────┤
-│ Deleted Tuesday 24 Nov          [↺ undo] │
+│  Deleted Tuesday 24 Nov         [↺ undo] │
 ├──────────────────────────────────────────┤
-│ Monday 23 Nov                        ✎ ✕ │
-│ Sun 20:17 → 12:45 · 16:27:44             │
-│ Ketosis · 102% of 16h                    │
+│▎Monday 23 Nov                        ✎ ✕ │
+│▎from Sun 20:17 to 12:45 · 16:27:44       │
+│▎██████████████████████████  102% of 16h  │
+│▎Ketosis 4:27 · +0:27                     │
 ╰──────────────────────────────────────────╯
  Fast │ Calendar │ Stats │ Options │ Info
         ‾‾‾‾‾‾‾‾
@@ -206,8 +219,7 @@ the credits as links; **third-party notices** opens the Licences pane.
 │ Fast Track 0.1.0 · source on GitHub      │
 │ based on Fast Track by Dark Rock Studios │
 │ (MIT)                                    │
-│ fonts Iosevka, Noto Sans Symbols 2       │
-│ (SIL OFL 1.1)                            │
+│ font Iosevka (SIL OFL 1.1)               │
 │ colours Catppuccin (MIT)                 │
 │ icons Material Icons (Apache 2.0),       │
 │ Octicons (MIT)                           │
@@ -235,15 +247,20 @@ Licences pane: the bundled THIRD_PARTY_NOTICES.md as plain text, scrolling.
 
 Stats page: a column of panes that scrolls. The span (**30d 90d 1y all**) sits in Summary's top
 edge, is remembered, and sets what Length, Goal, Stages, Rhythm and Weight cover; Summary sets it
-against the same span before, and Records cover the whole history. The charts are drawn (SVG) on
-the text's grid in the stage colours; the length bands and the stage bar are text cells.
+against the same span before, with a green ▲ or a red ▼ beside each value that rose or fell, and
+Records cover the whole history. Values are in the accent. The charts are drawn (SVG) on the
+text's grid in the stage colours; the length bands and the stage bar are text cells.
+
+**⇅ Arrange** in Summary's bottom edge sets ˄ ˅ ✕ into the top edge of every pane below it: up,
+down, and put away. Put-away panes wait in a Put away block at the bottom, a **+** word each to
+bring it back; **✓ Done** ends it.
 
 ```text
 ╭─ Summary ─────────── 30d 90d 1y all ─╮
-│ 26 fasts · 448h · goal met 69%       │
-│ avg 17:13 · streak 1                 │
-│ prior 30d: 25 fasts · avg 16:30 · 64%│
-╰──────────────────────────────────────╯
+│ 26 fasts ▲ · 448h ▲ · goal met 69% ▼ │
+│ avg 17:13 ▲ · streak 1               │
+│ prior 30d: 25 fasts · avg 16:30 · 72%│
+╰─ ⇅ Arrange ──────────────────────────╯
 ╭─ Length ───────────── median 16:51 ──╮
 │ 24h ─▆─────────────────────────────  │   each fast a bar in its stages'
 │ 12h ▇█▇█▇▇█▇▇█▇█▇█▇▇█▇▇█▇█▇█▇▇█▇     │   colours; a white mark at the
@@ -290,10 +307,55 @@ the text's grid in the stage colours; the length bands and the stage bar are tex
 ╰──────────────────────────────────────╯
 ```
 
-Options page: a pane a category, in a column that scrolls like Stats: General (theme), Body (kg or
-lb, and BMI), Notifications (alerts, the status notification), Calendar, openScale (weights from
-the scale), Backup (export and import, an .ics file, and regular exports) and Privacy: Android's
-cloud backup, off by default.
+Options page: a pane a category, in a column that scrolls like Stats: General (theme and
+colours), Display, Pages, Body (kg or lb, and BMI), Notifications (alerts, the status
+notification), Calendar, openScale (weights from the scale), Backup (export and import, an .ics
+file, and regular exports) and Privacy: Android's cloud backup, off by default. A setting that is
+off reads muted.
+
+General: Theme steps through Mocha, Latte and System, which shows Mocha while the phone is dark
+and Latte while it is light, and follows it. Colours shows the accent and the four stage colours
+as squares and opens the Colours pane: a stepper for each, through Catppuccin's fourteen accents,
+each shown as a bar in its colour and its name, in Latte or Mocha as the theme is. A change
+applies at once, to the app and the status notification; **↺ Defaults** brings back mauve, blue,
+peach, red and mauve.
+
+Display: Text size (System, Small, Normal, Large), Motion and Haptics (System, On, Off). System
+follows the phone: its font size, Remove animations, and touch feedback.
+
+Pages: the five pages in the tabs' order, each moved with ˄ ˅; Calendar, Stats and Info can be
+turned off, Fast and Options always show. **Opens on** picks the page the app starts on.
+
+```text
+╭─ General ────────────────────────────────╮
+│ Theme                          [System]  │
+│ Colours                       [■■■■■]    │
+╰──────────────────────────────────────────╯
+╭─ Display ────────────────────────────────╮
+│ Text size                      [System]  │
+│ Motion                         [System]  │
+│ Haptics                           [Off]  │
+│ System follows the phone: its font size, │
+│ Remove animations, and touch feedback.   │
+╰──────────────────────────────────────────╯
+╭─ Pages ──────────────────────────────────╮
+│ Fast                      always   ˄  ˅  │
+│ Calendar                    [on]   ˄  ˅  │
+│ Stats                       [on]   ˄  ˅  │
+│ Options                   always   ˄  ˅  │
+│ Info                       [off]   ˄  ˅  │
+│ Opens on                         [Fast]  │
+│ The tabs follow this order; Fast and     │
+│ Options always show.                     │
+╰──────────────────────────────────────────╯
+╭─ Colours ────────────────────────────────╮
+│ Accent       ████ Mauve             <  > │
+│ Glucose      ████ Blue              <  > │
+│ Fat burning  ████ Peach             <  > │
+│ Ketosis      ████ Red               <  > │
+│ Autophagy    ████ Mauve             <  > │
+╰─ ✕ Close ─────────────────── ↺ Defaults ─╯
+```
 
 Body: BMI is off by default. On, it adds a Height row, stepped by `<` `>` like Start time's fields:
 by the cm, 100–250, with kg, and by the inch, as `5′ 11″`, with lb; it is stored in cm either way.

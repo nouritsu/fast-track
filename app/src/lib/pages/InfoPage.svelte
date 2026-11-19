@@ -94,7 +94,7 @@
       <span class="muted">by Dark Rock Studios (MIT)</span>
     </li>
     <li>
-      <span class="muted">fonts</span>
+      <span class="muted">font</span>
       <a class="link" href="https://github.com/be5invis/Iosevka" target="_blank" rel="noreferrer">Iosevka</a>
       <span class="muted">(SIL OFL 1.1)</span>
     </li>
