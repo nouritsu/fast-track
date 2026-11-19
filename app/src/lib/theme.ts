@@ -1,12 +1,15 @@
-// Catppuccin Latte (light) and Mocha (dark), with mauve as the accent. index.html
-// sets the first theme before the page paints: the saved choice, else Mocha.
-// The theme button switches between them and saves the choice.
+// Catppuccin Latte (light) and Mocha (dark). index.html sets the first theme before the
+// page paints: the saved choice, else Mocha. The theme button cycles through Mocha,
+// Latte and System, which shows whichever the device is in, and saves the choice.
 
 import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core'
 import { reducedMotion } from './motion/shuffle'
 
 export type Theme = 'latte' | 'mocha'
-export const THEMES: Theme[] = ['latte', 'mocha']
+export type ThemeChoice = Theme | 'system'
+export const THEME_CHOICES: ThemeChoice[] = ['mocha', 'latte', 'system']
+
+const DARK = '(prefers-color-scheme: dark)'
 
 const LEAD_MS = 150 // the button shows the new theme this long before the page follows
 const GROW_MS = 650
@@ -20,8 +23,37 @@ export function currentTheme(): Theme {
   return document.documentElement.dataset.theme === 'latte' ? 'latte' : 'mocha'
 }
 
+/** The theme a choice shows: System follows the device. */
+export function shownTheme(choice: ThemeChoice, dark: boolean): Theme {
+  return choice === 'system' ? (dark ? 'mocha' : 'latte') : choice
+}
+
+export const systemDark = (): boolean => matchMedia(DARK).matches
+
+/** Calls `onChange` when the device goes from light to dark or back. Returns a function that stops. */
+export function watchSystem(onChange: () => void): () => void {
+  const query = matchMedia(DARK)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+
+export function savedChoice(): ThemeChoice {
+  try {
+    const saved = localStorage.getItem('theme')
+    return saved === 'latte' || saved === 'system' ? saved : 'mocha'
+  } catch {
+    return 'mocha'
+  }
+}
+
 function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme
+}
+
+/** Shows `theme` at once, with no reveal. */
+export function setTheme(theme: Theme): void {
+  applyTheme(theme)
+  paintStatusBar()
 }
 
 /** The system bars follow the theme: in the app the page shows through them and
@@ -37,9 +69,9 @@ export function paintStatusBar(): void {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', background)
 }
 
-export function saveTheme(theme: Theme): void {
+export function saveTheme(choice: ThemeChoice): void {
   try {
-    localStorage.setItem('theme', theme)
+    localStorage.setItem('theme', choice)
   } catch {
     // no storage: the choice lasts until the page closes
   }
@@ -68,11 +100,7 @@ export function revealFrames(grow: boolean): { circle: Keyframe[]; view: Keyfram
  *  goes out. Without view transitions, or with reduced motion, the switch is instant. */
 export async function revealTheme(theme: Theme, origin: HTMLElement): Promise<void> {
   const root = document.documentElement
-  if (!document.startViewTransition || reducedMotion()) {
-    applyTheme(theme)
-    paintStatusBar()
-    return
-  }
+  if (!document.startViewTransition || reducedMotion()) return setTheme(theme)
 
   const start = performance.now()
   const page = document.body.getBoundingClientRect()

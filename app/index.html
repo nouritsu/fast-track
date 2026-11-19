@@ -5,15 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1e1e2e" />
     <script>
-      // The theme before the first paint: the saved choice, else Mocha (src/lib/theme.ts).
+      // The theme and the colours before the first paint: the saved choices, else Mocha and
+      // the default colours (src/lib/theme.ts, src/lib/colors.ts).
       {
-        let saved = null
-        try {
-          saved = localStorage.getItem('theme')
-        } catch {}
-        const theme = saved === 'latte' ? 'latte' : 'mocha'
+        const read = (key) => {
+          try {
+            return localStorage.getItem(key)
+          } catch {}
+        }
+        const dark = matchMedia('(prefers-color-scheme: dark)').matches
+        const saved = read('theme')
+        const theme = saved === 'latte' || (saved === 'system' && !dark) ? 'latte' : 'mocha'
         document.documentElement.dataset.theme = theme
         document.querySelector('meta[name="theme-color"]').content = theme === 'mocha' ? '#1e1e2e' : '#eff1f5'
+
+        const names = 'rosewater flamingo pink mauve red maroon peach yellow green teal sky sapphire blue lavender'.split(' ')
+        let colors
+        try {
+          colors = JSON.parse(read('colors'))
+        } catch {}
+        const picked = ['accent', 'glucose', 'fat', 'ketosis', 'autophagy']
+          .filter((key) => names.includes(colors?.[key]))
+          .map((key) => `--${key}:var(--ctp-${colors[key]})`)
+        if (picked.length) {
+          const style = document.createElement('style')
+          style.id = 'colors'
+          style.textContent = `:root,[data-theme]{${picked.join(';')}}`
+          document.head.append(style)
+        }
       }
     </script>
     <title>Fast Track</title>

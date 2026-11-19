@@ -110,7 +110,7 @@ export class Tracker {
     await saveSettings(this.settings)
     if (alertsChanged) await syncAlerts(this.active, this.settings.alerts)
     if ('exportOn' in patch || 'exportEvery' in patch) await this.#planExports()
-    else if ('status' in patch) await refreshStatus()
+    else if ('status' in patch || 'colors' in patch) await refreshStatus()
     if ('scaleUser' in patch) await this.loadScale()
   }
 

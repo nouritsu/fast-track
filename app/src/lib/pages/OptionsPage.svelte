@@ -11,18 +11,28 @@
   import { latestWeighing } from '../fasting/stats'
   import { dayClock, dayKey, shortDate } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
+  import { COLOR_KEYS } from '../colors'
+  import type { IconName } from '../ui/Icon.svelte'
   import Block from '../ui/Block.svelte'
   import HeightStepper from '../ui/HeightStepper.svelte'
-  import type { Theme } from '../theme'
+  import Icon from '../ui/Icon.svelte'
+  import type { ThemeChoice } from '../theme'
 
-  // A pane a category: the theme, the weight unit and BMI, the notifications, the
-  // calendar, weights from openScale, the backup with its regular exports, and privacy.
+  // A pane a category: the theme and colours, the weight unit and BMI, the notifications,
+  // the calendar, weights from openScale, the backup with its regular exports, and privacy.
   // Toggles show the current state.
   let {
     tracker,
-    theme,
+    choice,
     onTheme,
-  }: { tracker: Tracker; theme: Theme; onTheme: (button: HTMLElement) => void } = $props()
+    onColours,
+  }: { tracker: Tracker; choice: ThemeChoice; onTheme: (button: HTMLElement) => void; onColours: () => void } = $props()
+
+  const THEMES: Record<ThemeChoice, { name: string; icon: IconName }> = {
+    mocha: { name: 'Mocha', icon: 'dark_mode' },
+    latte: { name: 'Latte', icon: 'light_mode' },
+    system: { name: 'System', icon: 'brightness_auto' },
+  }
 
   let busy = $state(false)
   let message = $state('')
@@ -253,8 +263,15 @@
   <Block title="General">
     <div class="row first">
       <span>Theme</span>
-      <button type="button" class="word" aria-label="Theme: {theme === 'mocha' ? 'Mocha' : 'Latte'}" onclick={(e) => onTheme(e.currentTarget)}>
-        <span class="icon" aria-hidden="true">{theme === 'mocha' ? '⏾' : '☼'}</span>{theme === 'mocha' ? 'Mocha' : 'Latte'}
+      <button type="button" class="word" aria-label="Theme: {THEMES[choice].name}" onclick={(e) => onTheme(e.currentTarget)}>
+        <span class="mark" aria-hidden="true"><Icon name={THEMES[choice].icon} /></span>{THEMES[choice].name}
+      </button>
+    </div>
+    <!-- The whole row opens the pane; the button inside is what a keyboard or screen reader finds. -->
+    <div class="row" role="presentation" onclick={onColours}>
+      <span>Colours</span>
+      <button type="button" class="word" aria-label="Colours">
+        {#each COLOR_KEYS as key (key)}<span style:color="var(--{key})" aria-hidden="true">■</span>{/each}
       </button>
     </div>
   </Block>
@@ -397,6 +414,11 @@
 
   hr.split {
     margin-top: 0.8em;
+  }
+
+  /* A Material icon at the start of a word button. */
+  .mark {
+    margin-right: 0.6ch;
   }
 
   .pair {

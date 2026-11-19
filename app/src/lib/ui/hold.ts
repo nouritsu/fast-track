@@ -1,13 +1,14 @@
 // A button that repeats while held: one step on a tap (or Enter), then, held past
 // HOLD_MS, a step every REPEAT_MS until it is released or becomes disabled. A press
-// that turns into a drag (a swipe, a scrub) neither repeats nor steps.
+// that turns into a drag (a swipe, a scrub) neither repeats nor steps. `step` is told
+// whether it is a repeat, so what changes with each step can hold back its flourish.
 
 import { SLOP_PX } from './drag'
 
 const HOLD_MS = 450
 const REPEAT_MS = 90
 
-export function hold(node: HTMLButtonElement, step: () => void) {
+export function hold(node: HTMLButtonElement, step: (repeating: boolean) => void) {
   let current = step
   let delay = 0
   let repeat = 0
@@ -28,8 +29,8 @@ export function hold(node: HTMLButtonElement, step: () => void) {
     from = { x: event.clientX, y: event.clientY }
     delay = window.setTimeout(() => {
       repeated = true
-      repeat = window.setInterval(() => (node.disabled ? stop() : current()), REPEAT_MS)
-      current()
+      repeat = window.setInterval(() => (node.disabled ? stop() : current(true)), REPEAT_MS)
+      current(true)
     }, HOLD_MS)
   }
   const drift = (event: PointerEvent) => {
@@ -39,7 +40,7 @@ export function hold(node: HTMLButtonElement, step: () => void) {
   }
   const click = () => {
     if (repeated) repeated = false
-    else current()
+    else current(false)
   }
 
   node.addEventListener('pointerdown', down)
@@ -47,7 +48,7 @@ export function hold(node: HTMLButtonElement, step: () => void) {
   node.addEventListener('click', click)
   for (const type of ['pointerup', 'pointerleave', 'pointercancel']) node.addEventListener(type, release)
   return {
-    update(next: () => void) {
+    update(next: (repeating: boolean) => void) {
       current = next
     },
     destroy() {
