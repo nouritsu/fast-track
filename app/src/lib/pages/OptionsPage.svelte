@@ -260,7 +260,7 @@
 
 <!-- A pane a category, in one scrolling column like Stats (app.css .panes). -->
 <div class="panes">
-  <Block title="General">
+  <Block title="General" icon="tune">
     <div class="row first">
       <span>Theme</span>
       <button type="button" class="word" aria-label="Theme: {THEMES[choice].name}" onclick={(e) => onTheme(e.currentTarget)}>
@@ -276,7 +276,7 @@
     </div>
   </Block>
 
-  <Block title="Body">
+  <Block title="Body" icon="accessibility_new">
     <div class="row first">
       <span>Weight</span>
       <button
@@ -293,7 +293,7 @@
     {/if}
   </Block>
 
-  <Block title="Notifications">
+  <Block title="Notifications" icon="notifications">
     {@render toggle('alerts', 'Alerts', true)}
     <p class="muted">A notification when a stage begins and at the goal.</p>
     {@render toggle('status', 'Status')}
@@ -301,7 +301,7 @@
     {#if message && messageAt === 'notify'}<p class="message" role="status">{message}</p>{/if}
   </Block>
 
-  <Block title="Calendar">
+  <Block title="Calendar" icon="calendar_month">
     <div class="row first">
       <span>Week starts on</span>
       <button type="button" class="word" onclick={() => tracker.setSettings({ weekStart: nextWeekStart() })}
@@ -313,7 +313,7 @@
     <p class="muted">Week numbers are ISO weeks; a week's hours count the fasts that ended in it.</p>
   </Block>
 
-  <Block title="openScale">
+  <Block title="openScale" icon="scale">
     {#if !scale.installed}
       <p class="muted">openScale is not installed. With it, each fast takes its weight from your scale.</p>
     {:else if scale.granted && settings.scaleUser !== null}
@@ -327,7 +327,7 @@
       </p>
       {#if reason}<p class="problem">{reason}</p>{/if}
       <div class="pair">
-        <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true">↺</span>sync weights</button>
+        <button type="button" class="word lead" disabled={busy} onclick={sync}><span class="icon" aria-hidden="true"><Icon name="sync" /></span>sync weights</button>
         <button type="button" class="word" disabled={busy} onclick={changeUser}>change user</button>
       </div>
     {:else if choosing.length}
@@ -339,23 +339,23 @@
     {:else}
       <p class="muted">Take each fast's weight from openScale: the last weighing during it, else the closest to its end within {WINDOW_HOURS} hours.</p>
       <button type="button" class="word lead" disabled={busy} onclick={connect}
-        ><span class="icon" aria-hidden="true">⚯</span>connect openScale</button
+        ><span class="icon" aria-hidden="true"><Icon name="link" /></span>connect openScale</button
       >
     {/if}
     {#if message && messageAt === 'scale'}<p class="message" role="status">{message}</p>{/if}
   </Block>
 
-  <Block title="Backup">
+  <Block title="Backup" icon="backup">
     <p class="muted">{last ? `Last export ${last}.` : 'Never exported.'}</p>
     <div class="pair">
-      <button type="button" class="word lead" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true">⤓</span>export</button>
+      <button type="button" class="word lead" disabled={busy} onclick={exportNow}><span class="icon" aria-hidden="true"><Icon name="download" /></span>export</button>
       <button type="button" class="word" disabled={busy} onclick={() => picker?.click()}>
-        <span class="icon" aria-hidden="true">⤒</span>import
+        <span class="icon" aria-hidden="true"><Icon name="upload" /></span>import
       </button>
     </div>
     <input bind:this={picker} type="file" accept="application/json,.json" hidden onchange={importFile} />
     <button type="button" class="word lead" disabled={busy} onclick={exportIcs}
-      ><span class="icon" aria-hidden="true">⤓</span>export to calendar (.ics)</button
+      ><span class="icon" aria-hidden="true"><Icon name="download" /></span>export to calendar (.ics)</button
     >
     {#if message && messageAt === 'backup'}<p class="message" role="status">{message}</p>{/if}
     <p class="muted">Import adds the fasts the app lacks and changes none.</p>
@@ -387,7 +387,7 @@
     {#if autoLine}<p class="muted message">{autoLine}</p>{/if}
   </Block>
 
-  <Block title="Privacy">
+  <Block title="Privacy" icon="lock">
     {@render toggle('cloudBackup', 'Cloud backup', true)}
     <p class="muted">
       Off keeps your fasts out of your Google account's backup; moving to a new phone by direct transfer works either

@@ -207,7 +207,7 @@
 {/snippet}
 
 {#snippet addButton()}
-  <button type="button" class="word" onclick={() => onAdd(selected)}><span class="icon" aria-hidden="true">✚</span>add</button>
+  <button type="button" class="word" onclick={() => onAdd(selected)}><span class="icon" aria-hidden="true"><Icon name="add" /></span>add</button>
 {/snippet}
 
 {#snippet grid(y: number, m: number)}
@@ -263,7 +263,7 @@
 {/snippet}
 
 <div class="layout">
-<Block title="Calendar" class="calendar-block" actions={legend}>
+<Block title="Calendar" icon="calendar_month" class="calendar-block" actions={legend}>
   <div class="swipe" bind:clientWidth={width} use:drag={monthDrag}>
     <div class="month">
       <button type="button" class="glyph" aria-label="Previous month" title="Previous month" onclick={() => step(-1)}>&lt;</button>
@@ -294,7 +294,7 @@
   </div>
 </Block>
 
-<Block title="Fasts" class="fasts-block" headingRight={addButton}>
+<Block title="Fasts" icon="history" class="fasts-block" headingRight={addButton}>
   <div class="content scroller">
   <Measure bind:width={listWidth} bind:ch={measured} />
   <div class="head">
@@ -322,14 +322,14 @@
     {#if gone}
       <div class="entry gone">
         <span class="muted">Deleted {longDate(fast.end)}</span>
-        <button type="button" class="word" onclick={() => restore(fast)}><span class="icon" aria-hidden="true">↺</span>undo</button>
+        <button type="button" class="word" onclick={() => restore(fast)}><span class="icon" aria-hidden="true"><Icon name="undo" /></span>undo</button>
       </div>
     {:else}
       {@const stage = STAGES[deepestStage(fast)]}
       {@const weight = weightOf(fast, scale)}
       {@const percent = percentOf(fastLength(fast), fast.goal)}
       <div class="swipe row" use:drag={entryDrag(fast)}>
-      <span class="reveal" aria-hidden="true">✕ Delete</span>
+      <span class="reveal" aria-hidden="true"><Icon name="delete" /> Delete</span>
       <div
         class="entry"
         style:--stage="var(--{stage.id})"
@@ -360,7 +360,7 @@
                 class="muted">(scale)</span
               >{/if}{/if}
         </p>
-        {#if fast.note}<p class="note"><span class="icon" aria-hidden="true">¶</span>{fast.note}</p>{/if}
+        {#if fast.note}<p class="note"><span class="icon" aria-hidden="true"><Icon name="notes" /></span>{fast.note}</p>{/if}
       </div>
       </div>
     {/if}

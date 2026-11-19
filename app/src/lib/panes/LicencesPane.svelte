@@ -21,7 +21,7 @@
   })
 </script>
 
-<Pane title="Licences" {onClose}>
+<Pane title="Licences" icon="gavel" {onClose}>
   {#if text !== null}
     <pre class="notices">{text}</pre>
   {:else if missing}

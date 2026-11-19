@@ -230,9 +230,9 @@
 
 <div class="panes">
   {#if !fasts.length}
-    <Block title="Statistics"><p class="muted">No fasts yet.</p></Block>
+    <Block title="Statistics" icon="bar_chart"><p class="muted">No fasts yet.</p></Block>
   {:else}
-    <Block title="Summary" headingRight={spans}>
+    <Block title="Summary" icon="summarize" headingRight={spans}>
       <Measure bind:width bind:ch={measured} />
       {#if sum.count}
         <p class="fields">
@@ -259,7 +259,7 @@
     </Block>
 
     {#if sum.count && width}
-      <Block title="Length" titleRight="median {hm(median(lengths))}">
+      <Block title="Length" icon="straighten" titleRight="median {hm(median(lengths))}">
         <svg
           class="chart"
           width={width}
@@ -303,7 +303,7 @@
         </div>
       </Block>
 
-      <Block title="Goal" titleRight="{percent(sum.goalRate)} met">
+      <Block title="Goal" icon="flag" titleRight="{percent(sum.goalRate)} met">
         <svg
           class="chart"
           width={width}
@@ -347,7 +347,7 @@
         <p class="fields">near misses {goals.near} · avg {percent(goals.progress)} of goal</p>
       </Block>
 
-      <Block title="Stages" titleRight="{Math.round(sum.total / HOUR)}h">
+      <Block title="Stages" icon="layers" titleRight="{Math.round(sum.total / HOUR)}h">
         <p class="fields stagebar" aria-hidden="true">
           {#each STAGES as stage, i (stage.id)}<span style:color="var(--{stage.id})">{'█'.repeat(runs[i])}</span>{/each}
         </p>
@@ -360,7 +360,7 @@
         {/each}
       </Block>
 
-      <Block title="Rhythm">
+      <Block title="Rhythm" icon="schedule">
         <svg
           class="chart"
           width={width}
@@ -430,7 +430,7 @@
       </Block>
     {/if}
 
-    <Block title="Weight" titleRight={edge}>
+    <Block title="Weight" icon="monitor_weight" titleRight={edge}>
       {#if points.length && width}
         <svg
           class="chart"
@@ -473,7 +473,7 @@
       {/if}
     </Block>
 
-    <Block title="Records" titleRight="all time">
+    <Block title="Records" icon="emoji_events" titleRight="all time">
       {#if record.longest}
         <p class="fields">
           {label('longest')}<span class="value">{hm(fastLength(record.longest))}</span> <span class="muted"

@@ -29,13 +29,11 @@ SIL Open Font License 1.1 ships beside the fonts, in generated/fonts/.
   Copyright JetBrains s.r.o.
 - Guava's ListenableFuture: Apache-2.0. Copyright The Guava Authors.
 - JSpecify annotations: Apache-2.0. Copyright The JSpecify Authors.
-- Material Icons (the edit and close icons): Apache-2.0. Copyright Google LLC.
+- Material Icons (the icons): Apache-2.0. Copyright Google LLC.
 - Octicons (the GitHub mark): MIT. Copyright (c) GitHub Inc.
 - Catppuccin's palette (the colours): MIT. Copyright (c) 2021 Catppuccin.
 - Iosevka (the font): SIL OFL 1.1. Copyright Renzhi Li (Belleve Invis).
   generated/fonts/LICENSE.md
-- Noto Sans Symbols 2 (the theme symbols): SIL OFL 1.1.
-  Copyright The Noto Project Authors. generated/fonts/LICENSE-noto.txt
 
 ## Inspired by
 

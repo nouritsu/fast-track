@@ -31,6 +31,7 @@
   import { currentTheme, revealTheme, savedChoice, saveTheme, setTheme, shownTheme, systemDark, THEME_CHOICES, watchSystem } from './lib/theme'
   import Block, { type Tone } from './lib/ui/Block.svelte'
   import Hero from './lib/ui/Hero.svelte'
+  import Icon from './lib/ui/Icon.svelte'
   import ShuffleText from './lib/ui/ShuffleText.svelte'
   import TabBar, { type Tab } from './lib/ui/TabBar.svelte'
   import TypeText from './lib/ui/TypeText.svelte'
@@ -507,7 +508,7 @@
         inert={page !== 0}
       >
         <div class="page-main" inert={pane !== null && paneHost === 0}>
-        <Block title="Fast" class="page-block">
+        <Block title="Fast" icon="timer" class="page-block">
           {#snippet headingRight()}Goal <span class="value" style:--block-border={tone ? `var(--${tone})` : undefined}
               ><ShuffleText text={dashed ? '--' : `${percent}%`} staggerMs={120} /></span
             >{/snippet}
@@ -569,30 +570,30 @@
             {#if phase === 'done' && ended}
               {@const fast = ended}
               <button type="button" class="edge" onclick={() => openEdit(fast, false)}>
-                <span class="icon" aria-hidden="true">¶</span>Note
+                <span class="icon" aria-hidden="true"><Icon name="edit_note" /></span>Note
               </button>
               <button type="button" class="edge primary" onclick={() => (phase = 'ready')}>
-                <span class="icon" aria-hidden="true">↺</span>Again
+                <span class="icon" aria-hidden="true"><Icon name="replay" /></span>Again
               </button>
             {:else if phase === 'running'}
               <button type="button" class="edge" class:flash={armed} disabled={!active} onclick={cancel}>
-                <span class="icon" aria-hidden="true">✕</span><ShuffleText text={armed ? 'Discard?' : 'Cancel'} />
+                <span class="icon" aria-hidden="true"><Icon name="close" /></span><ShuffleText text={armed ? 'Discard?' : 'Cancel'} />
               </button>
               <button type="button" class="edge" data-pane="start" aria-label="Start time" disabled={!active} onclick={() => openPane('start')}>
-                <span class="icon" aria-hidden="true">◷</span>Start
+                <span class="icon" aria-hidden="true"><Icon name="schedule" /></span>Start
               </button>
               <button type="button" class="edge" data-pane="goal" aria-label="Goal: {goal} hours" onclick={() => openPane('goal')}>
-                <span class="icon" aria-hidden="true">⧗</span>{goal}h
+                <span class="icon" aria-hidden="true"><Icon name="hourglass_bottom" /></span>{goal}h
               </button>
               <button type="button" class="edge primary" disabled={!active} onclick={end}>
-                <span class="icon" aria-hidden="true">■</span>End fast
+                <span class="icon" aria-hidden="true"><Icon name="stop" /></span>End fast
               </button>
             {:else if phase === 'ready'}
               <button type="button" class="edge" data-pane="start" onclick={() => openPane('start')}>
-                <span class="icon" aria-hidden="true">◷</span>Start at
+                <span class="icon" aria-hidden="true"><Icon name="schedule" /></span>Start at
               </button>
               <button type="button" class="edge" data-pane="goal" aria-label="Goal: {goal} hours" onclick={() => openPane('goal')}>
-                <span class="icon" aria-hidden="true">⧗</span>{goal}h
+                <span class="icon" aria-hidden="true"><Icon name="hourglass_bottom" /></span>{goal}h
               </button>
             {/if}
           {/snippet}

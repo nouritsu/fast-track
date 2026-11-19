@@ -2,6 +2,7 @@
   import { untrack } from 'svelte'
   import { dayClock, floorMinute, HOUR, MINUTE } from '../fasting/time'
   import { duration } from '../ui/fields'
+  import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
   import TimeSteppers from '../ui/TimeSteppers.svelte'
 
@@ -31,12 +32,12 @@
   const shown = $derived(Math.max(first, Math.min(at, latest)))
 </script>
 
-<Pane title="Start time" {onClose}>
+<Pane title="Start time" icon="schedule" {onClose}>
   <TimeSteppers at={shown} earliest={first} {latest} onChange={(t) => (at = t)} />
   <p class="fields">{duration(now - shown)} ago · ends {dayClock(shown + goal * HOUR)}</p>
   {#snippet action()}
     <button type="button" class="edge primary" onclick={() => onConfirm(shown)}
-      ><span class="icon" aria-hidden="true">{moving ? '✓' : '▷'}</span>{moving ? 'Save' : 'Start'}</button
+      ><span class="icon" aria-hidden="true"><Icon name={moving ? 'check' : 'play_arrow'} /></span>{moving ? 'Save' : 'Start'}</button
     >
   {/snippet}
 </Pane>

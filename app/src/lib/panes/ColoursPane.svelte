@@ -1,6 +1,7 @@
 <script lang="ts">
   import { accentName, DEFAULT_COLORS, sameColors, stepAccent, type ColorKey, type Colors } from '../colors'
   import { STAGES } from '../fasting/stages'
+  import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
   import ShuffleText from '../ui/ShuffleText.svelte'
   import Stepper from '../ui/Stepper.svelte'
@@ -29,7 +30,7 @@
   }
 </script>
 
-<Pane title="Colours" {onClose}>
+<Pane title="Colours" icon="palette" {onClose}>
   {#each ROWS as { key, label } (key)}
     <Stepper {label} labelWidth={12} width={14} onStep={(direction, repeating) => step(key, direction, repeating)}>
       <span style:color="var(--ctp-{colors[key]})" aria-hidden="true">████</span> <ShuffleText text={accentName(colors[key])} plain={fast} />
@@ -37,7 +38,7 @@
   {/each}
   {#snippet action()}
     <button type="button" class="edge" disabled={sameColors(colors, DEFAULT_COLORS)} onclick={reset}
-      ><span class="icon" aria-hidden="true">↺</span>Defaults</button
+      ><span class="icon" aria-hidden="true"><Icon name="restart_alt" /></span>Defaults</button
     >
   {/snippet}
 </Pane>

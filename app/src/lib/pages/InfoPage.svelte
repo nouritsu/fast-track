@@ -42,7 +42,7 @@
   const ORIGINAL = 'https://github.com/Darkrock-Studios/FastTrack'
 </script>
 
-<Page title="Info">
+<Page title="Info" icon="info">
   <h3>Stages of a fast</h3>
   <Measure bind:width bind:ch />
   <div class="bar" role="tablist" aria-label="Stages of a fast">
@@ -94,10 +94,7 @@
     </li>
     <li>
       <span class="muted">fonts</span>
-      <a class="link" href="https://github.com/be5invis/Iosevka" target="_blank" rel="noreferrer">Iosevka</a>,
-      <a class="link" href="https://fonts.google.com/noto/specimen/Noto+Sans+Symbols+2" target="_blank" rel="noreferrer"
-        >Noto Sans Symbols 2</a
-      >
+      <a class="link" href="https://github.com/be5invis/Iosevka" target="_blank" rel="noreferrer">Iosevka</a>
       <span class="muted">(SIL OFL 1.1)</span>
     </li>
     <li>
