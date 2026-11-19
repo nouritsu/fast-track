@@ -8,7 +8,7 @@
 
   // The accent's colour and each stage's, from Catppuccin's accents: `<` `>` step a
   // row through them, round the ends. Each step applies at once. It unfolds below
-  // Options' General block, and Close, in its top edge, folds it away.
+  // Options' Theme block, and Close, in its top edge, folds it away.
   let { colors, onChange, onClose }: { colors: Colors; onChange: (colors: Colors) => void; onClose: () => void } = $props()
 
   const ROWS: { key: ColorKey; label: string }[] = [

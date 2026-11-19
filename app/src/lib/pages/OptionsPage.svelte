@@ -25,7 +25,7 @@
 
   // A pane a category: the theme and colours, the weight unit and BMI, the notifications,
   // the calendar, weights from openScale, the backup with its regular exports, and privacy.
-  // Toggles show the current state. Colours unfolds below General, pushing the rest down,
+  // Toggles show the current state. Colours unfolds below Theme, pushing the rest down,
   // and folds away again when the page is left.
   let {
     tracker,
@@ -302,10 +302,10 @@
 
 <!-- A pane a category, in one scrolling column like Stats (app.css .panes). -->
 <div class="panes">
-  <Block title="General" icon="tune">
+  <Block title="Theme" icon="contrast">
     <div class="row first">
-      <span>Theme</span>
-      <button type="button" class="word" aria-label="Theme: {THEMES[choice].name}" onclick={(e) => onTheme(e.currentTarget)}>
+      <span>Flavour</span>
+      <button type="button" class="word" aria-label="Flavour: {THEMES[choice].name}" onclick={(e) => onTheme(e.currentTarget)}>
         <span class="mark" aria-hidden="true"><Icon name={THEMES[choice].icon} /></span>{THEMES[choice].name}
       </button>
     </div>
