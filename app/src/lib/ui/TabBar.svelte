@@ -106,9 +106,7 @@
       width var(--slide);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .line {
-      transition: none;
-    }
+  :global(:root[data-still]) .line {
+    transition: none;
   }
 </style>

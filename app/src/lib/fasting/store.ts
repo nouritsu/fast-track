@@ -4,6 +4,8 @@
 
 import { Preferences } from '@capacitor/preferences'
 import { DEFAULT_COLORS, toColors, type Colors } from '../colors'
+import { SWITCHABLE, TEXT_SIZES, type Switchable, type TextSize } from '../display'
+import { PAGE_IDS, STATS_PANES, toOrder, toSubset, type PageId, type StatsPane } from '../layout'
 import { WEEK_STARTS, type WeekStart } from './calendar'
 import { DEFAULT_GOAL, type Active, type Fast } from './fasts'
 import { SPANS, type Span } from './stats'
@@ -26,6 +28,14 @@ export interface Settings {
   bmi: boolean // show BMI, from the latest weight and the height (fasts.ts)
   height: number | null // in cm, whichever unit it is shown in; none until set
   colors: Colors // the accent and the stages' colours, by Catppuccin name (colors.ts; FastColors.java reads them)
+  pages: PageId[] // every page, in the tabs' order (layout.ts)
+  hiddenPages: PageId[] // the ones left off the tabs; never Fast or Options
+  startPage: PageId // the page the app opens on
+  statsPanes: StatsPane[] // Stats' panes below Summary, in order
+  hiddenStats: StatsPane[] // the ones put away
+  textSize: TextSize // display.ts; System follows the phone's font size
+  motion: Switchable // animations; System follows the phone and the browser
+  haptics: Switchable // vibration; System follows the phone's touch feedback
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -46,6 +56,14 @@ export const DEFAULT_SETTINGS: Settings = {
   bmi: false,
   height: null,
   colors: { ...DEFAULT_COLORS },
+  pages: [...PAGE_IDS],
+  hiddenPages: [],
+  startPage: 'fast',
+  statsPanes: [...STATS_PANES],
+  hiddenStats: [],
+  textSize: 'system',
+  motion: 'system',
+  haptics: 'system',
 }
 
 export interface Saved {
@@ -99,6 +117,14 @@ export function toSettings(v: unknown): Settings {
     bmi: s.bmi === true,
     height: isNumber(s.height) && s.height > 0 ? s.height : null,
     colors: toColors(s.colors),
+    pages: toOrder(s.pages, PAGE_IDS),
+    hiddenPages: toSubset(s.hiddenPages, ['calendar', 'stats', 'info']),
+    startPage: PAGE_IDS.includes(s.startPage as PageId) ? (s.startPage as PageId) : DEFAULT_SETTINGS.startPage,
+    statsPanes: toOrder(s.statsPanes, STATS_PANES),
+    hiddenStats: toSubset(s.hiddenStats, STATS_PANES),
+    textSize: TEXT_SIZES.includes(s.textSize as TextSize) ? (s.textSize as TextSize) : DEFAULT_SETTINGS.textSize,
+    motion: SWITCHABLE.includes(s.motion as Switchable) ? (s.motion as Switchable) : DEFAULT_SETTINGS.motion,
+    haptics: SWITCHABLE.includes(s.haptics as Switchable) ? (s.haptics as Switchable) : DEFAULT_SETTINGS.haptics,
   }
 }
 

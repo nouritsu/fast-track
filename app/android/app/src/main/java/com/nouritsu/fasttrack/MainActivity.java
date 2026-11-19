@@ -11,11 +11,15 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // The status notification and exports (FastStatus, FastExport), and weights from
-        // openScale; registered before the bridge starts.
+        // The status notification and exports (FastStatus, FastExport), weights from openScale,
+        // and the phone settings the display can follow; registered before the bridge starts.
         registerPlugin(FastStatusPlugin.class);
         registerPlugin(OpenScalePlugin.class);
+        registerPlugin(SystemPrefsPlugin.class);
         super.onCreate(savedInstanceState);
+        // The app sizes its own text, from the phone's font scale or the size picked in
+        // Options (src/lib/display.ts), so the WebView must not scale it again.
+        getBridge().getWebView().getSettings().setTextZoom(100);
         preferFastestRefreshRate();
     }
 
