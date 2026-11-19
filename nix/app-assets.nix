@@ -1,6 +1,5 @@
 # Generated app assets, so no binaries live in git:
-# - Iosevka (SIL OFL 1.1) subset to the text and the icons the app draws;
-# - the icons Iosevka lacks or draws too small, from Noto Sans Symbols 2 (SIL OFL 1.1);
+# - Iosevka (SIL OFL 1.1) subset to the text and the symbols the app draws;
 # - the Android launcher icons rendered from app/icon.svg: 48 dp legacy icons and the
 #   108 dp adaptive foreground, whose motif sits in the central safe zone;
 # - the 24 dp status-bar icon for stage alerts and the status notification
@@ -10,7 +9,6 @@
   fetchurl,
   iosevka-bin,
   lib,
-  noto-fonts,
   python3,
   runCommand,
   vips,
@@ -21,29 +19,15 @@
     hash = "sha256-S6U8fByzknmq5fjX0iBUxIXHEWmSDlo27QmLEV4uPF0=";
   };
   # Text: Basic Latin to Latin Extended-A, General Punctuation (– … ‘ ’), Box Drawing
-  # and Block Elements (bars). Then every icon the app draws from Iosevka; keep this
-  # list equal to the icons in the code.
+  # and Block Elements (bars). Then every other symbol the app draws; keep this list
+  # equal to the symbols in the code. Icons are Material Icons, drawn as SVG.
   text = ["U+0000-017F" "U+2000-206F" "U+2500-259F"];
   icons = [
-    "U+25F7" # ◷ Start time
-    "U+29D7" # ⧗ Goal
-    "U+2715" # ✕ cancel, close
-    "U+2302" # ⌂ today (the calendar's month and year panes)
-    "U+25B7" # ▷ start
-    "U+2713" # ✓ save
-    "U+271A" # ✚ add
-    "U+21BA" # ↺ undo
-    "U+26AF" # ⚯ link
-    "U+2913" # ⤓ export
-    "U+2912" # ⤒ import
     "U+25A0" # ■ a stage's colour
-    "U+2192" # → from start to end
+    "U+25B2" # ▲ up on the span before (Stats)
+    "U+25BC" # ▼ down on it
+    "U+2192" # → in a path to an Android setting
     "U+25C6" # ◆ BMI
-  ];
-  # From Noto Sans Symbols 2; keep equal to unicode-range in app/src/app.css.
-  noto = [
-    "U+23FE" # ⏾ Mocha (the theme button)
-    "U+263C" # ☼ Latte
   ];
   # Android density buckets and their scale over mdpi.
   densities = {
@@ -85,8 +69,5 @@ in
     ${subset "Regular"}
     ${subset "Bold"}
     cp ${license} $out/fonts/LICENSE.md
-    pyftsubset ${noto-fonts}/share/fonts/noto/NotoSansSymbols2-Regular.otf \
-      --unicodes=${lib.concatStringsSep "," noto} --flavor=woff2 --output-file=$out/fonts/symbols.woff2
-    cp ${noto-fonts.src}/fonts/LICENSE $out/fonts/LICENSE-noto.txt
     ${launcherIcons}
   ''

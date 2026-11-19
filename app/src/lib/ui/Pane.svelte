@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import Block from './Block.svelte'
+  import Icon, { type IconName } from './Icon.svelte'
 
   // A pane as tall as its content, hung just below its page: App slides the page up by
   // the pane's height to bring it in, pushing as much of the page's panel off the top
@@ -9,10 +10,11 @@
   // button (an edge button), on the right. Escape closes it too.
   let {
     title,
+    icon,
     onClose,
     children,
     action,
-  }: { title: string; onClose: () => void; children: Snippet; action?: Snippet } = $props()
+  }: { title: string; icon?: IconName; onClose: () => void; children: Snippet; action?: Snippet } = $props()
 
   // Content taller than the pane scrolls natively; otherwise a vertical drag on it
   // pulls the pane down (App's .hang).
@@ -42,10 +44,10 @@
   aria-modal="true"
   aria-label={title}
 >
-  <Block {title}>
+  <Block {title} {icon}>
     <div class="content scroller" class:scrolls bind:this={content}>{@render children()}</div>
     {#snippet actions()}
-      <button type="button" class="edge" onclick={onClose}><span class="icon" aria-hidden="true">✕</span>Close</button>
+      <button type="button" class="edge" onclick={onClose}><span class="icon" aria-hidden="true"><Icon name="close" /></span>Close</button>
       {#if action}{@render action()}{/if}
     {/snippet}
   </Block>

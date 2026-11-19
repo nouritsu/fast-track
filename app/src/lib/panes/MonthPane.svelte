@@ -1,5 +1,6 @@
 <script lang="ts">
   import { MONTHS } from '../fasting/time'
+  import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
 
   // Which month the calendar shows: the twelve as buttons, the shown one lit; picking
@@ -12,14 +13,14 @@
   }: { month: number; onPick: (month: number) => void; onToday: () => void; onClose: () => void } = $props()
 </script>
 
-<Pane title="Month" {onClose}>
+<Pane title="Month" icon="calendar_month" {onClose}>
   <div class="months">
     {#each MONTHS as name, i (name)}
       <button type="button" class="word" class:lit={i === month} aria-pressed={i === month} onclick={() => onPick(i)}>{name.slice(0, 3)}</button>
     {/each}
   </div>
   {#snippet action()}
-    <button type="button" class="edge primary" onclick={onToday}><span class="icon" aria-hidden="true">⌂</span>Today</button>
+    <button type="button" class="edge primary" onclick={onToday}><span class="icon" aria-hidden="true"><Icon name="today" /></span>Today</button>
   {/snippet}
 </Pane>
 

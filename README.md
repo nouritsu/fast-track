@@ -91,7 +91,7 @@ Your fasts stay on the phone. The app can't go online, and nothing leaves the ph
 
 - Based on [Fast Track](https://github.com/Darkrock-Studios/FastTrack) by Dark Rock Studios (MIT).
 - Colours: [Catppuccin](https://github.com/catppuccin/catppuccin) Mocha and Latte (MIT).
-- Fonts: [Iosevka](https://github.com/be5invis/Iosevka) and [Noto Sans Symbols 2](https://fonts.google.com/noto/specimen/Noto+Sans+Symbols+2) (SIL OFL 1.1).
+- Font: [Iosevka](https://github.com/be5invis/Iosevka) (SIL OFL 1.1).
 - Icons: [Material Icons](https://fonts.google.com/icons) (Apache-2.0) and [Octicons](https://primer.style/octicons) (MIT).
 - Built with [Svelte](https://svelte.dev) and [Capacitor](https://capacitorjs.com).
 

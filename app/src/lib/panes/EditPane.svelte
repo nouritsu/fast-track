@@ -5,6 +5,7 @@
   import { dayClock, floorMinute, longDate } from '../fasting/time'
   import { duration } from '../ui/fields'
   import GoalStepper from '../ui/GoalStepper.svelte'
+  import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
   import TimeSteppers from '../ui/TimeSteppers.svelte'
 
@@ -57,7 +58,7 @@
   }
 </script>
 
-<Pane title={isNew ? 'Add fast' : 'Edit fast'} {onClose}>
+<Pane title={isNew ? 'Add fast' : 'Edit fast'} icon={isNew ? 'add' : 'edit'} {onClose}>
   <label class="field">
     <span class="muted">Note</span>
     <input type="text" bind:value={note} maxlength="80" placeholder="How it went" />
@@ -96,7 +97,7 @@
 
   {#snippet action()}
     <button type="button" class="edge primary" disabled={problem !== null} onclick={save}
-      ><span class="icon" aria-hidden="true">✓</span>Save</button
+      ><span class="icon" aria-hidden="true"><Icon name="check" /></span>Save</button
     >
   {/snippet}
 </Pane>

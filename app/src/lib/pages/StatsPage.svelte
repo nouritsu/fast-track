@@ -3,6 +3,7 @@
   import {
     bmi,
     fastLength,
+    goalTone,
     KG_PER_LB,
     percentOf,
     showBmi,
@@ -212,6 +213,13 @@
       />{/if}</svg
   >{/snippet}
 
+<!-- A value set against the same span before it: up in green, down in red, when it moved. -->
+{#snippet versus(value: number, before: number | undefined)}{#if prior?.count && before !== undefined && value !== before}<span
+      class="versus"
+      style:color="var(--{value > before ? 'ok' : 'bad'})"
+      aria-label={value > before ? 'up on the span before' : 'down on the span before'}>{value > before ? ' ▲' : ' ▼'}</span
+    >{/if}{/snippet}
+
 {#snippet spans()}
   <span class="spans" role="group" aria-label="Span of the stats">
     {#each SPANS as s (s)}<button type="button" class="span" class:on={span === s} aria-pressed={span === s} onclick={() => onSpan(s)}
@@ -222,13 +230,24 @@
 
 <div class="panes">
   {#if !fasts.length}
-    <Block title="Statistics"><p class="muted">No fasts yet.</p></Block>
+    <Block title="Statistics" icon="bar_chart"><p class="muted">No fasts yet.</p></Block>
   {:else}
-    <Block title="Summary" headingRight={spans}>
+    <Block title="Summary" icon="summarize" headingRight={spans}>
       <Measure bind:width bind:ch={measured} />
       {#if sum.count}
-        <p class="fields">{plural(sum.count, 'fast')} · {Math.round(sum.total / HOUR)}h · goal met {percent(sum.goalRate)}</p>
-        <p class="fields">avg {hm(sum.average)} · streak {streak(fasts, minute)}</p>
+        <p class="fields">
+          <span class="value">{sum.count}</span>
+          {sum.count === 1 ? 'fast' : 'fasts'}{@render versus(sum.count, prior?.count)} · <span class="value"
+            >{Math.round(sum.total / HOUR)}</span
+          >h{@render versus(sum.total, prior?.total)} · goal met <span style:color="var(--{goalTone(sum.goalRate)})"
+            >{percent(sum.goalRate)}</span
+          >{@render versus(sum.goalRate, prior?.goalRate)}
+        </p>
+        <p class="fields">
+          avg <span class="value">{hm(sum.average)}</span>{@render versus(sum.average, prior?.average)} · streak <span class="value"
+            >{streak(fasts, minute)}</span
+          >
+        </p>
       {:else}
         <p class="fields muted">No fasts in {spanText}.</p>
       {/if}
@@ -240,7 +259,7 @@
     </Block>
 
     {#if sum.count && width}
-      <Block title="Length" titleRight="median {hm(median(lengths))}">
+      <Block title="Length" icon="straighten" titleRight="median {hm(median(lengths))}">
         <svg
           class="chart"
           width={width}
@@ -284,7 +303,7 @@
         </div>
       </Block>
 
-      <Block title="Goal" titleRight="{percent(sum.goalRate)} met">
+      <Block title="Goal" icon="flag" titleRight="{percent(sum.goalRate)} met">
         <svg
           class="chart"
           width={width}
@@ -328,7 +347,7 @@
         <p class="fields">near misses {goals.near} · avg {percent(goals.progress)} of goal</p>
       </Block>
 
-      <Block title="Stages" titleRight="{Math.round(sum.total / HOUR)}h">
+      <Block title="Stages" icon="layers" titleRight="{Math.round(sum.total / HOUR)}h">
         <p class="fields stagebar" aria-hidden="true">
           {#each STAGES as stage, i (stage.id)}<span style:color="var(--{stage.id})">{'█'.repeat(runs[i])}</span>{/each}
         </p>
@@ -341,7 +360,7 @@
         {/each}
       </Block>
 
-      <Block title="Rhythm">
+      <Block title="Rhythm" icon="schedule">
         <svg
           class="chart"
           width={width}
@@ -377,10 +396,16 @@
         </svg>
         <p class="fields muted">last {plural(stripDays, 'day')}, today at the bottom</p>
         {#if starts && ends}
-          <p class="fields">starts ~{clockOfDay(starts.minutes)} <span class="muted">±{hm(starts.spread * MINUTE)}</span></p>
-          <p class="fields">{'ends'.padEnd(6)} ~{clockOfDay(ends.minutes)} <span class="muted">±{hm(ends.spread * MINUTE)}</span></p>
+          <p class="fields">
+            starts ~<span class="value">{clockOfDay(starts.minutes)}</span> <span class="muted">±{hm(starts.spread * MINUTE)}</span>
+          </p>
+          <p class="fields">
+            {'ends'.padEnd(6)} ~<span class="value">{clockOfDay(ends.minutes)}</span> <span class="muted">±{hm(ends.spread * MINUTE)}</span>
+          </p>
         {/if}
-        {#if eating !== null}<p class="fields">eating window {hm(eating)} <span class="muted">on average</span></p>{/if}
+        {#if eating !== null}<p class="fields">
+            eating window <span class="value">{hm(eating)}</span> <span class="muted">on average</span>
+          </p>{/if}
         <svg
           class="chart weekdays"
           width={width}
@@ -405,7 +430,7 @@
       </Block>
     {/if}
 
-    <Block title="Weight" titleRight={edge}>
+    <Block title="Weight" icon="monitor_weight" titleRight={edge}>
       {#if points.length && width}
         <svg
           class="chart"
@@ -448,13 +473,17 @@
       {/if}
     </Block>
 
-    <Block title="Records" titleRight="all time">
+    <Block title="Records" icon="emoji_events" titleRight="all time">
       {#if record.longest}
-        <p class="fields">{label('longest')}{hm(fastLength(record.longest))} <span class="muted">{dayMonth(record.longest.end, minute)}</span></p>
+        <p class="fields">
+          {label('longest')}<span class="value">{hm(fastLength(record.longest))}</span> <span class="muted"
+            >{dayMonth(record.longest.end, minute)}</span
+          >
+        </p>
       {/if}
       {#if record.streak.from && record.streak.to}
         <p class="fields">
-          {label('best streak')}{plural(record.streak.days, 'day')} <span class="muted"
+          {label('best streak')}<span class="value">{plural(record.streak.days, 'day')}</span> <span class="muted"
             >{record.streak.days > 1
               ? `${dayMonth(noonOf(record.streak.from), minute)}–${dayMonth(noonOf(record.streak.to), minute)}`
               : dayMonth(noonOf(record.streak.from), minute)}</span
@@ -462,9 +491,15 @@
         </p>
       {/if}
       {#if record.week}
-        <p class="fields">{label('best week')}{Math.round(record.week.ms / HOUR)}h <span class="muted">from {dayMonth(record.week.start, minute)}</span></p>
+        <p class="fields">
+          {label('best week')}<span class="value">{Math.round(record.week.ms / HOUR)}h</span> <span class="muted"
+            >from {dayMonth(record.week.start, minute)}</span
+          >
+        </p>
       {/if}
-      <p class="fields">{label('in all')}{(record.total / DAY).toFixed(record.total < 10 * DAY ? 1 : 0)} days of fasting</p>
+      <p class="fields">
+        {label('in all')}<span class="value">{(record.total / DAY).toFixed(record.total < 10 * DAY ? 1 : 0)}</span> days of fasting
+      </p>
       {#if record.first}
         <p class="fields muted">{plural(record.count, 'fast')} since {dayMonth(record.first.start, minute)}</p>
       {/if}
@@ -563,7 +598,8 @@
     stroke-linecap: round;
   }
 
-  .accent {
+  .accent,
+  .value {
     color: var(--accent);
   }
 

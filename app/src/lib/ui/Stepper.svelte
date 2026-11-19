@@ -81,6 +81,7 @@
   .setting {
     flex: 1;
     white-space: pre;
+    color: var(--accent);
   }
 
 </style>

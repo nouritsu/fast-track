@@ -4,12 +4,15 @@
 
 <script lang="ts">
   import type { Snippet } from 'svelte'
+  import Icon, { type IconName } from './Icon.svelte'
 
-  // A ratatui-style block: a rounded 1px border with titles set into its top edge.
+  // A ratatui-style block: a rounded 1px border with titles set into its top edge, the
+  // left one after its `icon` (a Material icon) if it has one.
   // `headingRight` replaces the right title when it needs markup (a live value).
   // `actions` are buttons set into the bottom edge, the way the titles sit in the top one.
   let {
     title = '',
+    icon,
     titleRight = '',
     headingRight,
     actions,
@@ -17,6 +20,7 @@
     class: className = '',
   }: {
     title?: string
+    icon?: IconName
     titleRight?: string
     headingRight?: Snippet
     actions?: Snippet
@@ -27,7 +31,7 @@
 
 <section class="block {className}" class:with-actions={actions}>
   {#if title}
-    <h2 class="title left">{title}</h2>
+    <h2 class="title left">{#if icon}<span class="mark" aria-hidden="true"><Icon name={icon} /></span>{/if}{title}</h2>
   {/if}
   {#if headingRight}
     <span class="title right">{@render headingRight()}</span>
@@ -69,6 +73,10 @@
 
   .left {
     left: 1ch;
+  }
+
+  .mark {
+    margin-right: 0.6ch;
   }
 
   .right {

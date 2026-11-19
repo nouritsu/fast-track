@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
 
   // Which year the calendar shows: < year > a year at a time, or jumps of 5, 3 and 1
@@ -17,7 +18,7 @@
   const go = (by: number) => onPick(Math.min(LAST, Math.max(FIRST, year + by)))
 </script>
 
-<Pane title="Year" {onClose}>
+<Pane title="Year" icon="event" {onClose}>
   <div class="year">
     <button type="button" class="glyph" aria-label="Previous year" disabled={year <= FIRST} onclick={() => go(-1)}>&lt;</button>
     <strong>{year}</strong>
@@ -35,7 +36,7 @@
     {/each}
   </div>
   {#snippet action()}
-    <button type="button" class="edge primary" onclick={onToday}><span class="icon" aria-hidden="true">⌂</span>Today</button>
+    <button type="button" class="edge primary" onclick={onToday}><span class="icon" aria-hidden="true"><Icon name="today" /></span>Today</button>
   {/snippet}
 </Pane>
 

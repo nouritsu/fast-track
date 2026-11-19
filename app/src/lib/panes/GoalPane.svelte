@@ -17,7 +17,7 @@
   const reached = $derived(STAGES.filter((s) => s.from < goal))
 </script>
 
-<Pane title="Goal" {onClose}>
+<Pane title="Goal" icon="flag" {onClose}>
   <GoalStepper {goal} {onChange} />
   <p>{planName(goal)}</p>
   {#if active}<p class="fields">Ends {dayClock(active.start + goal * HOUR)}</p>{/if}
