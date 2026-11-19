@@ -47,6 +47,7 @@
   import { hm, pad, two } from '../ui/fields'
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
+  import { unfold } from '../motion/unfold'
   import Icon from '../ui/Icon.svelte'
   import Measure from '../ui/Measure.svelte'
   import ShuffleText from '../ui/ShuffleText.svelte'
@@ -67,6 +68,7 @@
     weekStart,
     span,
     now,
+    visible,
     panes,
     hiddenPanes,
     onSpan,
@@ -80,6 +82,7 @@
     weekStart: WeekStart
     span: Span
     now: number
+    visible: boolean // the page is in view; leaving it ends arranging
     panes: StatsPane[] // the panes below Summary, in order
     hiddenPanes: StatsPane[] // the ones put away
     onSpan: (span: Span) => void
@@ -87,6 +90,9 @@
   } = $props()
 
   let arranging = $state(false)
+  $effect(() => {
+    if (!visible) arranging = false
+  })
   const order = $derived(panes.filter((id) => !hiddenPanes.includes(id)))
   // A move swaps a pane with the next one shown; the put-away ones keep their places.
   function movePane(id: StatsPane, by: -1 | 1) {
@@ -570,6 +576,23 @@
       {/if}
     </Block>
 
+    <!-- Arranging, the put-away panes unfold below Summary's Arrange, pushing the rest down. -->
+    {#if arranging}
+      <div class="unfold" transition:unfold>
+        <Block title="Put away" icon="visibility_off">
+          {#if hiddenPanes.length}
+            <div class="put-away">
+              {#each hiddenPanes as id (id)}<button type="button" class="word" onclick={() => bringBack(id)}
+                  ><span class="icon" aria-hidden="true"><Icon name="add" /></span>{STATS_NAMES[id]}</button
+                >{/each}
+            </div>
+          {:else}
+            <p class="muted">Nothing put away. <Icon name="close" /> in a pane's top edge puts it here.</p>
+          {/if}
+        </Block>
+      </div>
+    {/if}
+
     {#each order as id (id)}
       {#if id === 'length'}{@render lengthPane()}
       {:else if id === 'goal'}{@render goalPane()}
@@ -580,15 +603,6 @@
       {/if}
     {/each}
 
-    {#if arranging && hiddenPanes.length}
-      <Block title="Put away" icon="visibility_off">
-        <div class="put-away">
-          {#each hiddenPanes as id (id)}<button type="button" class="word" onclick={() => bringBack(id)}
-              ><span class="icon" aria-hidden="true"><Icon name="add" /></span>{STATS_NAMES[id]}</button
-            >{/each}
-        </div>
-      </Block>
-    {/if}
   {/if}
 </div>
 

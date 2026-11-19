@@ -23,7 +23,6 @@
   import InfoPage from './lib/pages/InfoPage.svelte'
   import OptionsPage from './lib/pages/OptionsPage.svelte'
   import StatsPage from './lib/pages/StatsPage.svelte'
-  import ColoursPane from './lib/panes/ColoursPane.svelte'
   import EditPane from './lib/panes/EditPane.svelte'
   import GoalPane from './lib/panes/GoalPane.svelte'
   import LicencesPane from './lib/panes/LicencesPane.svelte'
@@ -46,12 +45,11 @@
   // swipe. The Fast page is one panel: the fast's status at its top, the goal's share
   // in its top edge, a coloured progress line under the timer, and its buttons in its
   // bottom edge. A fast starts at the gate (now) or from Start at (earlier), runs until
-  // End fast, and ends on "Done!". Start time, Goal, Edit fast, Options' colours and
-  // Info's licences open as panes hung below the page, which slides up and off the top,
-  // pushed by the pane;
+  // End fast, and ends on "Done!". Start time, Goal, Edit fast and Info's licences open
+  // as panes hung below the page, which slides up and off the top, pushed by the pane;
   // the calendar's month and year panes hang above it and push it down.
   type Phase = 'loading' | 'ready' | 'running' | 'done'
-  type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year' | 'licences' | 'colours'
+  type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year' | 'licences'
   type HeroMode = 'left' | 'elapsed'
 
   const COLORS = STAGES.map((s) => s.id)
@@ -520,8 +518,6 @@
       />
     {:else if shownPane === 'licences'}
       <LicencesPane onClose={closePane} />
-    {:else if shownPane === 'colours'}
-      <ColoursPane colors={settings.colors} onChange={(colors) => attempt(() => tracker.setSettings({ colors }))} onClose={closePane} />
     {/if}
     </div>
     {/key}
@@ -692,6 +688,7 @@
           weekStart={settings.weekStart}
           span={settings.statsSpan}
           {now}
+          visible={current === 'stats'}
           panes={settings.statsPanes}
           hiddenPanes={settings.hiddenStats}
           onArrange={(statsPanes, hiddenStats) => attempt(() => tracker.setSettings({ statsPanes, hiddenStats }))}
@@ -713,7 +710,7 @@
         inert={current !== 'options'}
       >
         <div class="page-main" inert={pane !== null && paneHost === 'options'}>
-        <OptionsPage {tracker} {choice} onTheme={switchTheme} onColours={() => openPane('colours')} />
+        <OptionsPage {tracker} {choice} visible={current === 'options'} onTheme={switchTheme} />
         </div>
         {@render hangingPane('options')}
       </div>
