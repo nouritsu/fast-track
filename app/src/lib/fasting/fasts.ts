@@ -175,10 +175,13 @@ const HEIGHT_IN = { min: 39, max: 98 }
 const inchesOf = (cm: number): number => Math.round(cm / CM_PER_INCH)
 const cmOf = (inches: number): number => Number((inches * CM_PER_INCH).toFixed(2))
 
-/** The height a step from `cm` lands on, in cm: by the cm with kg, by the inch with lb.
- *  Unset, the first step in either direction sets 170 cm, to the nearest inch with lb. */
-export function stepHeight(cm: number | null, direction: -1 | 1, unit: 'kg' | 'lb'): number {
-  if (unit === 'kg') {
+/** A height's unit, apart from the weight's: centimetres, or feet and inches. */
+export type HeightUnit = 'cm' | 'in'
+
+/** The height a step from `cm` lands on, in cm: by the cm, or by the inch. Unset, the
+ *  first step in either direction sets 170 cm, to the nearest inch in inches. */
+export function stepHeight(cm: number | null, direction: -1 | 1, unit: HeightUnit): number {
+  if (unit === 'cm') {
     return cm === null ? HEIGHT_CM.start : Math.min(HEIGHT_CM.max, Math.max(HEIGHT_CM.min, Math.round(cm) + direction))
   }
   const inches = cm === null ? inchesOf(HEIGHT_CM.start) : inchesOf(cm) + direction
@@ -186,26 +189,29 @@ export function stepHeight(cm: number | null, direction: -1 | 1, unit: 'kg' | 'l
 }
 
 /** Whether a step in `direction` has nowhere to go. */
-export function heightAtLimit(cm: number | null, direction: -1 | 1, unit: 'kg' | 'lb'): boolean {
+export function heightAtLimit(cm: number | null, direction: -1 | 1, unit: HeightUnit): boolean {
   if (cm === null) return false
-  const [at, limit] = unit === 'kg' ? [Math.round(cm), HEIGHT_CM] : [inchesOf(cm), HEIGHT_IN]
+  const [at, limit] = unit === 'cm' ? [Math.round(cm), HEIGHT_CM] : [inchesOf(cm), HEIGHT_IN]
   return direction < 0 ? at <= limit.min : at >= limit.max
 }
 
 /** A height as the stepper shows it, in whole units: "180 cm", "5′ 11″"; dashes when unset. */
-export function showHeight(cm: number | null, unit: 'kg' | 'lb'): string {
-  if (unit === 'kg') return cm === null ? '--- cm' : `${Math.round(cm)} cm`
+export function showHeight(cm: number | null, unit: HeightUnit): string {
+  if (unit === 'cm') return cm === null ? '--- cm' : `${Math.round(cm)} cm`
   if (cm === null) return '-′ --″'
   const inches = inchesOf(cm)
   return `${Math.floor(inches / 12)}′ ${inches % 12}″`
 }
 
-/** BMI's formula in the weight's unit, with the numbers in it when there is a weight (kg)
- *  and a height (cm): "BMI = 80.6 kg / (1.80 m)² = 24.9", "BMI = 703 × 177.7 lb / (71 in)² = 24.8".
+/** BMI's formula, with the numbers in it when there is a weight (kg) and a height (cm). In
+ *  pounds and inches it is the imperial one, "BMI = 703 × 177.7 lb / (71 in)² = 24.8"; any
+ *  other mix is the metric one, the imperial measure converted, "BMI = 80.6 kg / (1.80 m)² = 24.9".
  *  The 703 is the metric formula's constant, rounded: https://en.wikipedia.org/wiki/Body_mass_index#Calculation */
-export function bmiFormula(unit: 'kg' | 'lb', kg: number | null, cm: number | null): string {
+export function bmiFormula(weight: 'kg' | 'lb', height: HeightUnit, kg: number | null, cm: number | null): string {
   const filled = kg !== null && cm !== null
   const result = filled ? ` = ${showBmi(bmi(kg, cm))}` : ''
-  if (unit === 'kg') return `BMI = ${filled ? `${weightNumber(kg, 'kg')} kg / (${(cm / 100).toFixed(2)} m)²` : 'kg / m²'}${result}`
-  return `BMI = 703 × ${filled ? `${weightNumber(kg, 'lb')} lb / (${inchesOf(cm)} in)²` : 'lb / in²'}${result}`
+  if (weight === 'lb' && height === 'in') {
+    return `BMI = 703 × ${filled ? `${weightNumber(kg, 'lb')} lb / (${inchesOf(cm)} in)²` : 'lb / in²'}${result}`
+  }
+  return `BMI = ${filled ? `${weightNumber(kg, 'kg')} kg / (${(cm / 100).toFixed(2)} m)²` : 'kg / m²'}${result}`
 }

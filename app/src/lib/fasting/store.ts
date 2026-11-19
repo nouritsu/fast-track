@@ -7,7 +7,7 @@ import { DEFAULT_COLORS, toColors, type Colors } from '../colors'
 import { SWITCHABLE, TEXT_SIZES, type Switchable, type TextSize } from '../display'
 import { PAGE_IDS, STATS_PANES, toOrder, toSubset, type PageId, type StatsPane } from '../layout'
 import { WEEK_STARTS, type WeekStart } from './calendar'
-import { DEFAULT_GOAL, type Active, type Fast } from './fasts'
+import { DEFAULT_GOAL, type Active, type Fast, type HeightUnit } from './fasts'
 import { SPANS, type Span } from './stats'
 
 export interface Settings {
@@ -27,6 +27,7 @@ export interface Settings {
   keepOneFile: boolean // exports replace one fast-track.json instead of making a file a day (backup.ts, FastExport.java)
   bmi: boolean // show BMI, from the latest weight and the height (fasts.ts)
   height: number | null // in cm, whichever unit it is shown in; none until set
+  heightUnit: HeightUnit // the height's own unit, cm or feet and inches (fasts.ts)
   colors: Colors // the accent and the stages' colours, by Catppuccin name (colors.ts; FastColors.java reads them)
   pages: PageId[] // every page, in the tabs' order (layout.ts)
   hiddenPages: PageId[] // the ones left off the tabs; never Fast or Options
@@ -55,6 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
   keepOneFile: false,
   bmi: false,
   height: null,
+  heightUnit: 'cm',
   colors: { ...DEFAULT_COLORS },
   pages: [...PAGE_IDS],
   hiddenPages: [],
@@ -116,6 +118,8 @@ export function toSettings(v: unknown): Settings {
     keepOneFile: s.keepOneFile === true,
     bmi: s.bmi === true,
     height: isNumber(s.height) && s.height > 0 ? s.height : null,
+    // Before it had its own unit, the height followed the weight's.
+    heightUnit: s.heightUnit === 'in' || (s.heightUnit === undefined && s.unit === 'lb') ? 'in' : 'cm',
     colors: toColors(s.colors),
     pages: toOrder(s.pages, PAGE_IDS),
     hiddenPages: toSubset(s.hiddenPages, ['calendar', 'stats', 'info']),

@@ -189,7 +189,7 @@
   // BMI's formula, with numbers once there is a height and a weight: the latest one the
   // app knows, from a fast or openScale.
   const latest = $derived(latestWeighing(tracker.fasts, tracker.scale))
-  const formula = $derived(bmiFormula(settings.unit, latest?.kg ?? null, settings.height))
+  const formula = $derived(bmiFormula(settings.unit, settings.heightUnit, latest?.kg ?? null, settings.height))
 
   async function run(task: () => Promise<string>, at: typeof messageAt = 'backup') {
     busy = true
@@ -367,7 +367,7 @@
 
   <Block title="Body" icon="accessibility_new">
     <div class="row first">
-      <span>Weight</span>
+      <span>Weight unit</span>
       <button
         type="button"
         class="word"
@@ -377,7 +377,18 @@
     </div>
     {@render toggle('bmi', 'BMI')}
     {#if settings.bmi}
-      <HeightStepper height={settings.height} unit={settings.unit} onChange={(height) => tracker.setSettings({ height })} />
+      <!-- The height's unit is its own: kg with feet, or pounds with cm, works too. -->
+      <div class="row">
+        <span>Height unit</span>
+        <button
+          type="button"
+          class="word"
+          aria-label="Height unit: {settings.heightUnit === 'cm' ? 'centimetres' : 'feet and inches'}"
+          onclick={() => tracker.setSettings({ heightUnit: settings.heightUnit === 'cm' ? 'in' : 'cm' })}
+          ><ShuffleText text={settings.heightUnit === 'cm' ? 'cm' : 'ft'} /></button
+        >
+      </div>
+      <HeightStepper height={settings.height} unit={settings.heightUnit} onChange={(height) => tracker.setSettings({ height })} />
       <p class:muted={settings.height === null || !latest}>{formula}</p>
     {/if}
   </Block>

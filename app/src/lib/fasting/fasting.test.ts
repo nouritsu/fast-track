@@ -257,40 +257,51 @@ describe('BMI', () => {
     expect([-1.04, 0.44, 0, 0.04, -0.04, 12.35].map(signedNumber)).toEqual(['-1.0', '+0.4', '±0.0', '±0.0', '±0.0', '+12.3'])
   })
 
-  it('steps the height by the cm with kg, and by the inch with lb, within limits', () => {
-    expect(stepHeight(180, 1, 'kg')).toBe(181)
-    expect(stepHeight(180, -1, 'kg')).toBe(179)
-    expect(stepHeight(100, -1, 'kg')).toBe(100)
-    expect(stepHeight(250, 1, 'kg')).toBe(250)
-    expect(stepHeight(180.34, 1, 'lb')).toBe(182.88) // 71 inches to 72
-    expect(stepHeight(180, -1, 'lb')).toBe(177.8) // 70.87 inches to 70
-    expect(stepHeight(250, 1, 'lb')).toBe(248.92) // 98 inches, the top
-    expect(stepHeight(100, -1, 'lb')).toBe(99.06) // 39 inches, the bottom, not stepped up
-    expect(stepHeight(null, 1, 'kg')).toBe(170)
-    expect(stepHeight(null, -1, 'kg')).toBe(170)
-    expect(stepHeight(null, 1, 'lb')).toBe(170.18) // 67 inches
-    expect(heightAtLimit(100, -1, 'kg')).toBe(true)
-    expect(heightAtLimit(100, 1, 'kg')).toBe(false)
-    expect(heightAtLimit(250, 1, 'kg')).toBe(true)
-    expect(heightAtLimit(99.06, -1, 'lb')).toBe(true)
-    expect(heightAtLimit(248.92, 1, 'lb')).toBe(true)
-    expect(heightAtLimit(null, -1, 'kg')).toBe(false)
+  it('steps the height by the cm, or by the inch, within limits', () => {
+    expect(stepHeight(180, 1, 'cm')).toBe(181)
+    expect(stepHeight(180, -1, 'cm')).toBe(179)
+    expect(stepHeight(100, -1, 'cm')).toBe(100)
+    expect(stepHeight(250, 1, 'cm')).toBe(250)
+    expect(stepHeight(180.34, 1, 'in')).toBe(182.88) // 71 inches to 72
+    expect(stepHeight(180, -1, 'in')).toBe(177.8) // 70.87 inches to 70
+    expect(stepHeight(250, 1, 'in')).toBe(248.92) // 98 inches, the top
+    expect(stepHeight(100, -1, 'in')).toBe(99.06) // 39 inches, the bottom, not stepped up
+    expect(stepHeight(null, 1, 'cm')).toBe(170)
+    expect(stepHeight(null, -1, 'cm')).toBe(170)
+    expect(stepHeight(null, 1, 'in')).toBe(170.18) // 67 inches
+    expect(heightAtLimit(100, -1, 'cm')).toBe(true)
+    expect(heightAtLimit(100, 1, 'cm')).toBe(false)
+    expect(heightAtLimit(250, 1, 'cm')).toBe(true)
+    expect(heightAtLimit(99.06, -1, 'in')).toBe(true)
+    expect(heightAtLimit(248.92, 1, 'in')).toBe(true)
+    expect(heightAtLimit(null, -1, 'cm')).toBe(false)
   })
 
   it('shows the height in cm, or in feet and inches', () => {
-    expect(showHeight(180, 'kg')).toBe('180 cm')
-    expect(showHeight(180.34, 'kg')).toBe('180 cm')
-    expect(showHeight(180.34, 'lb')).toBe('5′ 11″')
-    expect(showHeight(182.88, 'lb')).toBe('6′ 0″')
-    expect(showHeight(null, 'kg')).toBe('--- cm')
-    expect(showHeight(null, 'lb')).toBe('-′ --″')
+    expect(showHeight(180, 'cm')).toBe('180 cm')
+    expect(showHeight(180.34, 'cm')).toBe('180 cm')
+    expect(showHeight(180.34, 'in')).toBe('5′ 11″')
+    expect(showHeight(182.88, 'in')).toBe('6′ 0″')
+    expect(showHeight(null, 'cm')).toBe('--- cm')
+    expect(showHeight(null, 'in')).toBe('-′ --″')
   })
 
   it('writes the formula in the unit, with numbers once there is a weight and a height', () => {
-    expect(bmiFormula('kg', 80.6, 180)).toBe('BMI = 80.6 kg / (1.80 m)² = 24.9')
-    expect(bmiFormula('lb', 80.6, 180.34)).toBe('BMI = 703 × 177.7 lb / (71 in)² = 24.8')
-    expect(bmiFormula('kg', null, 180)).toBe('BMI = kg / m²')
-    expect(bmiFormula('lb', 80.6, null)).toBe('BMI = 703 × lb / in²')
+    expect(bmiFormula('kg', 'cm', 80.6, 180)).toBe('BMI = 80.6 kg / (1.80 m)² = 24.9')
+    expect(bmiFormula('lb', 'in', 80.6, 180.34)).toBe('BMI = 703 × 177.7 lb / (71 in)² = 24.8')
+    expect(bmiFormula('kg', 'cm', null, 180)).toBe('BMI = kg / m²')
+    expect(bmiFormula('lb', 'in', 80.6, null)).toBe('BMI = 703 × lb / in²')
+    // Mixed: the imperial measure in metric, and the metric formula.
+    expect(bmiFormula('lb', 'cm', 80.6, 180)).toBe('BMI = 80.6 kg / (1.80 m)² = 24.9')
+    expect(bmiFormula('kg', 'in', 80.6, 180.34)).toBe('BMI = 80.6 kg / (1.80 m)² = 24.8')
+    expect(bmiFormula('lb', 'cm', null, null)).toBe('BMI = kg / m²')
+  })
+
+  it('gives the height its own unit, which follows the weight unit in older settings', () => {
+    expect(toSettings({ unit: 'lb' }).heightUnit).toBe('in')
+    expect(toSettings({ unit: 'kg' }).heightUnit).toBe('cm')
+    expect(toSettings({ unit: 'lb', heightUnit: 'cm' }).heightUnit).toBe('cm')
+    expect(toSettings({ unit: 'kg', heightUnit: 'in' }).heightUnit).toBe('in')
   })
 })
 
