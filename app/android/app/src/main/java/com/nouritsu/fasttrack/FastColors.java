@@ -5,10 +5,11 @@ import android.content.res.Configuration;
 import org.json.JSONObject;
 
 /**
- * The stage colours for the status notification's bar. The web app saves the user's choice in
- * the settings as `"colors": {"glucose": "blue", ...}`, each a lowercase Catppuccin accent
- * name; a missing key or an unknown name gives the stage's default. The names resolve to
- * Mocha when the system is in dark mode and to Latte otherwise, with the hexes of src/app.css.
+ * The colours of the status notification's bar. The web app saves the user's choice in the
+ * settings as `"colors": {"accent": "mauve", "glucose": "blue", ...}`, each a lowercase
+ * Catppuccin accent name; a missing key or an unknown name gives its default. The names resolve
+ * to Mocha when the system is in dark mode and to Latte otherwise, with the hexes of
+ * src/app.css.
  */
 final class FastColors {
 
@@ -25,8 +26,9 @@ final class FastColors {
         0xDC8A78, 0xDD7878, 0xEA76CB, 0x8839EF, 0xD20F39, 0xE64553, 0xFE640B,
         0xDF8E1D, 0x40A02B, 0x179299, 0x04A5E5, 0x209FB5, 0x1E66F5, 0x7287FD,
     };
-    private static final int MOCHA_CRUST = 0x11111B;
-    private static final int LATTE_BASE = 0xEFF1F5;
+    // Overlay 0, what the app draws muted lines in: the part of a bar still to come.
+    private static final int MOCHA_REST = 0x6C7086;
+    private static final int LATTE_REST = 0x9CA0B0;
 
     // The keys of FastStatus.STAGES in the settings and their defaults, as --glucose to
     // --autophagy in src/app.css.
@@ -37,21 +39,31 @@ final class FastColors {
 
     /** The colour of each stage, as opaque ARGB, from the settings (null for none saved). */
     static int[] stages(Context context, JSONObject settings) {
-        JSONObject colors = settings == null ? null : settings.optJSONObject("colors");
-        int[] palette = dark(context) ? MOCHA : LATTE;
         int[] result = new int[KEYS.length];
-        for (int i = 0; i < KEYS.length; i++) {
-            String name = colors == null ? DEFAULTS[i] : colors.optString(KEYS[i], DEFAULTS[i]);
-            int index = indexOf(name);
-            if (index < 0) index = indexOf(DEFAULTS[i]);
-            result[i] = 0xFF000000 | palette[index];
-        }
+        for (int i = 0; i < KEYS.length; i++) result[i] = pick(context, settings, KEYS[i], DEFAULTS[i]);
         return result;
     }
 
-    /** A colour that reads on the stage colours: Mocha's crust, or Latte's base. */
-    static int onStage(Context context) {
-        return 0xFF000000 | (dark(context) ? MOCHA_CRUST : LATTE_BASE);
+    /** The app's accent. */
+    static int accent(Context context, JSONObject settings) {
+        return pick(context, settings, "accent", "mauve");
+    }
+
+    /** A Catppuccin accent by name, in the flavour of the system's mode. */
+    static int named(Context context, String name) {
+        return pick(context, null, name, name);
+    }
+
+    /** A muted colour for the part of a bar still to come. */
+    static int rest(Context context) {
+        return 0xFF000000 | (dark(context) ? MOCHA_REST : LATTE_REST);
+    }
+
+    private static int pick(Context context, JSONObject settings, String key, String fallback) {
+        JSONObject colors = settings == null ? null : settings.optJSONObject("colors");
+        int index = indexOf(colors == null ? fallback : colors.optString(key, fallback));
+        if (index < 0) index = indexOf(fallback);
+        return 0xFF000000 | (dark(context) ? MOCHA : LATTE)[index];
     }
 
     /** Whether the system is in dark mode. */
