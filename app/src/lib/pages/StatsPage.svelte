@@ -17,6 +17,7 @@
   } from '../fasting/fasts'
   import type { ScaleWeight } from '../fasting/openscale'
   import { NAME_WIDTH, STAGES, stageEnd } from '../fasting/stages'
+  import { moveIn, STATS_NAMES, type StatsPane } from '../layout'
   import {
     bestStreak,
     clockOfDay,
@@ -46,6 +47,7 @@
   import { hm, pad, two } from '../ui/fields'
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
+  import Icon from '../ui/Icon.svelte'
   import Measure from '../ui/Measure.svelte'
   import ShuffleText from '../ui/ShuffleText.svelte'
 
@@ -54,6 +56,8 @@
   // same span before; Length, Goal, Stages and Rhythm chart the fasts that ended in it,
   // Weight the weighings in it, and Records the whole history. The charts are drawn on
   // the text's grid: their labels in the app font, their marks in the stage colours.
+  // Arrange, in Summary's bottom edge, sets ˄ ˅ ✕ into each pane's top edge to move it
+  // or put it away; put-away panes wait at the bottom to be brought back.
   let {
     fasts,
     active,
@@ -63,7 +67,10 @@
     weekStart,
     span,
     now,
+    panes,
+    hiddenPanes,
     onSpan,
+    onArrange,
   }: {
     fasts: Fast[]
     active: Active | null // drawn in the rhythm strip up to now
@@ -73,8 +80,21 @@
     weekStart: WeekStart
     span: Span
     now: number
+    panes: StatsPane[] // the panes below Summary, in order
+    hiddenPanes: StatsPane[] // the ones put away
     onSpan: (span: Span) => void
+    onArrange: (panes: StatsPane[], hidden: StatsPane[]) => void
   } = $props()
+
+  let arranging = $state(false)
+  const order = $derived(panes.filter((id) => !hiddenPanes.includes(id)))
+  // A move swaps a pane with the next one shown; the put-away ones keep their places.
+  function movePane(id: StatsPane, by: -1 | 1) {
+    const next = moveIn(order, id, by)
+    onArrange([...next, ...panes.filter((p) => !next.includes(p))], hiddenPanes)
+  }
+  const putAway = (id: StatsPane) => onArrange(panes, [...hiddenPanes, id])
+  const bringBack = (id: StatsPane) => onArrange(panes, hiddenPanes.filter((p) => p !== id))
 
   // To the minute: the clock ticks several times a second, and nothing here needs it.
   const minute = $derived(Math.floor(now / MINUTE) * MINUTE)
@@ -229,11 +249,302 @@
   </span>
 {/snippet}
 
+<!-- While arranging, a pane's top edge: up, down, and put away. -->
+{#snippet mover(id: StatsPane)}
+  {@const at = order.indexOf(id)}
+  <span class="moves">
+    <button type="button" class="glyph" aria-label="Move {STATS_NAMES[id]} up" disabled={at === 0} onclick={() => movePane(id, -1)}
+      ><Icon name="keyboard_arrow_up" /></button
+    >
+    <button type="button" class="glyph" aria-label="Move {STATS_NAMES[id]} down" disabled={at === order.length - 1} onclick={() => movePane(id, 1)}
+      ><Icon name="keyboard_arrow_down" /></button
+    >
+    <button type="button" class="glyph" aria-label="Put {STATS_NAMES[id]} away" onclick={() => putAway(id)}><Icon name="close" /></button>
+  </span>
+{/snippet}
+
+{#snippet arrange()}
+  <button type="button" class="edge" class:primary={arranging} onclick={() => (arranging = !arranging)}
+    ><span class="icon" aria-hidden="true"><Icon name={arranging ? 'check' : 'swap_vert'} /></span>{arranging ? 'Done' : 'Arrange'}</button
+  >
+{/snippet}
+
+{#snippet lengthPane()}
+  {#if sum.count && width}
+    {#snippet moves()}{@render mover('length')}{/snippet}
+    <Block title="Length" icon="straighten" headingRight={arranging ? moves : undefined} shuffle titleRight="median {hm(median(lengths))}">
+      <svg
+        class="chart"
+        width={width}
+        height={LENGTH_H}
+        viewBox="0 0 {width} {LENGTH_H}"
+        role="img"
+        aria-label="The last {plural(bars.length, 'fast')} by length, each in the colours of the stages it went through"
+      >
+        {#each ticks as h (h)}
+          <line class="rule" x1={gutter} x2={width} y1={ly(h)} y2={ly(h)} />
+          <text class="axis" x={gutter - ch} y={ly(h)} text-anchor="end" dominant-baseline="central">{h}h</text>
+        {/each}
+        {#each bars as fast, i (fast.id)}
+          {@const x = gutter + i * barPitch}
+          {@const w = Math.max(1, barPitch - (barPitch > 6 ? 2 : 1))}
+          <g>
+            <title>{shortDate(fast.end)} · {hm(fastLength(fast))} · {percentOf(fastLength(fast), fast.goal)}% of {fast.goal}h</title>
+            {#each segments(fast) as s (s.id)}
+              <rect {x} y={ly(s.to)} width={w} height={ly(s.from) - ly(s.to)} style:fill="var(--{s.id})" />
+            {/each}
+            {#if fastLength(fast) < fast.goal * HOUR}
+              <rect class="goal" {x} y={ly(fast.goal) - 1} width={w} height="2" />
+            {/if}
+          </g>
+        {/each}
+        <line class="base" x1={gutter} x2={width} y1={ly(0)} y2={ly(0)} />
+      </svg>
+      <p class="fields muted">
+        {bars.length < shown.length ? `last ${bars.length} of ${shown.length}` : plural(bars.length, 'fast')} · <span class="mark">━</span> goal missed
+      </p>
+      <p class="fields">avg {hm(sum.average)} · max {hm(sum.longest)} · min {hm(Math.min(...lengths))}</p>
+      <div class="bands">
+        {#each bands as band (band.name)}
+          {@const n = bandFill(band.count)}
+          <p class="fields">
+            <span class="muted">{band.name.padEnd(6)}</span> <span class="accent">{'█'.repeat(n)}</span><span class="shade"
+              >{'░'.repeat(bandCells - n)}</span
+            >{pad(band.count, 4)}
+          </p>
+        {/each}
+      </div>
+    </Block>
+  {/if}
+{/snippet}
+
+{#snippet goalPane()}
+  {#if sum.count && width}
+    {#snippet moves()}{@render mover('goal')}{/snippet}
+    <Block title="Goal" icon="flag" headingRight={arranging ? moves : undefined} shuffle titleRight="{percent(sum.goalRate)} met">
+      <svg
+        class="chart"
+        width={width}
+        height={7 * cellPitch}
+        viewBox="0 0 {width} {7 * cellPitch}"
+        role="img"
+        aria-label="{plural(grid.length, 'week')} of days, each in the colour of the deepest stage reached, filled where the goal was met"
+      >
+        {#each [0, 2, 4, 6] as row (row)}
+          <text class="axis" x={gutter + cellsAt - ch} y={(row + 0.5) * cellPitch} text-anchor="end" dominant-baseline="central">{heads[row]}</text>
+        {/each}
+        {#each grid as week, w (week.start)}
+          {#each week.days as day, d (d)}
+            {#if day}
+              {@const size = cellPitch - cellGap}
+              {@const x = gutter + cellsAt + w * cellPitch}
+              {@const y = d * cellPitch}
+              {#if day.stage === null}
+                <rect class="empty" {x} {y} width={size} height={size} rx="2" />
+              {:else if day.met}
+                <rect {x} {y} width={size} height={size} rx="2" style:fill="var(--{STAGES[day.stage].id})" />
+              {:else}
+                <rect
+                  class="missed"
+                  x={x + 0.75}
+                  y={y + 0.75}
+                  width={size - 1.5}
+                  height={size - 1.5}
+                  rx="2"
+                  style:stroke="var(--{STAGES[day.stage].id})"
+                />
+              {/if}
+            {/if}
+          {/each}
+        {/each}
+      </svg>
+      <p class="fields muted">
+        {grid.length < weeks.length ? `last ${grid.length} weeks · ` : ''}{@render swatch(true)} met · {@render swatch(false)} missed
+      </p>
+      <p class="fields">best streak {plural(best.days, 'day')} · {perWeek.toFixed(1)} a week</p>
+      <p class="fields">near misses {goals.near} · avg {percent(goals.progress)} of goal</p>
+    </Block>
+  {/if}
+{/snippet}
+
+{#snippet stagesPane()}
+  {#if sum.count && width}
+    {#snippet moves()}{@render mover('stages')}{/snippet}
+    <Block title="Stages" icon="layers" headingRight={arranging ? moves : undefined} shuffle titleRight="{Math.round(sum.total / HOUR)}h">
+      <p class="fields stagebar" aria-hidden="true">
+        {#each STAGES as stage, i (stage.id)}<span style:color="var(--{stage.id})">{'█'.repeat(runs[i])}</span>{/each}
+      </p>
+      {#each STAGES as stage, i (stage.id)}
+        <p class="fields">
+          <span style:color="var(--{stage.id})">■ {stage.name.padEnd(NAME_WIDTH)}</span>{pad(Math.round(hours[i]), 5)}h <span class="muted"
+            >reached {pad(percent(reach[i]), 4)}</span
+          >
+        </p>
+      {/each}
+    </Block>
+  {/if}
+{/snippet}
+
+{#snippet rhythmPane()}
+  {#if sum.count && width}
+    {#snippet moves()}{@render mover('rhythm')}{/snippet}
+    <Block title="Rhythm" icon="schedule" headingRight={arranging ? moves : undefined}>
+      <svg
+        class="chart"
+        width={width}
+        height={stripDays * ROW + 16}
+        viewBox="0 0 {width} {stripDays * ROW + 16}"
+        role="img"
+        aria-label="The last {plural(stripDays, 'day')} over 24 hours, filled while fasting, in the colour of the stage"
+      >
+        {#each strip as row, r (row.day)}
+          {#if row.weekday === weekStart}
+            <text class="axis" x={gutter - ch} y={r * ROW + 3.5} text-anchor="end" dominant-baseline="central">{heads[0]}</text>
+          {/if}
+          <rect class="empty" x={gutter} y={r * ROW} width={plot} height={ROW - 3} />
+          {#each row.runs as run (run.at)}
+            <rect
+              x={gutter + (run.at * plot) / SLOTS}
+              y={r * ROW}
+              width={(run.length * plot) / SLOTS}
+              height={ROW - 3}
+              style:fill="var(--{STAGES[run.stage].id})"
+            />
+          {/each}
+        {/each}
+        {#each [0, 6, 12, 18, 24] as h (h)}
+          <text
+            class="axis"
+            x={gutter + (h / 24) * plot}
+            y={stripDays * ROW + 8}
+            text-anchor={h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}
+            dominant-baseline="central">{two(h)}</text
+          >
+        {/each}
+      </svg>
+      <p class="fields muted">last {plural(stripDays, 'day')}, today at the bottom</p>
+      {#if starts && ends}
+        <p class="fields">
+          starts ~<span class="value">{clockOfDay(starts.minutes)}</span> <span class="muted">±{hm(starts.spread * MINUTE)}</span>
+        </p>
+        <p class="fields">
+          {'ends'.padEnd(6)} ~<span class="value">{clockOfDay(ends.minutes)}</span> <span class="muted">±{hm(ends.spread * MINUTE)}</span>
+        </p>
+      {/if}
+      {#if eating !== null}<p class="fields">
+          eating window <span class="value">{hm(eating)}</span> <span class="muted">on average</span>
+        </p>{/if}
+      <svg
+        class="chart weekdays"
+        width={width}
+        height={WEEKDAY_H}
+        viewBox="0 0 {width} {WEEKDAY_H}"
+        role="img"
+        aria-label="Average hours by weekday: {days.map((d) => `${d.head} ${d.hours === null ? 'none' : Math.round(d.hours)}`).join(', ')}"
+      >
+        {#each days as day, i (day.head)}
+          {@const pitch = width / days.length}
+          {@const w = Math.min(pitch - 6, 3 * ch)}
+          {@const x = i * pitch + (pitch - w) / 2}
+          {@const h = day.hours === null ? 0 : (day.hours / dayMost) * (WEEKDAY_H - 30)}
+          <text class="axis" x={x + w / 2} y={WEEKDAY_H - 21 - h} text-anchor="middle" dominant-baseline="central"
+            >{day.hours === null ? '--' : Math.round(day.hours)}</text
+          >
+          <rect class="column" {x} y={WEEKDAY_H - 14 - h} width={w} height={h} />
+          <text class="head" x={x + w / 2} y={WEEKDAY_H - 7} text-anchor="middle" dominant-baseline="central">{day.head}</text>
+        {/each}
+      </svg>
+      <p class="fields muted">average hours by weekday</p>
+    </Block>
+  {/if}
+{/snippet}
+
+{#snippet weightPane()}
+  {#snippet moves()}{@render mover('weight')}{/snippet}
+  <Block title="Weight" icon="monitor_weight" headingRight={arranging ? moves : undefined} shuffle titleRight={edge}>
+    {#if points.length && width}
+      <svg
+        class="chart"
+        width={width}
+        height={WEIGHT_H}
+        viewBox="0 0 {width} {WEIGHT_H}"
+        role="img"
+        aria-label="{plural(points.length, 'weighing')} as dots, and the trend through them"
+      >
+        {#each scaleY.lines as value (value)}
+          <line class="rule" x1={gutter} x2={width} y1={yOf(value)} y2={yOf(value)} />
+          <text
+            class="axis"
+            x={gutter - ch}
+            y={yOf(value)}
+            text-anchor="end"
+            dominant-baseline="central">{scaleY.step < 1 ? value.toFixed(1) : value}</text
+          >
+        {/each}
+        {#each points as p, i (i)}
+          <circle class="dot" cx={wx(p.at)} cy={wy(p.kg)} r="2" />
+        {/each}
+        {#if trend.length > 1}
+          <polyline class="trend" points={trend.map((t) => `${wx(t.at)},${wy(t.kg)}`).join(' ')} />
+        {/if}
+      </svg>
+      {#if rate !== null}
+        <p class="fields">{signed(change)} {unit}{bmiChange} since {dayMonth(points[0].at, minute)} · {signed(rate)} {unit}/wk</p>
+      {/if}
+      <p class="fields muted">
+        low {weightNumber(Math.min(...points.map((p) => p.kg)), unit)} · high {weightNumber(Math.max(...points.map((p) => p.kg)), unit)} · {plural(
+          points.length,
+          'weighing',
+        )}
+      </p>
+    {:else if weighed}
+      <p class="fields muted">No weighings in {span ? spanText : 'the history'}.</p>
+    {:else}
+      <p class="muted">Add a weight when you end a fast, or connect openScale in Options.</p>
+    {/if}
+  </Block>
+{/snippet}
+
+{#snippet recordsPane()}
+  {#snippet moves()}{@render mover('records')}{/snippet}
+  <Block title="Records" icon="emoji_events" headingRight={arranging ? moves : undefined} titleRight="all time">
+    {#if record.longest}
+      <p class="fields">
+        {label('longest')}<span class="value">{hm(fastLength(record.longest))}</span> <span class="muted"
+          >{dayMonth(record.longest.end, minute)}</span
+        >
+      </p>
+    {/if}
+    {#if record.streak.from && record.streak.to}
+      <p class="fields">
+        {label('best streak')}<span class="value">{plural(record.streak.days, 'day')}</span> <span class="muted"
+          >{record.streak.days > 1
+            ? `${dayMonth(noonOf(record.streak.from), minute)}–${dayMonth(noonOf(record.streak.to), minute)}`
+            : dayMonth(noonOf(record.streak.from), minute)}</span
+        >
+      </p>
+    {/if}
+    {#if record.week}
+      <p class="fields">
+        {label('best week')}<span class="value">{Math.round(record.week.ms / HOUR)}h</span> <span class="muted"
+          >from {dayMonth(record.week.start, minute)}</span
+        >
+      </p>
+    {/if}
+    <p class="fields">
+      {label('in all')}<span class="value">{(record.total / DAY).toFixed(record.total < 10 * DAY ? 1 : 0)}</span> days of fasting
+    </p>
+    {#if record.first}
+      <p class="fields muted">{plural(record.count, 'fast')} since {dayMonth(record.first.start, minute)}</p>
+    {/if}
+  </Block>
+{/snippet}
+
 <div class="panes">
   {#if !fasts.length}
     <Block title="Statistics" icon="bar_chart"><p class="muted">No fasts yet.</p></Block>
   {:else}
-    <Block title="Summary" icon="summarize" headingRight={spans}>
+    <Block title="Summary" icon="summarize" headingRight={spans} actions={arrange}>
       <Measure bind:width bind:ch={measured} />
       {#if sum.count}
         <p class="fields">
@@ -259,256 +570,48 @@
       {/if}
     </Block>
 
-    {#if sum.count && width}
-      <Block title="Length" icon="straighten" shuffle titleRight="median {hm(median(lengths))}">
-        <svg
-          class="chart"
-          width={width}
-          height={LENGTH_H}
-          viewBox="0 0 {width} {LENGTH_H}"
-          role="img"
-          aria-label="The last {plural(bars.length, 'fast')} by length, each in the colours of the stages it went through"
-        >
-          {#each ticks as h (h)}
-            <line class="rule" x1={gutter} x2={width} y1={ly(h)} y2={ly(h)} />
-            <text class="axis" x={gutter - ch} y={ly(h)} text-anchor="end" dominant-baseline="central">{h}h</text>
-          {/each}
-          {#each bars as fast, i (fast.id)}
-            {@const x = gutter + i * barPitch}
-            {@const w = Math.max(1, barPitch - (barPitch > 6 ? 2 : 1))}
-            <g>
-              <title>{shortDate(fast.end)} · {hm(fastLength(fast))} · {percentOf(fastLength(fast), fast.goal)}% of {fast.goal}h</title>
-              {#each segments(fast) as s (s.id)}
-                <rect {x} y={ly(s.to)} width={w} height={ly(s.from) - ly(s.to)} style:fill="var(--{s.id})" />
-              {/each}
-              {#if fastLength(fast) < fast.goal * HOUR}
-                <rect class="goal" {x} y={ly(fast.goal) - 1} width={w} height="2" />
-              {/if}
-            </g>
-          {/each}
-          <line class="base" x1={gutter} x2={width} y1={ly(0)} y2={ly(0)} />
-        </svg>
-        <p class="fields muted">
-          {bars.length < shown.length ? `last ${bars.length} of ${shown.length}` : plural(bars.length, 'fast')} · <span class="mark">━</span> goal missed
-        </p>
-        <p class="fields">avg {hm(sum.average)} · max {hm(sum.longest)} · min {hm(Math.min(...lengths))}</p>
-        <div class="bands">
-          {#each bands as band (band.name)}
-            {@const n = bandFill(band.count)}
-            <p class="fields">
-              <span class="muted">{band.name.padEnd(6)}</span> <span class="accent">{'█'.repeat(n)}</span><span class="shade"
-                >{'░'.repeat(bandCells - n)}</span
-              >{pad(band.count, 4)}
-            </p>
-          {/each}
+    {#each order as id (id)}
+      {#if id === 'length'}{@render lengthPane()}
+      {:else if id === 'goal'}{@render goalPane()}
+      {:else if id === 'stages'}{@render stagesPane()}
+      {:else if id === 'rhythm'}{@render rhythmPane()}
+      {:else if id === 'weight'}{@render weightPane()}
+      {:else if id === 'records'}{@render recordsPane()}
+      {/if}
+    {/each}
+
+    {#if arranging && hiddenPanes.length}
+      <Block title="Put away" icon="visibility_off">
+        <div class="put-away">
+          {#each hiddenPanes as id (id)}<button type="button" class="word" onclick={() => bringBack(id)}
+              ><span class="icon" aria-hidden="true"><Icon name="add" /></span>{STATS_NAMES[id]}</button
+            >{/each}
         </div>
       </Block>
-
-      <Block title="Goal" icon="flag" shuffle titleRight="{percent(sum.goalRate)} met">
-        <svg
-          class="chart"
-          width={width}
-          height={7 * cellPitch}
-          viewBox="0 0 {width} {7 * cellPitch}"
-          role="img"
-          aria-label="{plural(grid.length, 'week')} of days, each in the colour of the deepest stage reached, filled where the goal was met"
-        >
-          {#each [0, 2, 4, 6] as row (row)}
-            <text class="axis" x={gutter + cellsAt - ch} y={(row + 0.5) * cellPitch} text-anchor="end" dominant-baseline="central">{heads[row]}</text>
-          {/each}
-          {#each grid as week, w (week.start)}
-            {#each week.days as day, d (d)}
-              {#if day}
-                {@const size = cellPitch - cellGap}
-                {@const x = gutter + cellsAt + w * cellPitch}
-                {@const y = d * cellPitch}
-                {#if day.stage === null}
-                  <rect class="empty" {x} {y} width={size} height={size} rx="2" />
-                {:else if day.met}
-                  <rect {x} {y} width={size} height={size} rx="2" style:fill="var(--{STAGES[day.stage].id})" />
-                {:else}
-                  <rect
-                    class="missed"
-                    x={x + 0.75}
-                    y={y + 0.75}
-                    width={size - 1.5}
-                    height={size - 1.5}
-                    rx="2"
-                    style:stroke="var(--{STAGES[day.stage].id})"
-                  />
-                {/if}
-              {/if}
-            {/each}
-          {/each}
-        </svg>
-        <p class="fields muted">
-          {grid.length < weeks.length ? `last ${grid.length} weeks · ` : ''}{@render swatch(true)} met · {@render swatch(false)} missed
-        </p>
-        <p class="fields">best streak {plural(best.days, 'day')} · {perWeek.toFixed(1)} a week</p>
-        <p class="fields">near misses {goals.near} · avg {percent(goals.progress)} of goal</p>
-      </Block>
-
-      <Block title="Stages" icon="layers" shuffle titleRight="{Math.round(sum.total / HOUR)}h">
-        <p class="fields stagebar" aria-hidden="true">
-          {#each STAGES as stage, i (stage.id)}<span style:color="var(--{stage.id})">{'█'.repeat(runs[i])}</span>{/each}
-        </p>
-        {#each STAGES as stage, i (stage.id)}
-          <p class="fields">
-            <span style:color="var(--{stage.id})">■ {stage.name.padEnd(NAME_WIDTH)}</span>{pad(Math.round(hours[i]), 5)}h <span class="muted"
-              >reached {pad(percent(reach[i]), 4)}</span
-            >
-          </p>
-        {/each}
-      </Block>
-
-      <Block title="Rhythm" icon="schedule">
-        <svg
-          class="chart"
-          width={width}
-          height={stripDays * ROW + 16}
-          viewBox="0 0 {width} {stripDays * ROW + 16}"
-          role="img"
-          aria-label="The last {plural(stripDays, 'day')} over 24 hours, filled while fasting, in the colour of the stage"
-        >
-          {#each strip as row, r (row.day)}
-            {#if row.weekday === weekStart}
-              <text class="axis" x={gutter - ch} y={r * ROW + 3.5} text-anchor="end" dominant-baseline="central">{heads[0]}</text>
-            {/if}
-            <rect class="empty" x={gutter} y={r * ROW} width={plot} height={ROW - 3} />
-            {#each row.runs as run (run.at)}
-              <rect
-                x={gutter + (run.at * plot) / SLOTS}
-                y={r * ROW}
-                width={(run.length * plot) / SLOTS}
-                height={ROW - 3}
-                style:fill="var(--{STAGES[run.stage].id})"
-              />
-            {/each}
-          {/each}
-          {#each [0, 6, 12, 18, 24] as h (h)}
-            <text
-              class="axis"
-              x={gutter + (h / 24) * plot}
-              y={stripDays * ROW + 8}
-              text-anchor={h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}
-              dominant-baseline="central">{two(h)}</text
-            >
-          {/each}
-        </svg>
-        <p class="fields muted">last {plural(stripDays, 'day')}, today at the bottom</p>
-        {#if starts && ends}
-          <p class="fields">
-            starts ~<span class="value">{clockOfDay(starts.minutes)}</span> <span class="muted">±{hm(starts.spread * MINUTE)}</span>
-          </p>
-          <p class="fields">
-            {'ends'.padEnd(6)} ~<span class="value">{clockOfDay(ends.minutes)}</span> <span class="muted">±{hm(ends.spread * MINUTE)}</span>
-          </p>
-        {/if}
-        {#if eating !== null}<p class="fields">
-            eating window <span class="value">{hm(eating)}</span> <span class="muted">on average</span>
-          </p>{/if}
-        <svg
-          class="chart weekdays"
-          width={width}
-          height={WEEKDAY_H}
-          viewBox="0 0 {width} {WEEKDAY_H}"
-          role="img"
-          aria-label="Average hours by weekday: {days.map((d) => `${d.head} ${d.hours === null ? 'none' : Math.round(d.hours)}`).join(', ')}"
-        >
-          {#each days as day, i (day.head)}
-            {@const pitch = width / days.length}
-            {@const w = Math.min(pitch - 6, 3 * ch)}
-            {@const x = i * pitch + (pitch - w) / 2}
-            {@const h = day.hours === null ? 0 : (day.hours / dayMost) * (WEEKDAY_H - 30)}
-            <text class="axis" x={x + w / 2} y={WEEKDAY_H - 21 - h} text-anchor="middle" dominant-baseline="central"
-              >{day.hours === null ? '--' : Math.round(day.hours)}</text
-            >
-            <rect class="column" {x} y={WEEKDAY_H - 14 - h} width={w} height={h} />
-            <text class="head" x={x + w / 2} y={WEEKDAY_H - 7} text-anchor="middle" dominant-baseline="central">{day.head}</text>
-          {/each}
-        </svg>
-        <p class="fields muted">average hours by weekday</p>
-      </Block>
     {/if}
-
-    <Block title="Weight" icon="monitor_weight" shuffle titleRight={edge}>
-      {#if points.length && width}
-        <svg
-          class="chart"
-          width={width}
-          height={WEIGHT_H}
-          viewBox="0 0 {width} {WEIGHT_H}"
-          role="img"
-          aria-label="{plural(points.length, 'weighing')} as dots, and the trend through them"
-        >
-          {#each scaleY.lines as value (value)}
-            <line class="rule" x1={gutter} x2={width} y1={yOf(value)} y2={yOf(value)} />
-            <text
-              class="axis"
-              x={gutter - ch}
-              y={yOf(value)}
-              text-anchor="end"
-              dominant-baseline="central">{scaleY.step < 1 ? value.toFixed(1) : value}</text
-            >
-          {/each}
-          {#each points as p, i (i)}
-            <circle class="dot" cx={wx(p.at)} cy={wy(p.kg)} r="2" />
-          {/each}
-          {#if trend.length > 1}
-            <polyline class="trend" points={trend.map((t) => `${wx(t.at)},${wy(t.kg)}`).join(' ')} />
-          {/if}
-        </svg>
-        {#if rate !== null}
-          <p class="fields">{signed(change)} {unit}{bmiChange} since {dayMonth(points[0].at, minute)} · {signed(rate)} {unit}/wk</p>
-        {/if}
-        <p class="fields muted">
-          low {weightNumber(Math.min(...points.map((p) => p.kg)), unit)} · high {weightNumber(Math.max(...points.map((p) => p.kg)), unit)} · {plural(
-            points.length,
-            'weighing',
-          )}
-        </p>
-      {:else if weighed}
-        <p class="fields muted">No weighings in {span ? spanText : 'the history'}.</p>
-      {:else}
-        <p class="muted">Add a weight when you end a fast, or connect openScale in Options.</p>
-      {/if}
-    </Block>
-
-    <Block title="Records" icon="emoji_events" titleRight="all time">
-      {#if record.longest}
-        <p class="fields">
-          {label('longest')}<span class="value">{hm(fastLength(record.longest))}</span> <span class="muted"
-            >{dayMonth(record.longest.end, minute)}</span
-          >
-        </p>
-      {/if}
-      {#if record.streak.from && record.streak.to}
-        <p class="fields">
-          {label('best streak')}<span class="value">{plural(record.streak.days, 'day')}</span> <span class="muted"
-            >{record.streak.days > 1
-              ? `${dayMonth(noonOf(record.streak.from), minute)}–${dayMonth(noonOf(record.streak.to), minute)}`
-              : dayMonth(noonOf(record.streak.from), minute)}</span
-          >
-        </p>
-      {/if}
-      {#if record.week}
-        <p class="fields">
-          {label('best week')}<span class="value">{Math.round(record.week.ms / HOUR)}h</span> <span class="muted"
-            >from {dayMonth(record.week.start, minute)}</span
-          >
-        </p>
-      {/if}
-      <p class="fields">
-        {label('in all')}<span class="value">{(record.total / DAY).toFixed(record.total < 10 * DAY ? 1 : 0)}</span> days of fasting
-      </p>
-      {#if record.first}
-        <p class="fields muted">{plural(record.count, 'fast')} since {dayMonth(record.first.start, minute)}</p>
-      {/if}
-    </Block>
   {/if}
 </div>
 
 <style>
+  /* A pane's moves while arranging, set into its top edge like a title: glyph buttons
+     whose tap area reaches above and below the line. */
+  .moves {
+    display: inline-flex;
+    margin: -0.45em -0.6ch;
+  }
+
+  .moves .glyph {
+    min-width: 2em;
+    font-size: 1em;
+  }
+
+  .put-away {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2ch;
+    margin-left: -0.3ch;
+  }
+
   /* The spans in Summary's top edge: the one shown in the accent, bold. The tap area
      reaches above and below the line without moving the words off it. */
   .spans {
