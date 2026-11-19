@@ -1,0 +1,6 @@
+* BMI from your height, in cm or feet and inches.
+* Past fasts show their progress to the goal, time in the deepest stage and how far past it.
+* Pick the accent and stage colours; the theme can follow the phone.
+* Reorder or hide the tabs and Stats' panes; set text size, motion and haptics.
+* The status notification shows the stages as a bar, as a Live Update on Android 16.
+* Backups can keep one file. A smoother calendar, Material icons and a new app icon.
