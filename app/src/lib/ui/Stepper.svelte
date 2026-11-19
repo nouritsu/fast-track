@@ -3,6 +3,7 @@
   import { drag, stepsAt } from './drag'
   import { tick } from './haptics'
   import { hold } from './hold'
+  import ShuffleText from './ShuffleText.svelte'
 
   // A field set with < > instead of typing, TUI style: a muted label, the value at a
   // fixed width (or `children`, when it needs markup), and the two glyph buttons, which
@@ -30,6 +31,14 @@
     atEnd?: boolean
   } = $props()
 
+  // A tapped step shuffles the value into place; a held or scrubbed one just shows it,
+  // as a shuffle at that pace would only flicker.
+  let quick = $state(false)
+  function step(direction: -1 | 1, repeating: boolean) {
+    quick = repeating
+    onStep(direction, repeating)
+  }
+
   let taken = 0 // steps the scrub has applied so far
   const scrub = {
     axis: 'x' as const,
@@ -39,7 +48,7 @@
       while (taken !== want) {
         const direction = want > taken ? 1 : -1
         if ((direction > 0 && atEnd) || (direction < 0 && atStart)) return
-        onStep(direction, true)
+        step(direction, true)
         taken += direction
         tick()
       }
@@ -50,14 +59,14 @@
 
 <div class="stepper" use:drag={scrub}>
   <span class="label muted" style:width="{labelWidth}ch">{label}</span>
-  <span class="setting" style:min-width="{width}ch">{#if children}{@render children()}{:else}{value}{/if}</span>
+  <span class="setting" style:min-width="{width}ch">{#if children}{@render children()}{:else}<ShuffleText text={value} plain={quick} />{/if}</span>
   <button
     type="button"
     class="glyph"
     aria-label="{label} earlier"
     title="{label} earlier"
     disabled={atStart}
-    use:hold={(repeating) => onStep(-1, repeating)}>&lt;</button
+    use:hold={(repeating) => step(-1, repeating)}>&lt;</button
   >
   <button
     type="button"
@@ -65,7 +74,7 @@
     aria-label="{label} later"
     title="{label} later"
     disabled={atEnd}
-    use:hold={(repeating) => onStep(1, repeating)}>&gt;</button
+    use:hold={(repeating) => step(1, repeating)}>&gt;</button
   >
 </div>
 

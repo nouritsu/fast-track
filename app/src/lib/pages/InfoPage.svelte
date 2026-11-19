@@ -5,6 +5,7 @@
   import Measure from '../ui/Measure.svelte'
   import { spread } from '../ui/progress'
   import Page from '../ui/Page.svelte'
+  import ShuffleText from '../ui/ShuffleText.svelte'
 
   // The stages of a fast as one text bar like the Fast page's, as wide as the page:
   // as many cells as fit, shared among the stages by the hours they span, each run in
@@ -62,8 +63,8 @@
     <div class="name">
       <button type="button" class="glyph" aria-label="Previous stage" onclick={() => step(-1)}>&lt;</button>
       <span
-        ><span style:color="var(--{stage.id})">■ {stage.name}</span> <span class="muted"
-          >{stageSpan(pick)}{current === pick ? ' · now' : ''}</span
+        ><span style:color="var(--{stage.id})">■ <ShuffleText text={stage.name} /></span> <span class="muted"
+          ><ShuffleText text="{stageSpan(pick)}{current === pick ? ' · now' : ''}" /></span
         ></span
       >
       <button type="button" class="glyph" aria-label="Next stage" onclick={() => step(1)}>&gt;</button>

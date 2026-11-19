@@ -47,6 +47,7 @@
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
   import Measure from '../ui/Measure.svelte'
+  import ShuffleText from '../ui/ShuffleText.svelte'
 
   // The history in panes, one block each, scrolling as a column. Summary's top edge
   // picks the span the panes cover (remembered in the settings) and sets it against the
@@ -236,15 +237,15 @@
       <Measure bind:width bind:ch={measured} />
       {#if sum.count}
         <p class="fields">
-          <span class="value">{sum.count}</span>
+          <span class="value"><ShuffleText text={String(sum.count)} /></span>
           {sum.count === 1 ? 'fast' : 'fasts'}{@render versus(sum.count, prior?.count)} · <span class="value"
-            >{Math.round(sum.total / HOUR)}</span
+            ><ShuffleText text={String(Math.round(sum.total / HOUR))} /></span
           >h{@render versus(sum.total, prior?.total)} · goal met <span style:color="var(--{goalTone(sum.goalRate)})"
-            >{percent(sum.goalRate)}</span
+            ><ShuffleText text={percent(sum.goalRate)} /></span
           >{@render versus(sum.goalRate, prior?.goalRate)}
         </p>
         <p class="fields">
-          avg <span class="value">{hm(sum.average)}</span>{@render versus(sum.average, prior?.average)} · streak <span class="value"
+          avg <span class="value"><ShuffleText text={hm(sum.average)} /></span>{@render versus(sum.average, prior?.average)} · streak <span class="value"
             >{streak(fasts, minute)}</span
           >
         </p>
@@ -259,7 +260,7 @@
     </Block>
 
     {#if sum.count && width}
-      <Block title="Length" icon="straighten" titleRight="median {hm(median(lengths))}">
+      <Block title="Length" icon="straighten" shuffle titleRight="median {hm(median(lengths))}">
         <svg
           class="chart"
           width={width}
@@ -303,7 +304,7 @@
         </div>
       </Block>
 
-      <Block title="Goal" icon="flag" titleRight="{percent(sum.goalRate)} met">
+      <Block title="Goal" icon="flag" shuffle titleRight="{percent(sum.goalRate)} met">
         <svg
           class="chart"
           width={width}
@@ -347,7 +348,7 @@
         <p class="fields">near misses {goals.near} · avg {percent(goals.progress)} of goal</p>
       </Block>
 
-      <Block title="Stages" icon="layers" titleRight="{Math.round(sum.total / HOUR)}h">
+      <Block title="Stages" icon="layers" shuffle titleRight="{Math.round(sum.total / HOUR)}h">
         <p class="fields stagebar" aria-hidden="true">
           {#each STAGES as stage, i (stage.id)}<span style:color="var(--{stage.id})">{'█'.repeat(runs[i])}</span>{/each}
         </p>
@@ -430,7 +431,7 @@
       </Block>
     {/if}
 
-    <Block title="Weight" icon="monitor_weight" titleRight={edge}>
+    <Block title="Weight" icon="monitor_weight" shuffle titleRight={edge}>
       {#if points.length && width}
         <svg
           class="chart"

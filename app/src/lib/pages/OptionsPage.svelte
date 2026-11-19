@@ -14,6 +14,7 @@
   import { COLOR_KEYS } from '../colors'
   import type { IconName } from '../ui/Icon.svelte'
   import Block from '../ui/Block.svelte'
+  import ShuffleText from '../ui/ShuffleText.svelte'
   import HeightStepper from '../ui/HeightStepper.svelte'
   import Icon from '../ui/Icon.svelte'
   import type { ThemeChoice } from '../theme'
@@ -253,7 +254,7 @@
   <div class="row" class:first>
     <span>{name}</span>
     <button type="button" class="word" disabled={key in NOTICES && busy} aria-pressed={settings[key]} onclick={() => flip(key)}
-      >{settings[key] ? 'on' : 'off'}</button
+      ><ShuffleText text={settings[key] ? 'on' : 'off'} /></button
     >
   </div>
 {/snippet}
@@ -264,7 +265,7 @@
     <div class="row first">
       <span>Theme</span>
       <button type="button" class="word" aria-label="Theme: {THEMES[choice].name}" onclick={(e) => onTheme(e.currentTarget)}>
-        <span class="mark" aria-hidden="true"><Icon name={THEMES[choice].icon} /></span>{THEMES[choice].name}
+        <span class="mark" aria-hidden="true"><Icon name={THEMES[choice].icon} /></span><ShuffleText text={THEMES[choice].name} />
       </button>
     </div>
     <!-- The whole row opens the pane; the button inside is what a keyboard or screen reader finds. -->
@@ -283,7 +284,7 @@
         type="button"
         class="word"
         aria-label="Weight unit: {settings.unit}"
-        onclick={() => tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' })}>{settings.unit}</button
+        onclick={() => tracker.setSettings({ unit: settings.unit === 'kg' ? 'lb' : 'kg' })}><ShuffleText text={settings.unit} /></button
       >
     </div>
     {@render toggle('bmi', 'BMI')}
@@ -305,7 +306,7 @@
     <div class="row first">
       <span>Week starts on</span>
       <button type="button" class="word" onclick={() => tracker.setSettings({ weekStart: nextWeekStart() })}
-        >{weekStartName(settings.weekStart)}</button
+        ><ShuffleText text={weekStartName(settings.weekStart)} /></button
       >
     </div>
     {@render toggle('weekNumbers', 'Week numbers')}
