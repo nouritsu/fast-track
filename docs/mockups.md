@@ -428,20 +428,23 @@ minutes to move the bar) and can be turned off in Options.
 While fasting it says "Fasting · Ketosis", the goal and the next stage's time, and a timer that
 counts down to the goal and then up past it. The bar spans 0 to the goal and reads like the
 app's progress line: the time fasted in the colours of the stages it went through (Glucose 0–4h,
-Fat burning 4–12h, Ketosis 12–24h, Autophagy 24h+), the rest muted, a dot in a stage's colour
-where each one still ahead begins, and one in the accent at the goal. Past the goal it spans on
-to the next whole 12 hours, so the coloured part keeps growing. The colours are the ones chosen
+Fat burning 4–12h, Ketosis 12–24h, Autophagy 24h+), the rest muted and broken where each stage
+still ahead begins, with a small rounded diamond in the stage's colour at now. A timer opens the
+bar and a flag closes it, in the accent, which keeps the bar off the notification's edges. Past
+the goal it spans on to the next whole 12 hours, broken at the goal, and the flag turns green.
+Android draws its own bar points only as large squares, so it uses none. The colours are the ones chosen
 in Options, as Catppuccin Mocha in dark mode and Latte in light; the icon takes the accent, and
 a day/night switch shows at the next refresh (at once while the app is in memory).
 
 During the eating window it says "Eating window", the next fast's time and a timer counting down
-to it, over a bar in the accent that drains to muted as the window runs out. Once the window has closed it
+to it, over a bar in the accent that drains to muted as the window runs out, from a fork and
+spoon to a timer. Once the window has closed it
 says "Not fasting" with a timer since, and no bar.
 
 ```text
 Fasting · Ketosis                      3:12:45
 Goal 19:39 · Autophagy Wed 03:39
-━━━━━━━━━━━━━━━━━━━━━━━━┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈●
+◷ ━━━━━━━━━━━━━━━━━━━━━◆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈ ⚑
  Glucose  Fat burning       Ketosis
 ```
 

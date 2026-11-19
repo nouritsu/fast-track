@@ -49,6 +49,11 @@ final class FastColors {
         return pick(context, settings, "accent", "mauve");
     }
 
+    /** A Catppuccin accent by name, in the flavour of the system's mode. */
+    static int named(Context context, String name) {
+        return pick(context, null, name, name);
+    }
+
     /** A muted colour for the part of a bar still to come. */
     static int rest(Context context) {
         return 0xFF000000 | (dark(context) ? MOCHA_REST : LATTE_REST);
