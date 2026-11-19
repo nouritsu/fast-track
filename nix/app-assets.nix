@@ -1,7 +1,8 @@
 # Generated app assets, so no binaries live in git:
 # - Iosevka (SIL OFL 1.1) subset to the text and the symbols the app draws;
 # - the Android launcher icons rendered from app/icon.svg: 48 dp legacy icons and the
-#   108 dp adaptive foreground, whose motif sits in the central safe zone;
+#   108 dp adaptive foreground, whose motif sits in the central safe zone, and its one-colour
+#   twin for themed icons from app/icon-monochrome.svg;
 # - the 24 dp status-bar icon for stage alerts and the status notification
 #   (FastStatus.java), from app/notification.svg.
 # In development: nix build .#app-assets -o app/public/generated
@@ -45,6 +46,7 @@
       vips thumbnail ${../app/icon.svg} "${dir}/ic_launcher.png[strip]" ${px 48}
       cp ${dir}/ic_launcher.png ${dir}/ic_launcher_round.png
       vips thumbnail ${../app/icon.svg} "${dir}/ic_launcher_foreground.png[strip]" ${px 108}
+      vips thumbnail ${../app/icon-monochrome.svg} "${dir}/ic_launcher_monochrome.png[strip]" ${px 108}
       mkdir -p $out/android/drawable-${density}
       vips thumbnail ${../app/notification.svg} "$out/android/drawable-${density}/ic_stat_fast.png[strip]" ${px 24}
     '')
