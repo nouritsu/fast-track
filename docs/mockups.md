@@ -7,14 +7,19 @@ The icons are Material Icons, drawn as SVG in the accent: on the buttons, and be
 block's title (a timer for Fast, a lock for Privacy, a trophy for Records). The mockups draw the
 buttons' with the nearest symbol and leave the titles' out. Values that change in place (a word
 button, a stepper's value on a tap, the calendar's month, Stats' numbers as the span changes)
-shuffle their letters into the new text.
+shuffle their letters into the new text; the theme's word just changes.
+
+Panes push other panes, never the screen: in a column of panes (Stats, Options), a block that
+opens from a button unfolds right below the block it belongs to and pushes the ones under it
+down, and folds back up when it closes (Options' Colours, Stats' Put away).
 
 ## Layout
 
 Five pages side by side — **Fast │ Calendar │ Stats │ Options │ Info** — switched by the tabs along
 the bottom (the accent line under the current one slides with the page) or by swiping left and
-right. Options' Pages block reorders the tabs, hides Calendar, Stats or Info, and picks the page
-the app opens on. Start time, Goal, Edit fast, Options' Colours and Info's Licences open as panes that hang below the page:
+right; the pages slide only when one is turned. Options' Pages block reorders the tabs, hides
+Calendar, Stats or Info, and picks the page the app opens on, which it opens straight onto.
+Start time, Goal, Edit fast and Info's Licences open as panes that hang below the page:
 each rises the size of its panel and pushes the page up and off the top, with **✕ Close** and its
 own button in its bottom edge, and drops back when closed. The calendar's Month and Year panes
 hang above the page instead and push it down. With one open, tapping the button of another that
@@ -193,14 +198,15 @@ Month and Year panes: the twelve months, the shown one lit, or the year with jum
 ╰─ ✕ Close ────────────────────── ⌂ Today ─╯
 ```
 
-Info page: the stages of a fast as a bar, each stage's cells in proportion to its hours, with
-the hours under it. Tap a stage's cells, or step with `<` `>`, to read what happens in it, with
-papers to read; "now" marks the stage the fast in progress is in. Below come the version and
-the credits as links; **third-party notices** opens the Licences pane.
+Info page: two blocks. Stages of a fast shows them as a bar, each stage's cells in proportion to
+its hours, with the hours under it. Tap a stage's cells, or step with `<` `>`, to read what happens
+in it, with papers to read; "now" marks the stage the fast in progress is in. It takes the height
+About leaves and scrolls inside, so stepping through the stages moves nothing else. About sits at
+the bottom, as tall as its lines: the version and the credits as links; **third-party notices**
+opens the Licences pane.
 
 ```text
-╭─ Info ───────────────────────────────────╮
-│ Stages of a fast                         │
+╭─ Stages of a fast ───────────────────────╮
 │ ░░░░░░░░░░░░░░█████████████░░░░░░░░░░░░░ │
 │ 0h   4h       12h          24h+          │
 │                                          │
@@ -215,7 +221,8 @@ the credits as links; **third-party notices** opens the Licences pane.
 │ Times vary with the person, the last     │
 │ meal and activity. This is not medical   │
 │ advice.                                  │
-├──────────────────────────────────────────┤
+╰──────────────────────────────────────────╯
+╭─ About ──────────────────────────────────╮
 │ Fast Track 0.1.0 · source on GitHub      │
 │ based on Fast Track by Dark Rock Studios │
 │ (MIT)                                    │
@@ -252,8 +259,9 @@ Records cover the whole history. Values are in the accent. The charts are drawn 
 text's grid in the stage colours; the length bands and the stage bar are text cells.
 
 **⇅ Arrange** in Summary's bottom edge sets ˄ ˅ ✕ into the top edge of every pane below it: up,
-down, and put away. Put-away panes wait in a Put away block at the bottom, a **+** word each to
-bring it back; **✓ Done** ends it.
+down, and put away. A Put away block unfolds below Summary, pushing the panes down, with a **+**
+word for each pane put away to bring it back; **✓ Done**, or leaving the page, folds it away and
+ends arranging.
 
 ```text
 ╭─ Summary ─────────── 30d 90d 1y all ─╮
@@ -315,10 +323,11 @@ off reads muted.
 
 General: Theme steps through Mocha, Latte and System, which shows Mocha while the phone is dark
 and Latte while it is light, and follows it. Colours shows the accent and the four stage colours
-as squares and opens the Colours pane: a stepper for each, through Catppuccin's fourteen accents,
-each shown as a bar in its colour and its name, in Latte or Mocha as the theme is. A change
-applies at once, to the app and the status notification; **↺ Defaults** brings back mauve, blue,
-peach, red and mauve.
+as squares; tapping them unfolds the Colours block right below General, pushing Display and the
+rest down. It has a stepper for each, through Catppuccin's fourteen accents, each shown as a bar
+in its colour and its name, in Latte or Mocha as the theme is. A change applies at once, to the
+app and the status notification; **↺ Defaults** brings back mauve, blue, peach, red and mauve, and
+**✕ Close**, the squares again, or leaving the page folds it away.
 
 Display: Text size (System, Small, Normal, Large), Motion and Haptics (System, On, Off). System
 follows the phone: its font size, Remove animations, and touch feedback.
@@ -391,7 +400,8 @@ export says so.
 │ Export on a schedule                [on] │
 │ Every  [Mon..Fri 08:00               ]   │
 │ On weekdays at 08:00. Next Thu 08:00.    │
-│ daily  weekly  Mon..Fri 08:00  *:0/30    │
+│ daily  weekly  Sun 21:00  Mon..Fri 08:00 │
+│ *:0/30                                   │
 │ Last regular export Nov 18, 2026, 8:00   │
 │ AM to                                    │
 │ Documents/FastTrack/fast-track.json.     │
