@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { describeSchedule, nextRun, parseSchedule, ScheduleError, upcomingRuns } from './schedule'
+import { describeSchedule, nextRun, parseSchedule, SCHEDULE_EXAMPLES, ScheduleError, upcomingRuns } from './schedule'
 
 const say = (expression: string) => describeSchedule(parseSchedule(expression))
 
 describe('schedule', () => {
+  it('reads every example Options offers', () => {
+    expect(SCHEDULE_EXAMPLES.map(say)).toEqual([
+      'Every day at 00:00',
+      'On Mondays at 00:00',
+      'On Sundays at 21:00',
+      'On weekdays at 08:00',
+      'Every 30 minutes',
+    ])
+  })
+
   it('describes the shorthands', () => {
     expect(say('daily')).toBe('Every day at 00:00')
     expect(say('weekly')).toBe('On Mondays at 00:00')

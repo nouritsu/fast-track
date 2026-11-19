@@ -222,8 +222,21 @@
 
   // Pages ---------------------------------------------------------------------
 
+  // The track slides only while a page is turned (a tab, a swipe, or one springing
+  // back); opening on the start page, or hiding or moving the one in view, puts it in
+  // place at once, without sweeping across the others.
+  const TURN_MS = 400 // past the slide (--slide), which ends it
+  let turning = $state(false)
+  let turnTimer = 0
+  function turn() {
+    turning = true
+    clearTimeout(turnTimer)
+    turnTimer = window.setTimeout(() => (turning = false), TURN_MS)
+  }
+
   // A pane belongs to the page it was opened on; turning the page closes it.
   function go(index: number) {
+    turn()
     current = order[Math.min(order.length - 1, Math.max(0, index))]
     clearTimeout(paneTimer)
     pane = shownPane = paneHost = editing = null
@@ -308,6 +321,7 @@
     onMove: (dx) => (dragX = resist(dx, pastEnd(dx))),
     onEnd: (dx, velocity) => {
       paging = false
+      turn()
       dragX = 0
       if (!pastEnd(dx) && carries(dx, pagesEl?.clientWidth ?? 1, velocity)) go(page + (dx < 0 ? 1 : -1))
     },
@@ -517,7 +531,7 @@
 
 <main class="app">
   <div class="pages" bind:this={pagesEl} use:drag={pageDrag}>
-    <div class="track" class:dragging={paging} style:transform="translateX(calc({-page * 100}% + {dragX}px))">
+    <div class="track" class:turning class:dragging={paging} style:transform="translateX(calc({-page * 100}% + {dragX}px))">
       <div
         class="page"
         class:pushed={pane !== null && paneHost === 'fast'}
@@ -755,6 +769,9 @@
   .track {
     display: flex;
     height: 100%;
+  }
+
+  .track.turning {
     transition: transform var(--slide);
   }
 

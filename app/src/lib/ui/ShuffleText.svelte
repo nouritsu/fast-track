@@ -13,10 +13,13 @@
   }: { text: string; staggerMs?: number; intro?: boolean; plain?: boolean } = $props()
   let shown = $state('')
   let first = true
+  // The text as a value: a prop passed as an expression (settings.unit) is read again
+  // whenever anything it reads changes, and only a change of the text itself shuffles.
+  const current = $derived(text)
 
   $effect(() => {
-    const target = text
-    const shuffle = plan(target, staggerMs)
+    const target = current
+    const shuffle = plan(target, untrack(() => staggerMs))
     if ((first && !intro) || untrack(() => plain) || !shuffle.duration || reducedMotion()) {
       first = false
       shown = target
