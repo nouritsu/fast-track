@@ -6,8 +6,8 @@
   // A pane as tall as its content, hung just below its page: App slides the page up by
   // the pane's height to bring it in, pushing as much of the page's panel off the top
   // as it needs, and back down to put it away. Taller than the page, it scrolls inside.
-  // Close is set into its bottom edge on the left; `action`, the pane's own primary
-  // button (an edge button), on the right. Escape closes it too.
+  // Close is set into its top edge on the right; `action`, the pane's own primary
+  // button (an edge button), into its bottom edge on the right. Escape closes it too.
   let {
     title,
     icon,
@@ -38,18 +38,23 @@
 
 <svelte:window onkeydown={keydown} />
 
+{#snippet close()}
+  <button type="button" class="edge" onclick={onClose}><span class="icon" aria-hidden="true"><Icon name="close" /></span>Close</button>
+{/snippet}
+
+<!-- The pane's own button, at the right of the bottom edge. -->
+{#snippet edge()}
+  <span></span>{@render action?.()}
+{/snippet}
+
 <div
   class="pane"
   role="dialog"
   aria-modal="true"
   aria-label={title}
 >
-  <Block {title} {icon}>
+  <Block {title} {icon} headingRight={close} actions={action ? edge : undefined}>
     <div class="content scroller" class:scrolls bind:this={content}>{@render children()}</div>
-    {#snippet actions()}
-      <button type="button" class="edge" onclick={onClose}><span class="icon" aria-hidden="true"><Icon name="close" /></span>Close</button>
-      {#if action}{@render action()}{/if}
-    {/snippet}
   </Block>
 </div>
 

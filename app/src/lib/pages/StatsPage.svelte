@@ -17,7 +17,7 @@
   } from '../fasting/fasts'
   import type { ScaleWeight } from '../fasting/openscale'
   import { NAME_WIDTH, STAGES, stageEnd } from '../fasting/stages'
-  import { moveIn, STATS_NAMES, type StatsPane } from '../layout'
+  import { moveIn, STATS_NAMES, STATS_PANES, type StatsPane } from '../layout'
   import {
     bestStreak,
     clockOfDay,
@@ -101,6 +101,9 @@
   }
   const putAway = (id: StatsPane) => onArrange(panes, [...hiddenPanes, id])
   const bringBack = (id: StatsPane) => onArrange(panes, hiddenPanes.filter((p) => p !== id))
+  // Reset puts every pane back, in the first order.
+  const arranged = $derived(hiddenPanes.length > 0 || panes.some((id, i) => id !== STATS_PANES[i]))
+  const reset = () => onArrange([...STATS_PANES], [])
 
   // To the minute: the clock ticks several times a second, and nothing here needs it.
   const minute = $derived(Math.floor(now / MINUTE) * MINUTE)
@@ -269,10 +272,16 @@
   </span>
 {/snippet}
 
+<!-- Summary's bottom edge: Arrange, and while arranging Done with Reset beside it. -->
 {#snippet arrange()}
-  <button type="button" class="edge" class:primary={arranging} onclick={() => (arranging = !arranging)}
-    ><span class="icon" aria-hidden="true"><Icon name={arranging ? 'check' : 'swap_vert'} /></span>{arranging ? 'Done' : 'Arrange'}</button
-  >
+  <span class="arrange">
+    <button type="button" class="edge" class:primary={arranging} onclick={() => (arranging = !arranging)}
+      ><span class="icon" aria-hidden="true"><Icon name={arranging ? 'check' : 'swap_vert'} /></span>{arranging ? 'Done' : 'Arrange'}</button
+    >
+    {#if arranging}<button type="button" class="edge" disabled={!arranged} onclick={reset}
+        ><span class="icon" aria-hidden="true"><Icon name="restart_alt" /></span>Reset</button
+      >{/if}
+  </span>
 {/snippet}
 
 {#snippet lengthPane()}
@@ -617,6 +626,11 @@
   .moves .glyph {
     min-width: 2em;
     font-size: 1em;
+  }
+
+  /* Done and Reset side by side at the left of Summary's bottom edge. */
+  .arrange {
+    display: inline-flex;
   }
 
   .put-away {

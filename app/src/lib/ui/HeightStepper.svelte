@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { heightAtLimit, showHeight, stepHeight } from '../fasting/fasts'
+  import { heightAtLimit, showHeight, stepHeight, type HeightUnit } from '../fasting/fasts'
   import Stepper from './Stepper.svelte'
 
-  // The height in cm, as cm with kg and feet and inches with lb; it is stored in cm
-  // either way. Unset, the first step sets a height to go on from.
+  // The height in cm, shown in cm or in feet and inches; it is stored in cm either way.
+  // Unset, the first step sets a height to go on from.
   let {
     height,
     unit,
     onChange,
-  }: { height: number | null; unit: 'kg' | 'lb'; onChange: (height: number) => void } = $props()
+  }: { height: number | null; unit: HeightUnit; onChange: (height: number) => void } = $props()
 </script>
 
 <Stepper

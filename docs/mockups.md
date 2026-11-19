@@ -20,8 +20,8 @@ the bottom (the accent line under the current one slides with the page) or by sw
 right; the pages slide only when one is turned. Options' Pages block reorders the tabs, hides
 Calendar, Stats or Info, and picks the page the app opens on, which it opens straight onto.
 Start time, Goal, Edit fast and Info's Licences open as panes that hang below the page:
-each rises the size of its panel and pushes the page up and off the top, with **✕ Close** and its
-own button in its bottom edge, and drops back when closed. The calendar's Month and Year panes
+each rises the size of its panel and pushes the page up and off the top, with **✕ Close** at the right of its
+top edge and its own button in its bottom edge, and drops back when closed. The calendar's Month and Year panes
 hang above the page instead and push it down. With one open, tapping the button of another that
 opens in the same place (Start and Goal, or Month and Year) swaps them: the new pane slides in
 from the side its button is on as the old one slides out the other way.
@@ -110,31 +110,31 @@ Ended: Done!, the summary and the status values scramble into place over the pro
 ## Panes and pages
 
 Start time pane: a stepper for each field; `<` `>` step it and repeat while held, or drag across
-it. Its bottom edge reads **✕ Close** and **▷ Start**; while fasting, the same pane moves the
+it. **✕ Close** sits in its top edge and **▷ Start** in its bottom one; while fasting, the same pane moves the
 start and its button reads **✓ Save**.
 
 ```text
-╭─ Start time ─────────────────────────────╮
+╭─ Start time ─────────────────── ✕ Close ─╮
 │ Day   Tue 17 Nov                    <  > │
 │ Hour  06                            <  > │
 │ Min   30                            <  > │
 │                                          │
 │ 8:00:00 ago · ends 22:30                 │
-╰─ ✕ Close ────────────────────── ▷ Start ─╯
+╰──────────────────────────────── ▷ Start ─╯
 ```
 
 Goal pane: `<` `>` step the goal from 12h to 24h by the hour, then 30, 36, 42, 48, 60 and 72h.
 While fasting it says when the fast would end.
 
 ```text
-╭─ Goal ───────────────────────────────────╮
+╭─ Goal ───────────────────────── ✕ Close ─╮
 │ Goal  16h                           <  > │
 │ 16:8 · eat within 8h                     │
 │ Ends Tue 19:39                           │
 │                                          │
 │ Reaches Glucose, Fat burning and         │
 │ Ketosis.                                 │
-╰─ ✕ Close ────────────────────────────────╯
+╰──────────────────────────────────────────╯
 ```
 
 Calendar page: a Calendar block and a Fasts block. `<` `>` or a swipe slides the month's grid
@@ -188,14 +188,14 @@ Month and Year panes: the twelve months, the shown one lit, or the year with jum
 **⌂ Today** returns to this month.
 
 ```text
-╭─ Month ──────────────────────────────────╮
+╭─ Month ──────────────────────── ✕ Close ─╮
 │   [Jan] [Feb] [Mar] [Apr] [May] [Jun]    │
 │   [Jul] [Aug] [Sep] [Oct] [Nov] [Dec]    │
-╰─ ✕ Close ────────────────────── ⌂ Today ─╯
-╭─ Year ───────────────────────────────────╮
+╰──────────────────────────────── ⌂ Today ─╯
+╭─ Year ───────────────────────── ✕ Close ─╮
 │               <   2026   >               │
 │      [-5] [-3] [-1] [+1] [+3] [+5]       │
-╰─ ✕ Close ────────────────────── ⌂ Today ─╯
+╰──────────────────────────────── ⌂ Today ─╯
 ```
 
 Info page: two blocks. Stages of a fast shows them as a bar, each stage's cells in proportion to
@@ -239,7 +239,7 @@ opens the Licences pane.
 Licences pane: the bundled THIRD_PARTY_NOTICES.md as plain text, scrolling.
 
 ```text
-╭─ Licences ───────────────────────────────╮
+╭─ Licences ───────────────────── ✕ Close ─╮
 │ # Third-party notices                    │
 │ …                                        │
 │ ## In the app                            │
@@ -249,7 +249,7 @@ Licences pane: the bundled THIRD_PARTY_NOTICES.md as plain text, scrolling.
 │ - clsx, part of Svelte's runtime: MIT.   │
 │ Copyright (c) Luke Edwards.              │
 │ …                                        │
-╰─ ✕ Close ────────────────────────────────╯
+╰──────────────────────────────────────────╯
 ```
 
 Stats page: a column of panes that scrolls. The span (**30d 90d 1y all**) sits in Summary's top
@@ -261,7 +261,7 @@ text's grid in the stage colours; the length bands and the stage bar are text ce
 **⇅ Arrange** in Summary's bottom edge sets ˄ ˅ ✕ into the top edge of every pane below it: up,
 down, and put away. A Put away block unfolds below Summary, pushing the panes down, with a **+**
 word for each pane put away to bring it back; **✓ Done**, or leaving the page, folds it away and
-ends arranging.
+ends arranging; **↺ Reset** beside Done puts every pane back in the first order.
 
 ```text
 ╭─ Summary ─────────── 30d 90d 1y all ─╮
@@ -315,15 +315,15 @@ ends arranging.
 ╰──────────────────────────────────────╯
 ```
 
-Options page: a pane a category, in a column that scrolls like Stats: General (theme and
+Options page: a pane a category, in a column that scrolls like Stats: Theme (flavour and
 colours), Display, Pages, Body (kg or lb, and BMI), Notifications (alerts, the status
 notification), Calendar, openScale (weights from the scale), Backup (export and import, an .ics
 file, and regular exports) and Privacy: Android's cloud backup, off by default. A setting that is
 off reads muted.
 
-General: Theme steps through Mocha, Latte and System, which shows Mocha while the phone is dark
+Theme: Flavour steps through Mocha, Latte and System, which shows Mocha while the phone is dark
 and Latte while it is light, and follows it. Colours shows the accent and the four stage colours
-as squares; tapping them unfolds the Colours block right below General, pushing Display and the
+as squares; tapping them unfolds the Colours block right below Theme, pushing Display and the
 rest down. It has a stepper for each, through Catppuccin's fourteen accents, each shown as a bar
 in its colour and its name, in Latte or Mocha as the theme is. A change applies at once, to the
 app and the status notification; **↺ Defaults** brings back mauve, blue, peach, red and mauve, and
@@ -336,8 +336,8 @@ Pages: the five pages in the tabs' order, each moved with ˄ ˅; Calendar, Stats
 turned off, Fast and Options always show. **Opens on** picks the page the app starts on.
 
 ```text
-╭─ General ────────────────────────────────╮
-│ Theme                          [System]  │
+╭─ Theme ──────────────────────────────────╮
+│ Flavour                        [System]  │
 │ Colours                       [■■■■■]    │
 ╰──────────────────────────────────────────╯
 ╭─ Display ────────────────────────────────╮
@@ -357,19 +357,21 @@ turned off, Fast and Options always show. **Opens on** picks the page the app st
 │ The tabs follow this order; Fast and     │
 │ Options always show.                     │
 ╰──────────────────────────────────────────╯
-╭─ Colours ────────────────────────────────╮
+╭─ Colours ────────────────────── ✕ Close ─╮
 │ Accent       ████ Mauve             <  > │
 │ Glucose      ████ Blue              <  > │
 │ Fat burning  ████ Peach             <  > │
 │ Ketosis      ████ Red               <  > │
 │ Autophagy    ████ Mauve             <  > │
-╰─ ✕ Close ─────────────────── ↺ Defaults ─╯
+╰───────────────────────────── ↺ Defaults ─╯
 ```
 
-Body: BMI is off by default. On, it adds a Height row, stepped by `<` `>` like Start time's fields:
-by the cm, 100–250, with kg, and by the inch, as `5′ 11″`, with lb; it is stored in cm either way.
-Under it the formula in the weight's unit, filled in with the latest weight the app knows, from a
-fast or openScale; without a weight or a height it shows without numbers. With a height set,
+Body: the weight's unit (kg or lb), and BMI, off by default. On, it adds the height's own unit
+(cm, or ft for feet and inches; older settings start it at the weight's) and a Height row,
+stepped by `<` `>` like Start time's fields: by the cm, 100–250, or by the inch, as `5′ 11″`; it
+is stored in cm either way. Under it the formula: the imperial one in pounds and inches, else the
+metric one, the imperial measure converted. It is filled in with the latest weight the app knows,
+from a fast or openScale; without a weight or a height it shows without numbers. With a height set,
 Stats' Weight block adds ◆ and the BMI to its top edge (`79.9 kg ◆ 24.7`) and the change in BMI to
 its change line (`-0.3 kg ◆ -0.1 since 22 Oct · -0.1 kg/wk`).
 
@@ -382,8 +384,9 @@ export says so.
 
 ```text
 ╭─ Body ───────────────────────────────────╮
-│ Weight                              [kg] │
+│ Weight unit                         [kg] │
 │ BMI                                 [on] │
+│ Height unit                         [cm] │
 │ Height  180 cm                      <  > │
 │ BMI = 80.6 kg / (1.80 m)² = 24.9         │
 ╰──────────────────────────────────────────╯
