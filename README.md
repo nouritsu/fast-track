@@ -62,9 +62,10 @@ git clone https://github.com/nouritsu/fast-track
 cd fast-track
 nix build .#apk               # unsigned APK in result/
 nix run .#apk -- --install    # sign with your debug key, then adb install
+nix run .#apk-debug -- --install  # the same, as Fast Track (debug) beside the release app
 ```
 
-A build signed with your own key can't update one from a release, and the reverse is also true. Export your fasts (Options → Backup) and uninstall before switching.
+A build signed with your own key can't update one from a release, and the reverse is also true. Export your fasts (Options → Backup) and uninstall before switching, or install the debug build, which has its own id and storage and sits beside the release app.
 
 To work on the app:
 
