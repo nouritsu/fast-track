@@ -5,15 +5,18 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import Icon, { type IconName } from './Icon.svelte'
+  import ShuffleText from './ShuffleText.svelte'
 
   // A ratatui-style block: a rounded 1px border with titles set into its top edge, the
   // left one after its `icon` (a Material icon) if it has one.
-  // `headingRight` replaces the right title when it needs markup (a live value).
+  // `headingRight` replaces the right title when it needs markup (a live value); with
+  // `shuffle`, a right title that changes runs the letter shuffle.
   // `actions` are buttons set into the bottom edge, the way the titles sit in the top one.
   let {
     title = '',
     icon,
     titleRight = '',
+    shuffle = false,
     headingRight,
     actions,
     children,
@@ -22,6 +25,7 @@
     title?: string
     icon?: IconName
     titleRight?: string
+    shuffle?: boolean
     headingRight?: Snippet
     actions?: Snippet
     children: Snippet
@@ -36,7 +40,7 @@
   {#if headingRight}
     <span class="title right">{@render headingRight()}</span>
   {:else if titleRight}
-    <span class="title right">{titleRight}</span>
+    <span class="title right">{#if shuffle}<ShuffleText text={titleRight} />{:else}{titleRight}{/if}</span>
   {/if}
   {@render children()}
   {#if actions}<div class="actions">{@render actions()}</div>{/if}
