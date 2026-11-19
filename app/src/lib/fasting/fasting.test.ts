@@ -13,11 +13,13 @@ import {
   bmiFormula,
   earliestStart,
   eatingLeft,
+  goalTone,
   heightAtLimit,
   invalidTimes,
   milestones,
   overlapping,
   parseWeight,
+  pastGoal,
   percentOf,
   planName,
   showBmi,
@@ -29,6 +31,7 @@ import {
   stepHeight,
   streak,
   summarize,
+  timeInDeepest,
   type Fast,
 } from './fasts'
 import { stageIndex, stageSpan, STAGES } from './stages'
@@ -92,6 +95,17 @@ describe('progress', () => {
   it('counts whole percent of the goal, past 100', () => {
     expect(percentOf(8 * HOUR, 16)).toBe(50)
     expect(percentOf(16.7 * HOUR, 16)).toBe(104)
+  })
+
+  it('colours a share of the goal: met, half or more, less', () => {
+    expect([1.03, 1, 0.99, 0.5, 0.49, 0].map(goalTone)).toEqual(['ok', 'ok', 'warn', 'warn', 'bad', 'bad'])
+  })
+
+  it('times a past fast in its deepest stage and against its goal', () => {
+    const f = fast('2026-11-17T18:33', '2026-11-18T11:03') // 16:30, in Ketosis since 12h
+    expect(timeInDeepest(f) / HOUR).toBe(4.5)
+    expect(pastGoal(f) / HOUR).toBe(0.5)
+    expect(pastGoal(fast('2026-11-17T18:00', '2026-11-18T08:40')) / HOUR).toBeCloseTo(-4 / 3)
   })
 
   it('lists the stages to come and the goal, in time order', () => {

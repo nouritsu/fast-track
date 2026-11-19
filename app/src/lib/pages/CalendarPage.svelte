@@ -1,15 +1,29 @@
 <script lang="ts">
   import { dayTotals, hoursOf, monthRows, monthSummary, rowWeek, weekdayHeads, weekTotal } from '../fasting/calendar'
-  import { deepestStage, fastLength, percentOf, showWeight, type Fast } from '../fasting/fasts'
+  import {
+    bmi,
+    deepestStage,
+    fastLength,
+    goalTone,
+    pastGoal,
+    percentOf,
+    progressOf,
+    showBmi,
+    showWeight,
+    timeInDeepest,
+    type Fast,
+  } from '../fasting/fasts'
   import { weightOf, type ScaleWeight } from '../fasting/openscale'
   import { STAGES } from '../fasting/stages'
   import type { Settings } from '../fasting/store'
   import { dayKey, longDate, MONTHS, nearClock, noonOf } from '../fasting/time'
   import { reducedMotion } from '../motion/shuffle'
   import { carries, drag, type DragOptions } from '../ui/drag'
-  import { clock, duration, hm } from '../ui/fields'
+  import { clock, duration, hm, pad, signedHm } from '../ui/fields'
+  import { stageCells } from '../ui/progress'
   import Icon from '../ui/Icon.svelte'
   import Block from '../ui/Block.svelte'
+  import Measure from '../ui/Measure.svelte'
   import ShuffleText from '../ui/ShuffleText.svelte'
 
   // Two panels. The Calendar: a month in which each day that ended a fast is in the
@@ -77,6 +91,22 @@
       .filter(({ fast }) => (selected ? dayKey(fast.end) === selected : dayKey(fast.end).startsWith(monthKey)))
       .sort((a, b) => b.fast.end - a.fast.end),
   )
+
+  // Each fast's progress line: as many cells as fit beside its "103% of 16h", each in
+  // the colour of the stage it falls in, as under the Fast page's timer.
+  let listWidth = $state(0)
+  let measured = $state(0)
+  const SUFFIX = 15 // " 103% of 16h", the entry's left bar and its room, and a spare cell
+  const lineCells = $derived(Math.max(8, Math.floor(listWidth / (measured || 8)) - SUFFIX))
+  const STAGE_IDS = STAGES.map((s) => s.id)
+  const lineOf = (fast: Fast) =>
+    stageCells(
+      STAGES.map((s) => s.from / fast.goal),
+      STAGE_IDS,
+      progressOf(fastLength(fast), fast.goal),
+      lineCells,
+    )
+  const height = $derived(settings.bmi ? settings.height : null)
 
   function move(by: -1 | 1) {
     const d = new Date(year, month + by, 1)
@@ -266,18 +296,24 @@
 
 <Block title="Fasts" class="fasts-block" headingRight={addButton}>
   <div class="content scroller">
+  <Measure bind:width={listWidth} bind:ch={measured} />
   <div class="head">
     {#if selected}
-      <p class="fields">{longDate(noonOf(selected))} · {count === 1 ? '1 fast' : `${count} fasts`}</p>
+      <p class="fields">{longDate(noonOf(selected))} · <span class="value">{count}</span> {count === 1 ? 'fast' : 'fasts'}</p>
     {:else if summary.count}
-      <p class="fields">{MONTHS[month]} · {summary.count === 1 ? '1 fast' : `${summary.count} fasts`} · {hoursOf(summary.total)}h</p>
+      <p class="fields">
+        {MONTHS[month]} · <span class="value">{summary.count}</span>
+        {summary.count === 1 ? 'fast' : 'fasts'} · <span class="value">{hoursOf(summary.total)}</span>h
+      </p>
     {:else}
       <p class="fields muted">{MONTHS[month]} · no fasts</p>
     {/if}
   </div>
   {#if !selected && summary.count}
     <p class="fields muted summary">
-      avg {hm(summary.average)} · goal met {Math.round(summary.goalRate * 100)}% · longest {hm(summary.longest)}
+      avg <span class="value">{hm(summary.average)}</span> · goal met <span style:color="var(--{goalTone(summary.goalRate)})"
+        >{Math.round(summary.goalRate * 100)}%</span
+      > · longest <span class="value">{hm(summary.longest)}</span>
     </p>
   {/if}
 
@@ -291,19 +327,38 @@
     {:else}
       {@const stage = STAGES[deepestStage(fast)]}
       {@const weight = weightOf(fast, scale)}
+      {@const percent = percentOf(fastLength(fast), fast.goal)}
       <div class="swipe row" use:drag={entryDrag(fast)}>
       <span class="reveal" aria-hidden="true">✕ Delete</span>
-      <div class="entry" style:transform="translateX({swiping?.id === fast.id ? swiping.dx : 0}px)" class:moving={swiping?.id === fast.id}>
+      <div
+        class="entry"
+        style:--stage="var(--{stage.id})"
+        style:transform="translateX({swiping?.id === fast.id ? swiping.dx : 0}px)"
+        class:moving={swiping?.id === fast.id}
+      >
         <div class="title">
           <h3>{longDate(fast.end)}</h3>
           <button type="button" class="glyph" aria-label="Edit" title="Edit" onclick={() => onEdit(fast)}><Icon name="edit" /></button>
           <button type="button" class="glyph" aria-label="Delete" title="Delete" onclick={() => remove(fast)}><Icon name="close" /></button>
         </div>
-        <p class="fields">{nearClock(fast.start, fast.end)} → {clock(new Date(fast.end))} · {duration(fastLength(fast))}</p>
         <p class="fields">
-          <span style:color="var(--{stage.id})">{stage.name}</span> · {percentOf(fastLength(fast), fast.goal)}% of {fast.goal}h{weight
-            ? ` · ${showWeight(weight.kg, unit)}${weight.scale ? ' (scale)' : ''}`
-            : ''}
+          <span class="muted">from</span>
+          {nearClock(fast.start, fast.end)} <span class="muted">to</span>
+          {clock(new Date(fast.end))} · {duration(fastLength(fast))}
+        </p>
+        <p class="fields" aria-label="{percent}% of {fast.goal}h">
+          <span aria-hidden="true"
+            >{#each lineOf(fast) as run, i (i)}<span style:color={run.color ? `var(--${run.color})` : undefined} class:shade={!run.color}
+                >{run.text}</span
+              >{/each}</span
+          >
+          <span style:color="var(--{goalTone(percent / 100)})">{pad(percent, 3)}%</span> of {fast.goal}h
+        </p>
+        <p class="fields detail">
+          <span style:color="var(--{stage.id})">{stage.name}</span>
+          {hm(timeInDeepest(fast))} · {signedHm(pastGoal(fast))}{#if weight}{' · '}{showWeight(weight.kg, unit)}{#if height !== null}{' '}◆ {showBmi(bmi(weight.kg, height))}{/if}{#if weight.scale}{' '}<span
+                class="muted">(scale)</span
+              >{/if}{/if}
         </p>
         {#if fast.note}<p class="note"><span class="icon" aria-hidden="true">¶</span>{fast.note}</p>{/if}
       </div>
@@ -360,11 +415,24 @@
     color: var(--bad);
   }
 
+  /* A thin bar down a fast's left edge in its deepest stage's colour; the Undo line keeps
+     the same room, uncoloured. */
   .entry {
     position: relative;
-    padding: 0.5em 0 0.2em;
+    padding: 0.5em 0 0.2em 1ch;
+    border-left: 2px solid var(--stage, transparent);
     background: var(--bg);
     transition: transform 0.2s ease;
+  }
+
+  /* The month's numbers stand out from their words. */
+  .value {
+    color: var(--accent);
+  }
+
+  /* The unfilled part of a progress line, as in Stats. */
+  .shade {
+    color: var(--button-border);
   }
 
   .entry.moving {
@@ -457,8 +525,15 @@
     border-color: var(--accent);
   }
 
+  /* Today is underlined in the accent; without a fast it is in the accent too, and a day
+     that ended one keeps its stage's colour. */
   .today .date {
-    text-decoration: underline;
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 0.15em;
+  }
+
+  span.day.today .date {
+    color: var(--accent);
   }
 
   /* The legend in the bottom edge, cutting the line like the edge buttons. */
