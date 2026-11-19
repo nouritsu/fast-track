@@ -223,7 +223,7 @@ opens the Licences pane.
 │ advice.                                  │
 ╰──────────────────────────────────────────╯
 ╭─ About ──────────────────────────────────╮
-│ Fast Track 0.2.0 · source on GitHub      │
+│ Fast Track 0.2.1 · source on GitHub      │
 │ based on Fast Track by Dark Rock Studios │
 │ (MIT)                                    │
 │ font Iosevka (SIL OFL 1.1)               │
