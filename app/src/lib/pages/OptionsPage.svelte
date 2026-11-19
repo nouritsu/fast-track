@@ -7,7 +7,7 @@
   import { backupName, makeBackup, parseBackup, saveExportFile } from '../fasting/backup'
   import { toIcs, WEEK_STARTS, weekStartName } from '../fasting/calendar'
   import { bmiFormula } from '../fasting/fasts'
-  import { describeSchedule, listed, nextRun, parseSchedule, ScheduleError } from '../fasting/schedule'
+  import { describeSchedule, listed, nextRun, parseSchedule, SCHEDULE_EXAMPLES, ScheduleError } from '../fasting/schedule'
   import { latestWeighing } from '../fasting/stats'
   import { dayClock, dayKey, shortDate } from '../fasting/time'
   import type { Tracker } from '../fasting/tracker.svelte'
@@ -83,8 +83,7 @@
     }, SAVE_MS)
   }
 
-  // Examples to tap: they fill the field and save as typing does.
-  const EXAMPLES = ['daily', 'weekly', 'Mon..Fri 08:00', '*:0/30']
+  // Examples to tap (SCHEDULE_EXAMPLES): they fill the field and save as typing does.
 
   function example(text: string) {
     every = text
@@ -299,7 +298,7 @@
     <div class="row first">
       <span>Theme</span>
       <button type="button" class="word" aria-label="Theme: {THEMES[choice].name}" onclick={(e) => onTheme(e.currentTarget)}>
-        <span class="mark" aria-hidden="true"><Icon name={THEMES[choice].icon} /></span><ShuffleText text={THEMES[choice].name} />
+        <span class="mark" aria-hidden="true"><Icon name={THEMES[choice].icon} /></span>{THEMES[choice].name}
       </button>
     </div>
     <!-- The whole row opens the pane; the button inside is what a keyboard or screen reader finds. -->
@@ -458,7 +457,7 @@
       {reading.text}{#if reading.ok && settings.exportOn}{' '}<span class="muted">{reading.next}</span>{/if}
     </p>
     <div class="examples">
-      {#each EXAMPLES as text (text)}<button type="button" class="link" onclick={() => example(text)}>{text}</button>{/each}
+      {#each SCHEDULE_EXAMPLES as text (text)}<button type="button" class="link" onclick={() => example(text)}>{text}</button>{/each}
     </div>
     {#if autoLine}<p class="muted message">{autoLine}</p>{/if}
   </Block>
