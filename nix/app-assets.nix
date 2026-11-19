@@ -37,6 +37,8 @@
     "U+2913" # ⤓ export
     "U+2912" # ⤒ import
     "U+25A0" # ■ a stage's colour
+    "U+25B2" # ▲ up on the span before (Stats)
+    "U+25BC" # ▼ down on it
     "U+2192" # → from start to end
     "U+25C6" # ◆ BMI
   ];

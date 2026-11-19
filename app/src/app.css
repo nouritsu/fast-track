@@ -352,6 +352,11 @@ button.word::after {
   content: ' ]';
 }
 
+/* A setting that is off reads muted, so the ones that are on stand out. */
+button.word[aria-pressed='false'] {
+  color: var(--muted);
+}
+
 button.word:active:not(:disabled),
 button.word:active:not(:disabled)::before,
 button.word:active:not(:disabled)::after {

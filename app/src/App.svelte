@@ -539,7 +539,9 @@
                   class="bare"
                   aria-label={heroMode === 'left' ? 'Show time elapsed' : 'Show time left'}
                   onclick={toggleHero}
+                  style:color="var(--{STAGES[stage].id})"
                 >
+                  <!-- The timer in the colour of the stage the fast is in; its detail stays muted. -->
                   <Hero text={heroText} animate onDone={onRevealed} />
                   <span class="muted settle" class:visible={revealed}>{heroDetail}</span>
                 </button>
