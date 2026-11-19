@@ -51,6 +51,16 @@ export const progressOf = (elapsedMs: number, goal: number): number => Math.max(
 /** Whole percent of the goal, as the action block shows it. */
 export const percentOf = (elapsedMs: number, goal: number): number => Math.floor(progressOf(elapsedMs, goal) * 100)
 
+/** How a share of the goal went, as a colour token: met, at least half, or short of that.
+ *  The Fast panel's border and the past fasts' percentages use the same thresholds. */
+export const goalTone = (share: number): 'ok' | 'warn' | 'bad' => (share >= 1 ? 'ok' : share >= 0.5 ? 'warn' : 'bad')
+
+/** How long a fast spent in the deepest stage it reached, in ms. */
+export const timeInDeepest = (fast: Pick<Fast, 'start' | 'end'>): number => fastLength(fast) - STAGES[deepestStage(fast)].from * HOUR
+
+/** How far a fast went past its goal, in ms: negative when it fell short. */
+export const pastGoal = (fast: Fast): number => fastLength(fast) - fast.goal * HOUR
+
 /** Newest first, by end. */
 export const newestFirst = (fasts: Fast[]): Fast[] => [...fasts].sort((a, b) => b.end - a.end)
 

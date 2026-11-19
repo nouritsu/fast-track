@@ -25,5 +25,8 @@ export function hm(ms: number): string {
   return `${Math.floor(minutes / 60)}:${two(minutes % 60)}`
 }
 
+/** A signed span to the nearest minute: "+0:30", "-1:20". */
+export const signedHm = (ms: number): string => `${Math.round(ms / 60_000) < 0 ? '-' : '+'}${hm(Math.abs(ms))}`
+
 /** A time of day as HH:MM. */
 export const clock = (at: Date): string => `${two(at.getHours())}:${two(at.getMinutes())}`

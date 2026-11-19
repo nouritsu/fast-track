@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dashes, duration, hm, pad } from './fields'
+import { dashes, duration, hm, pad, signedHm } from './fields'
 
 describe('fields', () => {
   it('pads and dashes at the same width', () => {
@@ -13,5 +13,8 @@ describe('fields', () => {
     expect(duration(3_725_000)).toBe('1:02:05')
     expect(hm(16 * 3_600_000 + 34 * 60_000 + 20_000)).toBe('16:34')
     expect(hm(59_000)).toBe('0:01')
+    expect(signedHm(30 * 60_000)).toBe('+0:30')
+    expect(signedHm(-80 * 60_000)).toBe('-1:20')
+    expect(signedHm(-20_000)).toBe('+0:00')
   })
 })
