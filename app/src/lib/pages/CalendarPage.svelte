@@ -269,26 +269,23 @@
               {#if day !== null}
                 {@const k = key(y, m, day)}
                 {@const total = days.get(k)}
-                {#if total}
-                  <button
-                    type="button"
-                    class="day"
-                    class:selected={selected === k}
-                    class:today={todayKey === k}
-                    class:near={total.near}
-                    style:--stage="var(--{STAGES[total.stage].id})"
-                    aria-label="{longDate(new Date(y, m, day).getTime())}: {hoursOf(total.ms)} hours, {STAGES[total.stage]
-                      .name}{total.near ? ', a near miss' : ''}"
-                    aria-pressed={selected === k}
-                    onclick={() => (selected = selected === k ? null : k)}
-                  >
-                    <span class="date">{day}</span>
-                  </button>
-                {:else}
-                  <span class="day muted" class:today={todayKey === k}>
-                    <span class="date">{day}</span>
-                  </span>
-                {/if}
+                <!-- Every day can be picked: one with fasts shows them, any shows Add for it. -->
+                <button
+                  type="button"
+                  class="day"
+                  class:fasted={total}
+                  class:selected={selected === k}
+                  class:today={todayKey === k}
+                  class:near={total?.near}
+                  style:--stage={total ? `var(--${STAGES[total.stage].id})` : undefined}
+                  aria-label="{longDate(new Date(y, m, day).getTime())}: {total
+                    ? `${hoursOf(total.ms)} hours, ${STAGES[total.stage].name}${total.near ? ', a near miss' : ''}`
+                    : 'no fasts'}"
+                  aria-pressed={selected === k}
+                  onclick={() => (selected = selected === k ? null : k)}
+                >
+                  <span class="date">{day}</span>
+                </button>
               {:else}
                 <!-- Holds the row's height, so short months keep the grid's size. -->
                 <span class="day" aria-hidden="true"><span class="date"> </span></span>
@@ -618,12 +615,14 @@
     white-space: pre;
   }
 
+  /* A day without a fast is muted; one that ended a fast is bold in its stage's colour. */
   button.day {
     background: none;
     border-color: transparent;
+    color: var(--muted);
   }
 
-  button.day .date {
+  button.day.fasted .date {
     font-weight: 700;
     color: var(--stage);
   }
@@ -656,7 +655,7 @@
     text-underline-offset: 0.15em;
   }
 
-  span.day.today .date {
+  button.day.today:not(.fasted) .date {
     color: var(--accent);
   }
 
