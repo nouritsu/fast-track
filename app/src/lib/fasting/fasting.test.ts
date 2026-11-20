@@ -40,7 +40,7 @@ import {
 } from './fasts'
 import { stageIndex, stageSpan, STAGES } from './stages'
 import { DEFAULT_SETTINGS, toFast, toSettings } from './store'
-import { dayKey, HOUR, stepDay, stepMinute } from './time'
+import { dayKey, dayRange, HOUR, stepDay, stepMinute } from './time'
 
 const at = (iso: string) => new Date(iso).getTime()
 const fast = (start: string, end: string, goal = 16, extra: Partial<Fast> = {}): Fast => ({
@@ -345,6 +345,14 @@ describe('time', () => {
     expect(new Date(stepMinute(at('2026-11-17T06:32'), 1)).getMinutes()).toBe(35)
     expect(new Date(stepMinute(at('2026-11-17T06:32'), -1)).getMinutes()).toBe(30)
     expect(new Date(stepMinute(at('2026-11-17T06:30'), -1)).getMinutes()).toBe(25)
+  })
+
+  it('writes a range of days without repeating its month or year', () => {
+    const now = at('2026-11-20T12:00')
+    expect(dayRange(at('2026-10-20T12:00'), at('2026-10-27T12:00'), now)).toEqual(['20', '27 Oct'])
+    expect(dayRange(at('2026-09-28T12:00'), at('2026-10-05T12:00'), now)).toEqual(['28 Sep', '5 Oct'])
+    expect(dayRange(at('2025-09-28T12:00'), at('2025-10-05T12:00'), now)).toEqual(['28 Sep', '5 Oct 2025'])
+    expect(dayRange(at('2025-12-28T12:00'), at('2026-01-03T12:00'), now)).toEqual(['28 Dec 2025', '3 Jan'])
   })
 })
 

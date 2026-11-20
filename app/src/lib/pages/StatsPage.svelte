@@ -43,7 +43,7 @@
     within,
     type Span,
   } from '../fasting/stats'
-  import { DAY, dayMonth, HOUR, MINUTE, noonOf, shortDate, stepDay } from '../fasting/time'
+  import { DAY, dayMonth, dayRange, HOUR, MINUTE, noonOf, shortDate, stepDay } from '../fasting/time'
   import { hm, pad, two } from '../ui/fields'
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
@@ -147,7 +147,8 @@
   const lengths = $derived(shown.map(fastLength))
   const bands = $derived(lengthBands(shown))
   const bandMost = $derived(Math.max(1, ...bands.map((b) => b.count)))
-  const bandCells = $derived(Math.max(4, Math.min(24, cells - 11)))
+  // The band's name (6), its count (4) and a cell either side of the bar: the bar fills the rest.
+  const bandCells = $derived(Math.max(4, cells - 12))
   const bandFill = (count: number) => (count ? Math.max(1, Math.round((count / bandMost) * bandCells)) : 0)
 
   // Goal: the span's days in weeks, each in the colour of the deepest stage it reached,
@@ -229,7 +230,6 @@
 
   // Records: the whole history.
   const record = $derived(records(fasts, weekStart))
-  const label = (text: string) => text.padEnd(12)
 </script>
 
 {#snippet swatch(filled: boolean)}<svg class="swatch" viewBox="0 0 10 10" aria-hidden="true"
@@ -322,10 +322,10 @@
       <div class="bands">
         {#each bands as band (band.name)}
           {@const n = bandFill(band.count)}
-          <p class="fields">
-            <span class="muted">{band.name.padEnd(6)}</span> <span class="accent">{'█'.repeat(n)}</span><span class="shade"
-              >{'░'.repeat(bandCells - n)}</span
-            >{pad(band.count, 4)}
+          <p class="fields pair">
+            <span class="muted">{band.name.padEnd(6)}</span><span
+              ><span class="accent">{'█'.repeat(n)}</span><span class="shade">{'░'.repeat(bandCells - n)}</span></span
+            ><span>{pad(band.count, 4)}</span>
           </p>
         {/each}
       </div>
@@ -390,10 +390,9 @@
         {#each STAGES as stage, i (stage.id)}<span style:color="var(--{stage.id})">{'█'.repeat(runs[i])}</span>{/each}
       </p>
       {#each STAGES as stage, i (stage.id)}
-        <p class="fields">
-          <span style:color="var(--{stage.id})">■ {stage.name.padEnd(NAME_WIDTH)}</span>{pad(Math.round(hours[i]), 5)}h <span class="muted"
-            >reached {pad(percent(reach[i]), 4)}</span
-          >
+        <p class="fields pair">
+          <span><span style:color="var(--{stage.id})">■ {stage.name.padEnd(NAME_WIDTH)}</span>{pad(Math.round(hours[i]), 5)}h</span>
+          <span><span class="muted">reached</span> {pad(percent(reach[i]), 4)}</span>
         </p>
       {/each}
     </Block>
@@ -439,15 +438,18 @@
       </svg>
       <p class="fields muted">last {plural(stripDays, 'day')}, today at the bottom</p>
       {#if starts && ends}
-        <p class="fields">
-          starts ~<span class="value">{clockOfDay(starts.minutes)}</span> <span class="muted">±{hm(starts.spread * MINUTE)}</span>
+        <p class="fields pair">
+          <span>starts:</span>
+          <span>~<span class="value">{clockOfDay(starts.minutes)}</span> <span class="muted">±{hm(starts.spread * MINUTE)}</span></span>
         </p>
-        <p class="fields">
-          {'ends'.padEnd(6)} ~<span class="value">{clockOfDay(ends.minutes)}</span> <span class="muted">±{hm(ends.spread * MINUTE)}</span>
+        <p class="fields pair">
+          <span>ends:</span>
+          <span>~<span class="value">{clockOfDay(ends.minutes)}</span> <span class="muted">±{hm(ends.spread * MINUTE)}</span></span>
         </p>
       {/if}
-      {#if eating !== null}<p class="fields">
-          eating window <span class="value">{hm(eating)}</span> <span class="muted">on average</span>
+      {#if eating !== null}<p class="fields pair">
+          <span>eating window:</span>
+          <span><span class="value">{hm(eating)}</span> <span class="muted">on average</span></span>
         </p>{/if}
       <svg
         class="chart weekdays"
@@ -523,32 +525,30 @@
 {#snippet recordsPane()}
   {#snippet moves()}{@render mover('records')}{/snippet}
   <Block title="Records" icon="emoji_events" headingRight={arranging ? moves : undefined} titleRight="all time">
-    {#if record.longest}
-      <p class="fields">
-        {label('longest')}<span class="value">{hm(fastLength(record.longest))}</span> <span class="muted"
-          >{dayMonth(record.longest.end, minute)}</span
+    <!-- A table: what, how much, and when, at the right edge. -->
+    <div class="fields records">
+      {#if record.longest}
+        <span>longest:</span><span class="value">{hm(fastLength(record.longest))}</span><span
+          ><span class="muted">on</span> {dayMonth(record.longest.end, minute)}</span
         >
-      </p>
-    {/if}
-    {#if record.streak.from && record.streak.to}
-      <p class="fields">
-        {label('best streak')}<span class="value">{plural(record.streak.days, 'day')}</span> <span class="muted"
-          >{record.streak.days > 1
-            ? `${dayMonth(noonOf(record.streak.from), minute)}–${dayMonth(noonOf(record.streak.to), minute)}`
-            : dayMonth(noonOf(record.streak.from), minute)}</span
+      {/if}
+      {#if record.streak.from && record.streak.to}
+        {@const [from, to] = dayRange(noonOf(record.streak.from), noonOf(record.streak.to), minute)}
+        <span>best streak:</span><span class="value">{plural(record.streak.days, 'day')}</span><span
+          >{#if record.streak.days > 1}<span class="muted">from</span> {from} <span class="muted">to</span> {to}{:else}<span class="muted"
+              >on</span
+            > {to}{/if}</span
         >
-      </p>
-    {/if}
-    {#if record.week}
-      <p class="fields">
-        {label('best week')}<span class="value">{Math.round(record.week.ms / HOUR)}h</span> <span class="muted"
-          >from {dayMonth(record.week.start, minute)}</span
+      {/if}
+      {#if record.week}
+        <span>best week:</span><span class="value">{Math.round(record.week.ms / HOUR)}h</span><span
+          ><span class="muted">from</span> {dayMonth(record.week.start, minute)}</span
         >
-      </p>
-    {/if}
-    <p class="fields">
-      {label('in all')}<span class="value">{(record.total / DAY).toFixed(record.total < 10 * DAY ? 1 : 0)}</span> days of fasting
-    </p>
+      {/if}
+      <span>in all:</span><span class="rest"
+        ><span class="value">{(record.total / DAY).toFixed(record.total < 10 * DAY ? 1 : 0)}</span> days of fasting</span
+      >
+    </div>
     {#if record.first}
       <p class="fields muted">{plural(record.count, 'fast')} since {dayMonth(record.first.start, minute)}</p>
     {/if}
@@ -757,5 +757,37 @@
   .stagebar {
     margin: 0.3em 0 0.4em;
     line-height: 1.2;
+  }
+
+  /* A line of its own sits in the middle of its pane; two things on one line go to its
+     edges, a label at the left and its value at the right. */
+  p.fields,
+  p.muted {
+    text-align: center;
+  }
+
+  p.pair {
+    display: flex;
+    justify-content: space-between;
+    gap: 1ch;
+  }
+
+  /* Records line up as a table: the labels, the values after them, and when at the
+     right edge. */
+  .records {
+    display: grid;
+    grid-template-columns: max-content max-content 1fr;
+    column-gap: 1ch;
+    margin: 0.3em 0;
+  }
+
+  .records > :nth-child(3n) {
+    text-align: right;
+  }
+
+  /* A value with nothing at the right runs on across the rest of its line. */
+  .records > .rest {
+    grid-column: 2 / -1;
+    text-align: left;
   }
 </style>

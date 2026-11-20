@@ -50,7 +50,15 @@ export const dayMonth = (at: number, now: number): string => {
   return `${d.getDate()} ${MONTH.format(d)}${year}`
 }
 
-export const floorMinute = (at: number): number => Math.floor(at / MINUTE) * MINUTE
+/** Two days as the ends of a range, the first without the month and year it shares with
+ *  the second: ["20", "27 Oct"], ["28 Sep", "5 Oct"]. */
+export function dayRange(from: number, to: number, now: number): [string, string] {
+  const [a, b] = [new Date(from), new Date(to)]
+  const sameMonth = a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
+  return [sameMonth ? String(a.getDate()) : dayMonth(from, b.getFullYear() === a.getFullYear() ? to : now), dayMonth(to, now)]
+}
+
+export const floorMinute =(at: number): number => Math.floor(at / MINUTE) * MINUTE
 
 /** The same time of day `days` later; DST-safe, unlike adding 24 hours. */
 export function stepDay(at: number, days: number): number {
