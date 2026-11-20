@@ -43,6 +43,10 @@ import org.json.JSONObject;
  * goal, and once past it the next whole 12 hours; the eating window's spans the window and drains.
  * Both ask Android 16 to promote them to a Live Update, a chip in the status bar that shows the
  * timer (https://developer.android.com/develop/ui/views/notifications/live-update).
+ *
+ * <p>Since Android 14 an ongoing notification can be swiped away
+ * (https://developer.android.com/about/versions/14/behavior-changes-all#non-dismissable-notifications),
+ * so a swipe puts it straight back; Options' Status switch is the way to turn it off.
  */
 final class FastStatus {
 
@@ -57,6 +61,7 @@ final class FastStatus {
     private static final int[] STARTS = { 0, 4, 12, 24 }; // hours into the fast
     private static final int CHANGE = 0; // the request codes of the two alarms
     private static final int TICK = 2; // 1 is the export's
+    private static final int DISMISSED = 3; // a swipe, which shows it again
 
     private FastStatus() {}
 
@@ -122,7 +127,7 @@ final class FastStatus {
             long planned = nextEnd(fasts, now);
             if (last == null) {
                 manager.cancel(ID); // nothing to say before the first fast ends
-                if (planned > 0) FastStatusReceiver.setAlarm(context, planned + 1000, alarmIntent(context, CHANGE));
+                if (planned > 0) FastStatusReceiver.setAlarm(context, planned + 1000, refreshIntent(context, CHANGE));
                 return;
             }
             long end = last.optLong("end");
@@ -159,10 +164,10 @@ final class FastStatus {
         } catch (SecurityException e) {
             return; // permission withdrawn between the check and here
         }
-        if (next > 0) FastStatusReceiver.setAlarm(context, next + 1000, alarmIntent(context, CHANGE)); // just past the change
+        if (next > 0) FastStatusReceiver.setAlarm(context, next + 1000, refreshIntent(context, CHANGE)); // just past the change
         // The bar moves between changes; a change before the next tick rebuilds it anyway.
         long tick = span > 0 ? now + tickEvery(span) : 0;
-        if (tick > 0 && (next == 0 || tick < next)) FastStatusReceiver.setLazyAlarm(context, tick, alarmIntent(context, TICK));
+        if (tick > 0 && (next == 0 || tick < next)) FastStatusReceiver.setLazyAlarm(context, tick, refreshIntent(context, TICK));
     }
 
     private static NotificationCompat.Builder builder(Context context) {
@@ -176,6 +181,7 @@ final class FastStatus {
         return new NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(icon(context))
             .setContentIntent(tap)
+            .setDeleteIntent(refreshIntent(context, DISMISSED))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
@@ -337,14 +343,15 @@ final class FastStatus {
         }
     }
 
-    private static PendingIntent alarmIntent(Context context, int code) {
+    /** A rebuild of the notification: at an alarm, or after a swipe. */
+    private static PendingIntent refreshIntent(Context context, int code) {
         Intent intent = new Intent(context, FastStatusReceiver.class).setAction(FastStatusReceiver.REFRESH);
         return PendingIntent.getBroadcast(context, code, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     private static void cancelAlarms(Context context) {
         AlarmManager alarms = context.getSystemService(AlarmManager.class);
-        alarms.cancel(alarmIntent(context, CHANGE));
-        alarms.cancel(alarmIntent(context, TICK));
+        alarms.cancel(refreshIntent(context, CHANGE));
+        alarms.cancel(refreshIntent(context, TICK));
     }
 }

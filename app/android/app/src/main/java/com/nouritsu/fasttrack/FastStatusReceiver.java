@@ -9,8 +9,8 @@ import android.os.Build;
 
 /**
  * The app's alarms and the system events that move them: the status notification's next
- * change and its bar's refreshes (FastStatus), a regular export (FastExport), and a reboot,
- * an app update or a clock change, which drop or shift them.
+ * change, its bar's refreshes and a swipe that dismissed it (FastStatus), a regular export
+ * (FastExport), and a reboot, an app update or a clock change, which drop or shift them.
  */
 public class FastStatusReceiver extends BroadcastReceiver {
 
