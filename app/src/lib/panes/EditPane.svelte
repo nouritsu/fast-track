@@ -2,12 +2,13 @@
   import { untrack } from 'svelte'
   import { completeMeal, invalidTimes, overlapping, parseWeight, weightNumber, type Active, type Fast } from '../fasting/fasts'
   import { scaleWeightFor, type ScaleWeight } from '../fasting/openscale'
-  import { dayClock, longDate } from '../fasting/time'
+  import { dayClock, HOUR, longDate } from '../fasting/time'
   import CompleteInput from '../ui/CompleteInput.svelte'
   import { duration } from '../ui/fields'
   import GoalStepper from '../ui/GoalStepper.svelte'
   import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
+  import ShuffleText from '../ui/ShuffleText.svelte'
   import TimeSteppers from '../ui/TimeSteppers.svelte'
 
   // A finished fast, a new one logged afterwards, or one planned ahead: the meal that
@@ -22,6 +23,7 @@
     unit,
     now,
     onSave,
+    onTrack,
     onClose,
   }: {
     fast: Fast
@@ -33,6 +35,7 @@
     unit: 'kg' | 'lb'
     now: number
     onSave: (fast: Fast) => void
+    onTrack: (start: number, goal: number) => void // runs it on the Fast page instead
     onClose: () => void
   } = $props()
 
@@ -45,12 +48,18 @@
   const initialWeightText = initial.weight === null ? '' : weightNumber(initial.weight, untrack(() => unit))
   let weightText = $state(initialWeightText)
 
+  // A new fast that ends later may run on the Fast page instead of in the list, while
+  // none is in progress there: it then has no end until it is ended, like any other.
+  let tracked = $state(false)
+  const canTrack = $derived(isNew && !active && (tracked || end > now))
+  const onFastPage = $derived(tracked && canTrack)
+
   const weight = $derived(parseWeight(weightText, unit))
   const weightBad = $derived(weightText.trim() !== '' && weight === null)
   const fromScale = $derived(scaleWeightFor({ start, end }, scale))
-  const clash = $derived(overlapping(others, start, end, initial.id))
+  const clash = $derived(overlapping(others, start, onFastPage ? Infinity : end, initial.id))
   const problem = $derived(
-    invalidTimes(start, end) ??
+    (onFastPage ? null : invalidTimes(start, end)) ??
       (clash ? `It overlaps the fast ${clash.end > now ? 'planned for' : 'that ended'} ${longDate(clash.end)}.` : null) ??
       (active && end > active.start ? 'It overlaps the fast in progress.' : null) ??
       (weightBad ? `That is not a weight in ${unit}.` : null),
@@ -58,6 +67,7 @@
 
   function save() {
     if (problem) return
+    if (onFastPage) return onTrack(start, goal)
     // A weight synced from the scale stays marked so while it is left as it was.
     const fromScale = initial.fromScale === true && weight !== null && weightText === initialWeightText
     const meal = brokeWith.trim()
@@ -91,17 +101,32 @@
     <p class="muted">Synced from openScale. Type a weight to use your own.</p>
   {/if}
 
+  {#if canTrack}
+    <div class="row">
+      <span>Track on the Fast page</span>
+      <button type="button" class="word" aria-pressed={tracked} onclick={() => (tracked = !tracked)}
+        ><ShuffleText text={tracked ? 'on' : 'off'} /></button
+      >
+    </div>
+  {/if}
+
   <h3>Start</h3>
   <TimeSteppers at={start} latest={Infinity} onChange={(t) => (start = t)} />
 
-  <h3>End</h3>
-  <TimeSteppers at={end} latest={Infinity} onChange={(t) => (end = t)} />
+  {#if !onFastPage}
+    <h3>End</h3>
+    <TimeSteppers at={end} latest={Infinity} onChange={(t) => (end = t)} />
+  {/if}
 
   <h3>Goal</h3>
   <GoalStepper {goal} onChange={(g) => (goal = g)} />
 
   {#if problem}
     <p class="problem" role="alert">{problem}</p>
+  {:else if onFastPage}
+    <p class="fields">
+      {start > now ? `starts in ${duration(start - now)}` : `began ${duration(now - start)} ago`} · goal {dayClock(start + goal * HOUR)}
+    </p>
   {:else}
     <p class="fields">Length {duration(end - start)}</p>
   {/if}
@@ -138,6 +163,14 @@
 
   h3 {
     margin-top: 0.8em;
+  }
+
+  /* A switch as in Options: its name, and the word to press. */
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.6em;
   }
 
   .problem {

@@ -35,8 +35,8 @@ export class Tracker {
     this.scale = this.scaleRead?.weights ?? []
   }
 
-  async start(at: number): Promise<void> {
-    this.active = { start: at, goal: this.settings.goal }
+  async start(at: number, goal = this.settings.goal): Promise<void> {
+    this.active = { start: at, goal }
     await this.#saveActive()
   }
 

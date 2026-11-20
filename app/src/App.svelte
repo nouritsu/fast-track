@@ -448,6 +448,17 @@
     return { id: crypto.randomUUID(), start: end - goalHours * HOUR, end, goal: goalHours, note: '', weight: null }
   }
 
+  /** A fast added in the list to track on the Fast page: it becomes the fast in
+   *  progress, counting down to its start until then. */
+  function track(at: number, goalHours: number) {
+    closePane()
+    attempt(async () => {
+      await allowAlerts()
+      await tracker.start(at, goalHours)
+      begin()
+    })
+  }
+
   function saveEdit(fast: Fast) {
     attempt(async () => {
       await tracker.save(fast)
@@ -541,6 +552,7 @@
         unit={settings.unit}
         {now}
         onSave={saveEdit}
+        onTrack={track}
         onClose={closePane}
       />
     {:else if shownPane === 'licences'}
