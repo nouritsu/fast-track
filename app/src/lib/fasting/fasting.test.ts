@@ -44,7 +44,7 @@ import {
 } from './fasts'
 import { stageIndex, stageSpan, STAGES } from './stages'
 import { DEFAULT_SETTINGS, toFast, toSettings } from './store'
-import { dayKey, dayRange, HOUR, stepDay, stepMinute } from './time'
+import { dayKey, dayRange, HOUR, stepDay, stepMinute, stepMonth } from './time'
 
 const at = (iso: string) => new Date(iso).getTime()
 const fast = (start: string, end: string, goal = 16, extra: Partial<Fast> = {}): Fast => ({
@@ -362,6 +362,8 @@ describe('BMI', () => {
 describe('time', () => {
   it('steps days by the calendar and minutes onto fives', () => {
     expect(dayKey(stepDay(at('2026-11-30T08:00'), 1))).toBe('2026-12-01')
+    expect(dayKey(stepMonth(at('2026-01-31T08:00'), 1))).toBe('2026-02-28')
+    expect(dayKey(stepMonth(at('2026-03-15T08:00'), -3))).toBe('2025-12-15')
     expect(new Date(stepMinute(at('2026-11-17T06:32'), 1)).getMinutes()).toBe(35)
     expect(new Date(stepMinute(at('2026-11-17T06:32'), -1)).getMinutes()).toBe(30)
     expect(new Date(stepMinute(at('2026-11-17T06:30'), -1)).getMinutes()).toBe(25)

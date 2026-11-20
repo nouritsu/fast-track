@@ -67,7 +67,17 @@ export function stepDay(at: number, days: number): number {
   return d.getTime()
 }
 
-export const stepHour = (at: number, hours: number): number => at + hours * HOUR
+/** The same day and time `months` later, on the month's last day where it is shorter. */
+export function stepMonth(at: number, months: number): number {
+  const d = new Date(at)
+  const day = d.getDate()
+  d.setDate(1)
+  d.setMonth(d.getMonth() + months)
+  d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()))
+  return d.getTime()
+}
+
+export const stepHour =(at: number, hours: number): number => at + hours * HOUR
 
 /** Moves by `steps` of `size` minutes, landing on a multiple of `size`. */
 export function stepMinute(at: number, steps: number, size = 5): number {

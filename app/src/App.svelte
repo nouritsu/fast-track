@@ -767,12 +767,14 @@
           weekStart={settings.weekStart}
           nearMiss={settings.nearMiss}
           span={settings.statsSpan}
+          picked={settings.statsRange}
           {now}
           visible={current === 'stats'}
           panes={settings.statsPanes}
           hiddenPanes={settings.hiddenStats}
           onArrange={(statsPanes, hiddenStats) => attempt(() => tracker.setSettings({ statsPanes, hiddenStats }))}
-          onSpan={(statsSpan) => attempt(() => tracker.setSettings({ statsSpan }))}
+          onSpan={(statsSpan, statsRange) => attempt(() => tracker.setSettings(statsRange ? { statsSpan, statsRange } : { statsSpan }))}
+          onPick={(statsRange) => attempt(() => tracker.setSettings({ statsRange }))}
         />
       </div>
 

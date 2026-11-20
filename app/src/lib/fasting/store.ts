@@ -8,7 +8,7 @@ import { SWITCHABLE, TEXT_SIZES, type Switchable, type TextSize } from '../displ
 import { PAGE_IDS, STATS_PANES, toOrder, toSubset, type PageId, type StatsPane } from '../layout'
 import { WEEK_STARTS, type WeekStart } from './calendar'
 import { DEFAULT_GOAL, NEAR_MISS, toNearMiss, type Active, type Fast, type HeightUnit } from './fasts'
-import { SPANS, type Span } from './stats'
+import { SPANS, toDayRange, type DayRange, type Span } from './stats'
 
 export interface Settings {
   goal: number // the next fast's goal, in hours
@@ -22,7 +22,8 @@ export interface Settings {
   weekStart: WeekStart // the calendar's first weekday (calendar.ts)
   weekNumbers: boolean // ISO week numbers before each week
   weekTotals: boolean // each week's fasting hours after it
-  statsSpan: Span // the days Stats covers (stats.ts); 0 is all of them
+  statsSpan: Span // the days Stats covers (stats.ts); 0 is all of them, 'range' statsRange
+  statsRange: DayRange | null // the days picked for Stats, once picked
   cloudBackup: boolean // Android's backup to the Google account (FastBackupAgent.java)
   keepOneFile: boolean // exports replace one fast-track.json instead of making a file a day (backup.ts, FastExport.java)
   bmi: boolean // show BMI, from the latest weight and the height (fasts.ts)
@@ -53,6 +54,7 @@ export const DEFAULT_SETTINGS: Settings = {
   weekNumbers: false,
   weekTotals: true,
   statsSpan: 30,
+  statsRange: null,
   cloudBackup: false,
   keepOneFile: false,
   bmi: false,
@@ -117,6 +119,7 @@ export function toSettings(v: unknown): Settings {
     weekNumbers: typeof s.weekNumbers === 'boolean' ? s.weekNumbers : DEFAULT_SETTINGS.weekNumbers,
     weekTotals: typeof s.weekTotals === 'boolean' ? s.weekTotals : DEFAULT_SETTINGS.weekTotals,
     statsSpan: SPANS.includes(s.statsSpan as Span) ? (s.statsSpan as Span) : DEFAULT_SETTINGS.statsSpan,
+    statsRange: toDayRange(s.statsRange),
     cloudBackup: s.cloudBackup === true,
     keepOneFile: s.keepOneFile === true,
     bmi: s.bmi === true,

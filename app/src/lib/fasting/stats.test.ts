@@ -15,6 +15,8 @@ import {
   records,
   spanName,
   spanWindow,
+  thisMonth,
+  toDayRange,
   stageReach,
   typicalClock,
   weekdays,
@@ -53,6 +55,23 @@ describe('spans', () => {
     const fasts = [fast('2026-11-01T20:00', '2026-11-02T12:00'), fast('2026-11-10T20:00', '2026-11-11T12:00')]
     expect(spanWindow(fasts, 0, NOW).from).toBe(at('2026-11-02T00:00'))
     expect(spanWindow([], 0, NOW).from).toBe(at('2026-11-18T00:00'))
+  })
+
+  it('covers a picked range to the end of its last day, or now, and the same days before', () => {
+    const window = spanWindow([], 'range', NOW, { from: '2026-09-01', to: '2026-09-30' })
+    expect(window).toEqual({ from: at('2026-09-01T00:00'), to: at('2026-10-01T00:00') - 1 })
+    expect(daysIn(window)).toBe(30)
+    expect(priorWindow(window, 'range')).toEqual({ from: at('2026-08-02T00:00'), to: at('2026-09-01T00:00') - 1 })
+    expect(spanWindow([], 'range', NOW, { from: '2026-11-01', to: '2026-11-18' }).to).toBe(NOW)
+    expect(spanWindow([], 'range', NOW, null)).toEqual({ from: at('2026-11-01T00:00'), to: NOW })
+    expect(thisMonth(NOW)).toEqual({ from: '2026-11-01', to: '2026-11-18' })
+  })
+
+  it('reads a stored range, or none', () => {
+    expect(toDayRange({ from: '2026-09-01', to: '2026-09-30' })).toEqual({ from: '2026-09-01', to: '2026-09-30' })
+    expect(toDayRange({ from: '2026-09-30', to: '2026-09-01' })).toBeNull()
+    expect(toDayRange({ from: '1 Sep', to: '2026-09-30' })).toBeNull()
+    expect(toDayRange(null)).toBeNull()
   })
 
   it('takes the fasts that ended inside', () => {

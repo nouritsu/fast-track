@@ -42,9 +42,11 @@
     weighings,
     weightTrend,
     within,
+    thisMonth,
+    type DayRange,
     type Span,
   } from '../fasting/stats'
-  import { DAY, dayMonth, dayRange, HOUR, MINUTE, noonOf, shortDate, stepDay } from '../fasting/time'
+  import { DAY, dayKey, dayMonth, dayRange, HOUR, MINUTE, noonOf, shortDate, stepDay } from '../fasting/time'
   import { hm, pad, two } from '../ui/fields'
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
@@ -52,12 +54,14 @@
   import Icon from '../ui/Icon.svelte'
   import Measure from '../ui/Measure.svelte'
   import ShuffleText from '../ui/ShuffleText.svelte'
+  import RangeBlock from './RangeBlock.svelte'
 
   // The history in panes, one block each, scrolling as a column. Summary's top edge
   // picks the span the panes cover (remembered in the settings) and sets it against the
   // same span before; Length, Goal, Stages and Rhythm chart the fasts that ended in it,
   // Weight the weighings in it, and Records the whole history. The charts are drawn on
   // the text's grid: their labels in the app font, their marks in the stage colours.
+  // A range, the last of the spans, unfolds a block below Summary to pick its days.
   // Arrange, in Summary's bottom edge, sets ˄ ˅ ✕ into each pane's top edge to move it
   // or put it away; put-away panes wait at the bottom to be brought back.
   let {
@@ -69,11 +73,13 @@
     weekStart,
     nearMiss,
     span,
+    picked,
     now,
     visible,
     panes,
     hiddenPanes,
     onSpan,
+    onPick,
     onArrange,
   }: {
     fasts: Fast[]
@@ -84,17 +90,20 @@
     weekStart: WeekStart
     nearMiss: number // the share of the goal a near miss reaches (Options)
     span: Span
+    picked: DayRange | null // the days of a range, once picked
     now: number
     visible: boolean // the page is in view; leaving it ends arranging
     panes: StatsPane[] // the panes below Summary, in order
     hiddenPanes: StatsPane[] // the ones put away
-    onSpan: (span: Span) => void
+    onSpan: (span: Span, picked?: DayRange) => void
+    onPick: (picked: DayRange) => void
     onArrange: (panes: StatsPane[], hidden: StatsPane[]) => void
   } = $props()
 
   let arranging = $state(false)
+  let picking = $state(false) // the range block is unfolded
   $effect(() => {
-    if (!visible) arranging = false
+    if (!visible) arranging = picking = false
   })
   const order = $derived(panes.filter((id) => !hiddenPanes.includes(id)))
   // A move swaps a pane with the next one shown; the put-away ones keep their places.
@@ -108,16 +117,28 @@
   const arranged = $derived(hiddenPanes.length > 0 || panes.some((id, i) => id !== STATS_PANES[i]))
   const reset = () => onArrange([...STATS_PANES], [])
 
+  /** A span from Summary's corner. A range unfolds its days to pick, and a second tap on
+   *  it folds them; the first range is the month so far. */
+  function pickSpan(s: Span) {
+    picking = s === 'range' && (span !== 'range' || !picking)
+    if (s !== span) onSpan(s, s === 'range' && !picked ? thisMonth(minute) : undefined)
+  }
+
   // To the minute: the clock ticks several times a second, and nothing here needs it.
   const minute = $derived(Math.floor(now / MINUTE) * MINUTE)
-  const range = $derived(spanWindow(fasts, span, minute))
+  const range = $derived(spanWindow(fasts, span, minute, picked))
   const shown = $derived(within(fasts, range))
   const sum = $derived(summarize(shown))
   const prior = $derived.by(() => {
     const window = priorWindow(range, span)
     return window ? summarize(within(fasts, window)) : null
   })
-  const spanText = $derived(span === 365 ? 'the last year' : `the last ${span} days`)
+  const today = $derived(dayKey(minute))
+  const pickedDays = $derived(picked ?? thisMonth(minute))
+  const rangeEnds = $derived(dayRange(noonOf(pickedDays.from), noonOf(pickedDays.to), minute))
+  const spanText = $derived(
+    span === 'range' ? `from ${rangeEnds[0]} to ${rangeEnds[1]}` : span === 365 ? 'the last year' : `the last ${span} days`,
+  )
   const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
   const percent = (share: number) => `${Math.round(share * 100)}%`
 
@@ -179,7 +200,7 @@
   const strip = $derived.by(() => {
     const periods = active && active.start < minute ? [...fasts, { start: active.start, end: minute }] : fasts
     return Array.from({ length: stripDays }, (_, i) => {
-      const day = startOfDay(stepDay(minute, i - stripDays + 1))
+      const day = startOfDay(stepDay(range.to, i - stripDays + 1))
       // Runs of one stage, so each is one rect.
       const slots = dayStrip(periods, day, SLOTS)
       const runs: { at: number; length: number; stage: number }[] = []
@@ -263,7 +284,7 @@
 
 {#snippet spans()}
   <span class="spans" role="group" aria-label="Span of the stats">
-    {#each SPANS as s (s)}<button type="button" class="span" class:on={span === s} aria-pressed={span === s} onclick={() => onSpan(s)}
+    {#each SPANS as s (s)}<button type="button" class="span" class:on={span === s} aria-pressed={span === s} onclick={() => pickSpan(s)}
         >{spanName(s)}</button
       >{/each}
   </span>
@@ -449,7 +470,9 @@
           >
         {/each}
       </svg>
-      <p class="fields muted">last {plural(stripDays, 'day')}, today at the bottom</p>
+      <p class="fields muted">
+        last {plural(stripDays, 'day')}, {range.to === minute ? 'today' : dayMonth(range.to, minute)} at the bottom
+      </p>
       {#if starts && ends}
         <p class="fields pair">
           <span>starts:</span>
@@ -574,6 +597,9 @@
   {:else}
     <Block title="Summary" icon="summarize" headingRight={spans} actions={arrange}>
       <Measure bind:width bind:ch={measured} />
+      {#if span === 'range'}
+        <p class="fields"><span class="muted">from</span> {rangeEnds[0]} <span class="muted">to</span> {rangeEnds[1]}</p>
+      {/if}
       {#if sum.count}
         <p class="fields">
           <span class="value"><ShuffleText text={String(sum.count)} /></span>
@@ -593,10 +619,17 @@
       {/if}
       {#if prior}
         <p class="fields muted">
-          prior {spanName(span)}: {prior.count ? `${plural(prior.count, 'fast')} · avg ${hm(prior.average)} · ${percent(prior.goalRate)}` : 'no fasts'}
+          prior {span === 'range' ? `${daysIn(range)}d` : spanName(span)}: {prior.count ? `${plural(prior.count, 'fast')} · avg ${hm(prior.average)} · ${percent(prior.goalRate)}` : 'no fasts'}
         </p>
       {/if}
     </Block>
+
+    <!-- A range's days unfold below Summary, pushing the rest down. -->
+    {#if picking}
+      <div class="unfold" transition:unfold>
+        <RangeBlock range={pickedDays} {today} onChange={onPick} onClose={() => (picking = false)} />
+      </div>
+    {/if}
 
     <!-- Arranging, the put-away panes unfold below Summary's Arrange, pushing the rest down. -->
     {#if arranging}

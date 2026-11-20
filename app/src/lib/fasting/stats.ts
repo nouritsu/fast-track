@@ -10,12 +10,34 @@ import { STAGES, stageIndex } from './stages'
 import { DAY, dayKey, HOUR, noonOf, stepDay } from './time'
 import { two } from '../ui/fields'
 
-/** The spans the Summary's corner offers, in days; 0 is the whole history. */
-export const SPANS = [30, 90, 365, 0] as const
+/** The spans the Summary's corner offers: days up to today, 0 the whole history, and
+ *  'range' the days picked (a DayRange). */
+export const SPANS = [30, 90, 365, 0, 'range'] as const
 export type Span = (typeof SPANS)[number]
 
-/** "30d", "1y", "all". */
-export const spanName = (span: Span): string => (span === 365 ? '1y' : span ? `${span}d` : 'all')
+/** Picked days, as day keys (YYYY-MM-DD), `from` no later than `to`. */
+export interface DayRange {
+  from: string
+  to: string
+}
+
+/** "30d", "1y", "all", "range". */
+export const spanName = (span: Span): string => (span === 'range' ? 'range' : span === 365 ? '1y' : span ? `${span}d` : 'all')
+
+/** The month so far: what a range starts as. */
+export function thisMonth(now: number): DayRange {
+  const d = new Date(now)
+  return { from: dayKey(new Date(d.getFullYear(), d.getMonth(), 1)), to: dayKey(now) }
+}
+
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/
+
+/** A range read from storage, or null when it is not one. */
+export function toDayRange(v: unknown): DayRange | null {
+  const r = v as Partial<DayRange> | null
+  const ok = typeof r?.from === 'string' && typeof r.to === 'string' && DAY_KEY.test(r.from) && DAY_KEY.test(r.to)
+  return ok && r.from! <= r.to! ? { from: r.from!, to: r.to! } : null
+}
 
 /** Midnight at the start of the day `at` falls on. */
 export function startOfDay(at: number): number {
@@ -31,15 +53,20 @@ export interface Window {
 }
 
 /** The span's days up to now, today the last of them. The whole history starts on the
- *  day the first fast ended (today, without any). */
-export function spanWindow(fasts: Fast[], span: Span, now: number): Window {
+ *  day the first fast ended (today, without any); a range runs from midnight on its
+ *  first day to the end of its last, or now if that is sooner. */
+export function spanWindow(fasts: Fast[], span: Span, now: number, range: DayRange | null = null): Window {
+  if (span === 'range') {
+    const { from, to } = range ?? thisMonth(now)
+    return { from: startOfDay(noonOf(from)), to: Math.min(now, startOfDay(stepDay(noonOf(to), 1)) - 1) }
+  }
   if (span) return { from: startOfDay(stepDay(now, 1 - span)), to: now }
   return { from: startOfDay(Math.min(now, ...fasts.map((f) => f.end))), to: now }
 }
 
 /** The same number of days just before the window, or null for the whole history. */
 export const priorWindow = (window: Window, span: Span): Window | null =>
-  span ? { from: startOfDay(stepDay(window.from, -span)), to: window.from - 1 } : null
+  span === 0 ? null : { from: startOfDay(stepDay(window.from, -daysIn(window))), to: window.from - 1 }
 
 /** The fasts that ended inside the window. */
 export const within = (fasts: Fast[], window: Window): Fast[] =>
