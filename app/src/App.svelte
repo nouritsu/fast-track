@@ -552,7 +552,7 @@
                 style:color={dashed ? undefined : `var(--${STAGES[stage].id})`}
                 ><ShuffleText text={show(STAGES[stage].name.padEnd(NAME_WIDTH))} /></span
               ></p>
-            <p class="fields">Start <ShuffleText text={show(dayClock(shownStart), DATE_FRAME)} /> · {phase === 'done' ? 'Ended' : 'Ends '} <ShuffleText
+            <p class="fields">Start <ShuffleText text={show(dayClock(shownStart), DATE_FRAME)} /> · {phase === 'done' ? 'Ended' : 'Ends'} <ShuffleText
                 text={show(dayClock(shownEnd), DATE_FRAME)}
               /></p>
           </div>
