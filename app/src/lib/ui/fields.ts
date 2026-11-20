@@ -19,14 +19,19 @@ export function duration(ms: number): string {
   return h ? `${h}:${two(m)}:${two(s)}` : `${two(m)}:${two(s)}`
 }
 
-/** A span of time to the nearest minute as h:mm: "16:34". */
+/** A span of time to the nearest minute, in words apart from clock times: "16h 04m",
+ *  "7h", "45m". The running timers use `duration`. */
 export function hm(ms: number): string {
   const minutes = Math.round(Math.max(0, ms) / 60_000)
-  return `${Math.floor(minutes / 60)}:${two(minutes % 60)}`
+  const [h, m] = [Math.floor(minutes / 60), minutes % 60]
+  return h && m ? `${h}h ${two(m)}m` : h ? `${h}h` : `${m}m`
 }
 
-/** A signed span to the nearest minute: "+0:30", "-1:20". */
-export const signedHm = (ms: number): string => `${Math.round(ms / 60_000) < 0 ? '-' : '+'}${hm(Math.abs(ms))}`
+/** How far a fast went past its goal (`ms`, negative when short): "3h over", "20m short". */
+export function overGoal(ms: number): string {
+  const minutes = Math.round(ms / 60_000)
+  return minutes === 0 ? 'on goal' : `${hm(Math.abs(ms))} ${minutes > 0 ? 'over' : 'short'}`
+}
 
 /** A time of day as HH:MM. */
 export const clock = (at: Date): string => `${two(at.getHours())}:${two(at.getMinutes())}`

@@ -226,9 +226,9 @@
   // beside the change in weight.
   const latest = $derived(latestWeighing(fasts, scale))
   const edge = $derived(
-    latest ? `${weightNumber(latest.kg, unit)} ${unit}${height === null ? '' : ` ◆ ${showBmi(bmi(latest.kg, height))}`}` : '',
+    latest ? `${weightNumber(latest.kg, unit)} ${unit}${height === null ? '' : ` · BMI ${showBmi(bmi(latest.kg, height))}`}` : '',
   )
-  const bmiChange = $derived(height === null ? '' : ` ◆ ${signedNumber(bmi(change, height))}`)
+  const bmiChange = $derived(height === null ? '' : ` · BMI ${signedNumber(bmi(change, height))}`)
   const weighed = $derived(scale.length > 0 || fasts.some((f) => f.weight !== null))
 
   // Records: the whole history.
@@ -570,7 +570,7 @@
 
 <div class="panes">
   {#if !fasts.length}
-    <Block title="Statistics" icon="bar_chart"><p class="muted">No fasts yet.</p></Block>
+    <Block title="Summary" icon="summarize"><p class="muted">No fasts yet.</p></Block>
   {:else}
     <Block title="Summary" icon="summarize" headingRight={spans} actions={arrange}>
       <Measure bind:width bind:ch={measured} />
@@ -609,7 +609,7 @@
                 >{/each}
             </div>
           {:else}
-            <p class="muted">Nothing put away. <Icon name="close" /> in a pane's top edge puts it here.</p>
+            <p class="muted">Nothing put away. <Icon name="close" /> on a pane puts it here.</p>
           {/if}
         </Block>
       </div>

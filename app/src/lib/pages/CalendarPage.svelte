@@ -23,7 +23,7 @@
   import { reducedMotion } from '../motion/shuffle'
   import { carries, drag, type DragOptions } from '../ui/drag'
   import { tick } from '../ui/haptics'
-  import { clock, duration, hm, pad, signedHm } from '../ui/fields'
+  import { clock, hm, overGoal, pad } from '../ui/fields'
   import { stageCells } from '../ui/progress'
   import Icon from '../ui/Icon.svelte'
   import Block from '../ui/Block.svelte'
@@ -391,7 +391,7 @@
         <p class="fields">
           <span class="muted">from</span>
           {nearClock(fast.start, fast.end)} <span class="muted">to</span>
-          {clock(new Date(fast.end))} · {duration(fastLength(fast))}
+          {clock(new Date(fast.end))} · {hm(fastLength(fast))}
         </p>
         <p class="fields" aria-label="{percent}% of {fast.goal}h{!planned && nearMiss(fast, settings.nearMiss) ? ', a near miss' : ''}">
           <span aria-hidden="true"
@@ -406,14 +406,16 @@
         </p>
         <p class="fields detail">
           {#if planned && minute < fast.start}<span class="muted">planned</span> · starts in <span class="value">{hm(fast.start - minute)}</span
-            >{:else if planned}<span style:color="var(--{stage.id})">{stage.name}</span>
-            {hm(timeInDeepest(reached))} · <span class="muted">under way</span> · <span class="value">{hm(fast.end - minute)}</span> left{:else}<span
-              style:color="var(--{stage.id})">{stage.name}</span
-            >
-            {hm(timeInDeepest(fast))} · {signedHm(pastGoal(fast))}{/if}{#if weight}{' · '}{showWeight(weight.kg, unit)}{#if height !== null}{' '}◆ {showBmi(bmi(weight.kg, height))}{/if}{#if weight.scale}{' '}<span
-                class="muted">(scale)</span
-              >{/if}{/if}
+            >{:else if planned}{hm(timeInDeepest(reached))} in <span style:color="var(--{stage.id})">{stage.name}</span> · <span class="muted"
+              >under way</span
+            > · <span class="value">{hm(fast.end - minute)}</span> left{:else}{hm(timeInDeepest(fast))} in <span style:color="var(--{stage.id})"
+              >{stage.name}</span
+            > · {overGoal(pastGoal(fast))}{/if}
         </p>
+        {#if weight}<p class="note">
+            <span class="icon" aria-hidden="true"><Icon name="monitor_weight" /></span>{showWeight(weight.kg, unit)}{#if height !== null}{' · '}BMI
+              {showBmi(bmi(weight.kg, height))}{/if}{#if weight.scale}{' '}<span class="muted">(openScale)</span>{/if}
+          </p>{/if}
         {#if fast.brokeWith}<p class="note" title="Broke with">
             <span class="icon" aria-hidden="true"><Icon name="restaurant" /></span><span class="hidden-label">{'Broke with: '}</span>{fast.brokeWith}
           </p>{/if}

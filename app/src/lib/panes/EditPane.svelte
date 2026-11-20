@@ -4,7 +4,7 @@
   import { scaleWeightFor, type ScaleWeight } from '../fasting/openscale'
   import { dayClock, HOUR, longDate } from '../fasting/time'
   import CompleteInput from '../ui/CompleteInput.svelte'
-  import { duration } from '../ui/fields'
+  import { hm } from '../ui/fields'
   import GoalStepper from '../ui/GoalStepper.svelte'
   import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
@@ -60,9 +60,9 @@
   const clash = $derived(overlapping(others, start, onFastPage ? Infinity : end, initial.id))
   const problem = $derived(
     (onFastPage ? null : invalidTimes(start, end)) ??
-      (clash ? `It overlaps the fast ${clash.end > now ? 'planned for' : 'that ended'} ${longDate(clash.end)}.` : null) ??
-      (active && end > active.start ? 'It overlaps the fast in progress.' : null) ??
-      (weightBad ? `That is not a weight in ${unit}.` : null),
+      (clash ? `Overlaps the fast ${clash.end > now ? 'planned for' : 'that ended'} ${longDate(clash.end)}.` : null) ??
+      (active && end > active.start ? 'Overlaps the fast in progress.' : null) ??
+      (weightBad ? `Not a weight in ${unit}.` : null),
   )
 
   function save() {
@@ -96,9 +96,9 @@
     <span>{unit}</span>
   </label>
   {#if fromScale && !weightText.trim()}
-    <p class="muted">From openScale, weighed {dayClock(fromScale.at)}. Type a weight to use your own.</p>
+    <p class="muted">From openScale, weighed {dayClock(fromScale.at)}. Type one to replace it.</p>
   {:else if initial.fromScale && weightText === initialWeightText}
-    <p class="muted">Synced from openScale. Type a weight to use your own.</p>
+    <p class="muted">Synced from openScale. Type one to replace it.</p>
   {/if}
 
   {#if canTrack}
@@ -125,10 +125,10 @@
     <p class="problem" role="alert">{problem}</p>
   {:else if onFastPage}
     <p class="fields">
-      {start > now ? `starts in ${duration(start - now)}` : `began ${duration(now - start)} ago`} · goal {dayClock(start + goal * HOUR)}
+      {start > now ? `starts in ${hm(start - now)}` : `began ${hm(now - start)} ago`} · goal {dayClock(start + goal * HOUR)}
     </p>
   {:else}
-    <p class="fields">Length {duration(end - start)}</p>
+    <p class="fields">Length {hm(end - start)}</p>
   {/if}
 
   {#snippet action()}

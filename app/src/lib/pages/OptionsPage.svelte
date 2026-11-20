@@ -71,7 +71,7 @@
     try {
       const cal = parseSchedule(every)
       const next = nextRun(cal, new Date())
-      return { ok: true as const, text: `${describeSchedule(cal)}.`, next: next ? `Next ${dayClock(next.getTime())}.` : 'It never comes round.' }
+      return { ok: true as const, text: `${describeSchedule(cal)}.`, next: next ? `Next ${dayClock(next.getTime())}.` : 'It never runs.' }
     } catch (error) {
       return { ok: false as const, text: error instanceof ScheduleError ? `Not a time: ${error.message}.` : String(error) }
     }
@@ -115,7 +115,7 @@
   function connect() {
     run(async () => {
       scale = await askScale()
-      if (!scale.granted) return 'Not allowed. Android settings → Apps → Fast Track → Permissions can allow openScale later.'
+      if (!scale.granted) return 'Not allowed. Change it in Android settings → Apps → Fast Track → Permissions.'
       const users = await scaleUsers()
       if (!users.length) return 'openScale has no users yet.'
       if (users.length > 1) {
@@ -144,7 +144,7 @@
         r.filled && `filled ${r.filled}`,
         r.updated && `updated ${r.updated}`,
         r.typed && `kept ${r.typed} typed in`,
-        r.unmatched && `${r.unmatched} without a weighing during the fast or within ${WINDOW_HOURS} hours of its end`,
+        r.unmatched && `${r.unmatched} with no weighing near them`,
       ].filter(Boolean)
       return `${span}: ${did.length ? listed(did as string[]) : 'every fast was up to date'}.`
     }, 'scale')
@@ -169,7 +169,7 @@
     run(async () => {
       await tracker.setSettings({ scaleUser: null })
       scaleUser = null
-      return 'openScale disconnected; weights you typed in stay.'
+      return 'Disconnected. Typed weights stay.'
     }, 'scale')
   }
 
@@ -239,7 +239,7 @@
   function exportIcs() {
     run(async () => {
       const where = await saveExportFile(`fast-track-${dayKey(new Date())}.ics`, toIcs(tracker.fasts, settings.unit), 'text/calendar')
-      return `Saved ${tracker.fasts.length} fasts to ${where}; open it with a calendar app to import them.`
+      return `Saved ${tracker.fasts.length} fasts to ${where}. Open it in a calendar app.`
     })
   }
 
@@ -329,7 +329,7 @@
     {@render choose('textSize', 'Text size', TEXT_SIZES, true)}
     {@render choose('motion', 'Motion', SWITCHABLE)}
     {@render choose('haptics', 'Haptics', SWITCHABLE)}
-    <p class="muted">System follows the phone: its font size, Remove animations, and touch feedback.</p>
+    <p class="muted">System follows the phone's settings.</p>
   </Block>
 
   <Block title="Pages" icon="tab">
@@ -363,7 +363,7 @@
       <span>Opens on</span>
       <button type="button" class="word" onclick={nextStartPage}><ShuffleText text={PAGE_NAMES[startPage]} /></button>
     </div>
-    <p class="muted">The tabs follow this order; Fast and Options always show.</p>
+    <p class="muted">Fast and Options can't be hidden.</p>
   </Block>
 
   <Block title="Goal" icon="flag">
@@ -377,7 +377,7 @@
       atEnd={nearMissAtLimit(settings.nearMiss, 1)}
       words={['lower', 'higher']}
     />
-    <p class="muted">A fast that reaches this share of its goal, but not all of it, is a near miss: hatched in Stats.</p>
+    <p class="muted">A fast short of its goal but past this share is a near miss, striped in Stats and the calendar.</p>
   </Block>
 
   <Block title="Body" icon="accessibility_new">
@@ -410,9 +410,9 @@
 
   <Block title="Notifications" icon="notifications">
     {@render toggle('alerts', 'Alerts', true)}
-    <p class="muted">A notification when a stage begins and at the goal.</p>
+    <p class="muted">When a stage begins and at the goal.</p>
     {@render toggle('status', 'Status')}
-    <p class="muted">A notification that stays: fasting or eating, the stage, and a running timer.</p>
+    <p class="muted">An ongoing notification with the timer and stage.</p>
     {#if message && messageAt === 'notify'}<p class="message" role="status">{message}</p>{/if}
   </Block>
 
@@ -425,20 +425,20 @@
     </div>
     {@render toggle('weekNumbers', 'Week numbers')}
     {@render toggle('weekTotals', 'Weekly totals')}
-    <p class="muted">Week numbers are ISO weeks; a week's hours count the fasts that ended in it.</p>
+    <p class="muted">ISO week numbers. A fast counts in the week it ended.</p>
   </Block>
 
   <Block title="openScale" icon="scale">
     {#if !scale.installed}
-      <p class="muted">openScale is not installed. With it, each fast takes its weight from your scale.</p>
+      <p class="muted">Install openScale to take weights from your scale.</p>
     {:else if scale.granted && settings.scaleUser !== null}
       <div class="row first">
         <span>Weights from {scaleUser?.name || `user ${settings.scaleUser}`}</span>
         <button type="button" class="word" disabled={busy} onclick={disconnect}>disconnect</button>
       </div>
       <p class="muted">
-        {tracker.scale.length} weighings. A fast takes the last one during it, else the closest to its end within
-        {WINDOW_HOURS} hours; a weight you type in wins. Sync writes them into past fasts.
+        {tracker.scale.length} weighings. A fast takes the last one during it, or the closest within {WINDOW_HOURS}h of its
+        end. A weight you type in comes first. Sync saves them to past fasts.
       </p>
       {#if reason}<p class="problem">{reason}</p>{/if}
       <div class="pair">
@@ -452,7 +452,7 @@
         {/each}
       </div>
     {:else}
-      <p class="muted">Take each fast's weight from openScale: the last weighing during it, else the closest to its end within {WINDOW_HOURS} hours.</p>
+      <p class="muted">Take each fast's weight from openScale: the last weighing during it, or the closest within {WINDOW_HOURS}h of its end.</p>
       <button type="button" class="word lead" disabled={busy} onclick={connect}
         ><span class="icon" aria-hidden="true"><Icon name="link" /></span>connect openScale</button
       >
@@ -473,7 +473,7 @@
       ><span class="icon" aria-hidden="true"><Icon name="download" /></span>export to calendar (.ics)</button
     >
     {#if message && messageAt === 'backup'}<p class="message" role="status">{message}</p>{/if}
-    <p class="muted">Import adds the fasts the app lacks and changes none.</p>
+    <p class="muted">Import only adds fasts that are missing.</p>
 
     <hr class="split" />
     {@render toggle('keepOneFile', 'Keep one file')}
@@ -504,10 +504,7 @@
 
   <Block title="Privacy" icon="lock">
     {@render toggle('cloudBackup', 'Cloud backup', true)}
-    <p class="muted">
-      Off keeps your fasts out of your Google account's backup; moving to a new phone by direct transfer works either
-      way, on Android 9 and newer.
-    </p>
+    <p class="muted">Off keeps your fasts out of your Google backup. Phone-to-phone transfer works either way (needs Android 9+).</p>
   </Block>
 </div>
 

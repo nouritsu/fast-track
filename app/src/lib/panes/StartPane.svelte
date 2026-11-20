@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import { dayClock, floorMinute, HOUR, MINUTE } from '../fasting/time'
-  import { duration } from '../ui/fields'
+  import { hm } from '../ui/fields'
   import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
   import TimeSteppers from '../ui/TimeSteppers.svelte'
@@ -29,7 +29,7 @@
   let at = $state(untrack(() => floorMinute(initial)))
   const first = $derived(Math.ceil(earliest / MINUTE) * MINUTE) // the next whole minute
   const shown = $derived(Math.max(first, at))
-  const when = $derived(shown > now ? `in ${duration(shown - now)}` : `${duration(now - shown)} ago`)
+  const when = $derived(shown > now ? `in ${hm(shown - now)}` : `${hm(now - shown)} ago`)
 </script>
 
 <Pane title="Start time" icon="schedule" {onClose}>

@@ -83,7 +83,7 @@ describe('iCalendar export', () => {
     expect(lines[0]).toBe('BEGIN:VCALENDAR')
     expect(lines).toContain('DTSTART:20261116T200000Z')
     expect(lines).toContain('DTEND:20261117T123000Z')
-    expect(lines).toContain('SUMMARY:Fast 16:30 · Ketosis')
+    expect(lines).toContain('SUMMARY:Fast 16h 30m · Ketosis')
     expect(ics.replace(/\r\n /g, '')).toContain('DESCRIPTION:103% of a 16h goal\\nWeight 72.6 kg\\nBroke with: Omelette\\nNote: eggs\\, then coffee')
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
   })

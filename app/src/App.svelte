@@ -39,7 +39,7 @@
   import TabBar from './lib/ui/TabBar.svelte'
   import TypeText from './lib/ui/TypeText.svelte'
   import { carries, drag, resist, type DragOptions } from './lib/ui/drag'
-  import { dashes, duration } from './lib/ui/fields'
+  import { dashes, duration, hm } from './lib/ui/fields'
   import { buzz, setHaptics } from './lib/ui/haptics'
   import { stageCells } from './lib/ui/progress'
 
@@ -630,7 +630,7 @@
               <div class="fill">
                 <p class="headline"><ShuffleText text="Done!" intro /></p>
                 <p>
-                  <ShuffleText text={duration(length)} intro /> · <span style:color="var(--{deepest.id})"
+                  <ShuffleText text={hm(length)} intro /> · <span style:color="var(--{deepest.id})"
                     ><ShuffleText text={deepest.name} intro /></span
                   >
                 </p>
