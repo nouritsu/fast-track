@@ -66,6 +66,14 @@ export class Tracker {
     return fast
   }
 
+  /** Puts an ended fast back in progress, for an End pressed by mistake. It is in
+   *  progress before it leaves the history, so the app closing between the two loses nothing. */
+  async resume(fast: Fast): Promise<void> {
+    this.active = { start: fast.start, goal: fast.goal }
+    await this.#saveActive()
+    await this.remove(fast.id)
+  }
+
   async cancel(): Promise<void> {
     this.active = null
     await this.#saveActive()

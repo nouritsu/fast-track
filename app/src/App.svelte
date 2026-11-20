@@ -47,9 +47,10 @@
   // swipe. The Fast page is one panel: the fast's status at its top, the goal's share
   // in its top edge, a coloured progress line under the timer, and its buttons in its
   // bottom edge. A fast starts at the gate (now) or from Start at (earlier or later),
-  // runs until End fast, and ends on "Done!". Start time, Goal, Edit fast and Info's licences open
-  // as panes hung below the page, which slides up and off the top, pushed by the pane;
-  // the calendar's month and year panes hang above it and push it down.
+  // runs until End fast, and ends on "Done!", where it can be resumed or discarded.
+  // Start time, Goal, Edit fast and Info's licences open as panes hung below the page,
+  // which slides up and off the top, pushed by the pane; the calendar's month and year
+  // panes hang above it and push it down.
   type Phase = 'loading' | 'ready' | 'running' | 'done'
   type PaneId = 'start' | 'goal' | 'edit' | 'month' | 'year' | 'licences'
   type HeroMode = 'left' | 'elapsed'
@@ -418,8 +419,8 @@
     })
   }
 
-  // The first press arms Cancel; a second within DISARM_MS discards the fast.
-  function cancel() {
+  /** The first press arms the button (Cancel, Discard); a second within DISARM_MS acts. */
+  function twice(act: () => void) {
     clearTimeout(disarm)
     if (!armed) {
       armed = true
@@ -427,11 +428,44 @@
       return
     }
     armed = false
+    act()
+  }
+
+  /** Drops the fast in progress. */
+  const cancel = () =>
+    twice(() =>
+      attempt(async () => {
+        await tracker.cancel()
+        phase = 'ready'
+        buzz('bad')
+      }),
+    )
+
+  /** Deletes the fast just ended: one started and ended by mistake. */
+  const discard = (fast: Fast) =>
+    twice(() =>
+      attempt(async () => {
+        await tracker.remove(fast.id)
+        again()
+        buzz('bad')
+      }),
+    )
+
+  /** Takes the fast just ended back into progress: an End pressed by mistake. */
+  function resume(fast: Fast) {
     attempt(async () => {
-      await tracker.cancel()
-      phase = 'ready'
-      buzz('bad')
+      await tracker.resume(fast)
+      ended = null
+      begin()
     })
+  }
+
+  /** Back to the gate for the next fast. */
+  function again() {
+    clearTimeout(disarm)
+    armed = false
+    ended = null
+    phase = 'ready'
   }
 
   function openEdit(fast: Fast, isNew: boolean) {
@@ -642,10 +676,16 @@
           {#snippet actions()}
             {#if phase === 'done' && ended}
               {@const fast = ended}
+              <button type="button" class="edge" class:flash={armed} onclick={() => discard(fast)}>
+                <span class="icon" aria-hidden="true"><Icon name="delete" /></span><ShuffleText text={armed ? 'Discard?' : 'Discard'} />
+              </button>
+              <button type="button" class="edge" onclick={() => resume(fast)}>
+                <span class="icon" aria-hidden="true"><Icon name="play_arrow" /></span>Resume
+              </button>
               <button type="button" class="edge" onclick={() => openEdit(fast, false)}>
                 <span class="icon" aria-hidden="true"><Icon name="edit_note" /></span>Note
               </button>
-              <button type="button" class="edge primary" onclick={() => (phase = 'ready')}>
+              <button type="button" class="edge primary" onclick={again}>
                 <span class="icon" aria-hidden="true"><Icon name="replay" /></span>Again
               </button>
             {:else if phase === 'running'}
