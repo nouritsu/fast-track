@@ -72,7 +72,7 @@
       <button type="button" class="glyph" aria-label="Next stage" onclick={() => step(1)}>&gt;</button>
     </div>
     <p>{stage.term === stage.name ? '' : `${stage.term}. `}{stage.about}</p>
-    <p class="muted">Read more</p>
+    <h3>Read more</h3>
     <ul class="sources">
       {#each stage.sources as source (source.url)}
         <li>

@@ -480,7 +480,7 @@
     <p class="muted">{exportNote}</p>
     {@render toggle('exportOn', 'Export on a schedule')}
     <label class="when">
-      <span class="muted">Every</span>
+      <span>Every</span>
       <input
         type="text"
         bind:value={every}

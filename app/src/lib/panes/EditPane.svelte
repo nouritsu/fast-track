@@ -77,15 +77,15 @@
 
 <Pane title={isNew ? 'Add fast' : 'Edit fast'} icon={isNew ? 'add' : 'edit'} {onClose}>
   <label class="field">
-    <span class="muted">Broke with</span>
+    <span class="label">Broke with</span>
     <CompleteInput bind:value={brokeWith} suggest={(typed) => completeMeal(typed, meals)} placeholder="First meal" />
   </label>
   <label class="field">
-    <span class="muted">Note</span>
+    <span class="label">Note</span>
     <input type="text" bind:value={note} maxlength="80" placeholder="How it went" />
   </label>
   <label class="field">
-    <span class="muted">Weight</span>
+    <span class="label">Weight</span>
     <input
       type="text"
       class="weight"
@@ -146,7 +146,7 @@
     margin: 0.3em 0;
   }
 
-  .field > .muted {
+  .field > .label {
     width: 10ch;
     flex: none;
   }
@@ -170,7 +170,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 0.6em;
+    margin-top: 0.4em;
   }
 
   .problem {

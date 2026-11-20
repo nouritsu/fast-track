@@ -60,7 +60,7 @@
 </script>
 
 <div class="stepper" use:drag={scrub}>
-  <span class="label muted" style:width="{labelWidth}ch">{label}</span>
+  <span class="label" style:width="{labelWidth}ch">{label}</span>
   <span class="setting" style:min-width="{width}ch">{#if children}{@render children()}{:else}<ShuffleText text={value} plain={quick} />{/if}</span>
   <button
     type="button"
