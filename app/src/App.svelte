@@ -39,7 +39,7 @@
   import TabBar from './lib/ui/TabBar.svelte'
   import TypeText from './lib/ui/TypeText.svelte'
   import { carries, drag, resist, type DragOptions } from './lib/ui/drag'
-  import { dashes, duration, hm } from './lib/ui/fields'
+  import { clock, dashes, duration, hm } from './lib/ui/fields'
   import { buzz, setHaptics } from './lib/ui/haptics'
   import { hours } from './lib/ui/hours.svelte'
   import { stageCells } from './lib/ui/progress'
@@ -147,14 +147,20 @@
   )
 
   // What comes next: the start, the next stage or the goal, else the stage the fast is in.
-  const nextLine = $derived.by(() => {
-    if (!active) return ''
-    if (pending) return `Starts at ${nearClock(active.start, now)}.`
-    const next = milestones(active).find((m) => m.at > now)
-    if (!next) return `${STAGES[stage].name} since ${nearClock(active.start + STAGES[stage].from * HOUR, now)}.`
-    return `${next.stage === null ? 'Goal' : STAGES[next.stage].name} at ${nearClock(next.at, now)}.`
+  // Its clock time is marked, apart from the day before it.
+  const next = $derived.by(() => {
+    if (!active) return null
+    const say = (words: string, at: number) => {
+      const [time, near] = [clock(new Date(at)), nearClock(at, now)]
+      return { lead: `${words} ${near.slice(0, near.length - time.length)}`, time }
+    }
+    if (pending) return say('Starts at', active.start)
+    const coming = milestones(active).find((m) => m.at > now)
+    if (!coming) return say(`${STAGES[stage].name} since`, active.start + STAGES[stage].from * HOUR)
+    return say(`${coming.stage === null ? 'Goal' : STAGES[coming.stage].name} at`, coming.at)
   })
-  const nextMark = $derived<[number, number]>([nextLine.lastIndexOf(' ') + 1, nextLine.length - 1])
+  const nextLine = $derived(next ? `${next.lead}${next.time}.` : '')
+  const nextMark = $derived<[number, number]>(next ? [next.lead.length, next.lead.length + next.time.length] : [0, 0])
 
   // Waiting at the gate, every status field shows dashes at its normal width.
   const dashed = $derived(phase === 'ready' || phase === 'loading')
@@ -678,7 +684,7 @@
           {#snippet actions()}
             {#if phase === 'done' && ended}
               {@const fast = ended}
-              <button type="button" class="edge" class:flash={armed} onclick={() => discard(fast)}>
+              <button type="button" class="edge quit" class:flash={armed} onclick={() => discard(fast)}>
                 <span class="icon" aria-hidden="true"><Icon name="delete" /></span><ShuffleText text={armed ? 'Discard?' : 'Discard'} />
               </button>
               <button type="button" class="edge" onclick={() => resume(fast)}>
@@ -691,7 +697,7 @@
                 <span class="icon" aria-hidden="true"><Icon name="replay" /></span>Again
               </button>
             {:else if phase === 'running'}
-              <button type="button" class="edge" class:flash={armed} disabled={!active} onclick={cancel}>
+              <button type="button" class="edge quit" class:flash={armed} disabled={!active} onclick={cancel}>
                 <span class="icon" aria-hidden="true"><Icon name="close" /></span><ShuffleText text={armed ? 'Discard?' : 'Cancel'} />
               </button>
               <button type="button" class="edge" data-pane="start" aria-label="Start time" disabled={!active} onclick={() => openPane('start')}>
