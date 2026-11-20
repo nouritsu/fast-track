@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buzzFor, stillFor, textScale } from './display'
+import { buzzFor, stillFor, textScale, twelveFor } from './display'
 import { DEFAULT_SETTINGS, toSettings } from './fasting/store'
 import { moveIn, PAGE_IDS, shownPages, startPageOf, STATS_PANES, toOrder, toSubset } from './layout'
 
@@ -37,7 +37,7 @@ describe('layout', () => {
 })
 
 describe('display', () => {
-  const phone = { fontScale: 1.3, animations: false, haptics: false }
+  const phone = { fontScale: 1.3, animations: false, haptics: false, clock24: true }
 
   it('sizes text by the phone for System, else by the choice', () => {
     expect(textScale('system', phone)).toBe(1.3)
@@ -57,5 +57,12 @@ describe('display', () => {
     expect(buzzFor('system', { ...phone, haptics: true })).toBe(true)
     expect(buzzFor('on', phone)).toBe(true)
     expect(buzzFor('off', { ...phone, haptics: true })).toBe(false)
+  })
+
+  it('reads times on 12 hours for 12h, or for System when the phone does', () => {
+    expect(twelveFor('system', phone)).toBe(false)
+    expect(twelveFor('system', { ...phone, clock24: false })).toBe(true)
+    expect(twelveFor('12h', phone)).toBe(true)
+    expect(twelveFor('24h', { ...phone, clock24: false })).toBe(false)
   })
 })

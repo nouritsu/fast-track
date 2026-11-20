@@ -13,7 +13,7 @@
   import type { Settings } from '../fasting/store'
   import type { Tracker } from '../fasting/tracker.svelte'
   import { COLOR_KEYS } from '../colors'
-  import { SWITCHABLE, TEXT_SIZES } from '../display'
+  import { CLOCKS, SWITCHABLE, TEXT_SIZES } from '../display'
   import { FIXED_PAGES, moveIn, PAGE_NAMES, shownPages, startPageOf, type PageId } from '../layout'
   import type { IconName } from '../ui/Icon.svelte'
   import Block from '../ui/Block.svelte'
@@ -252,7 +252,7 @@
 
   // Display: each word steps to the next choice.
   const capital = (word: string) => word[0].toUpperCase() + word.slice(1)
-  function cycle(key: 'textSize' | 'motion' | 'haptics', choices: readonly string[]) {
+  function cycle(key: 'textSize' | 'motion' | 'haptics' | 'clock', choices: readonly string[]) {
     const next = choices[(choices.indexOf(settings[key]) + 1) % choices.length]
     void tracker.setSettings({ [key]: next })
   }
@@ -299,7 +299,7 @@
 {/snippet}
 
 <!-- A setting of a few choices: its name, and the word to press for the next one. -->
-{#snippet choose(key: 'textSize' | 'motion' | 'haptics', name: string, choices: readonly string[], first = false)}
+{#snippet choose(key: 'textSize' | 'motion' | 'haptics' | 'clock', name: string, choices: readonly string[], first = false)}
   <div class="row" class:first>
     <span>{name}</span>
     <button type="button" class="word" aria-label="{name}: {settings[key]}" onclick={() => cycle(key, choices)}
@@ -336,6 +336,7 @@
     {@render choose('textSize', 'Text size', TEXT_SIZES, true)}
     {@render choose('motion', 'Motion', SWITCHABLE)}
     {@render choose('haptics', 'Haptics', SWITCHABLE)}
+    {@render choose('clock', 'Clock', CLOCKS)}
     <p class="muted">System follows the phone's settings.</p>
   </Block>
 

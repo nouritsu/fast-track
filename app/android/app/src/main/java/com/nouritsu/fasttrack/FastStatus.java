@@ -20,7 +20,6 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.TreeSet;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -93,7 +92,7 @@ final class FastStatus {
             span = minutes(start - from);
             builder
                 .setContentTitle("Eating window")
-                .setContentText("Fast starts " + time(context, start))
+                .setContentText("Fast starts " + time(context, settings, start))
                 .setWhen(start)
                 .setUsesChronometer(true)
                 .setChronometerCountDown(true);
@@ -108,8 +107,8 @@ final class FastStatus {
             long stageEnd = stage + 1 < STARTS.length ? start + STARTS[stage + 1] * HOUR : 0;
             // The bar spans the goal; past it, up to the next whole 12 hours, so the tracker keeps moving.
             long barEnd = ahead ? goalAt : start + ((now - start) / EXTEND + 1) * EXTEND;
-            StringBuilder text = new StringBuilder(ahead ? "Goal " + time(context, goalAt) : "Goal reached");
-            if (stageEnd > 0) text.append(" · ").append(STAGES[stage + 1]).append(' ').append(time(context, stageEnd));
+            StringBuilder text = new StringBuilder(ahead ? "Goal " + time(context, settings, goalAt) : "Goal reached");
+            if (stageEnd > 0) text.append(" · ").append(STAGES[stage + 1]).append(' ').append(time(context, settings, stageEnd));
             span = Math.max(1, minutes(barEnd - start));
             builder
                 .setContentTitle("Fasting · " + STAGES[stage])
@@ -137,7 +136,7 @@ final class FastStatus {
                 span = Math.max(1, minutes(windowEnd - end));
                 builder
                     .setContentTitle("Eating window")
-                    .setContentText("Next fast " + time(context, windowEnd))
+                    .setContentText("Next fast " + time(context, settings, windowEnd))
                     .setWhen(windowEnd)
                     .setUsesChronometer(true)
                     .setChronometerCountDown(true)
@@ -146,7 +145,7 @@ final class FastStatus {
             } else {
                 builder
                     .setContentTitle("Not fasting")
-                    .setContentText("Eating window closed " + time(context, windowEnd))
+                    .setContentText("Eating window closed " + time(context, settings, windowEnd))
                     .setWhen(windowEnd)
                     .setUsesChronometer(true);
                 next = planned;
@@ -290,9 +289,11 @@ final class FastStatus {
         return Math.min(15, Math.max(5, span / 50)) * MINUTE;
     }
 
-    /** "19:39" today, else "Wed 19:39", in the phone's 12- or 24-hour format. */
-    private static String time(Context context, long at) {
-        String clock = DateFormat.getTimeFormat(context).format(new Date(at));
+    /** "19:39" today, else "Wed 19:39", on Options' clock: 12- or 24-hour, or the phone's. */
+    private static String time(Context context, JSONObject settings, long at) {
+        String choice = settings != null ? settings.optString("clock", "system") : "system";
+        boolean twelve = "12h".equals(choice) || (!"24h".equals(choice) && !DateFormat.is24HourFormat(context));
+        String clock = DateFormat.format(twelve ? "h:mm a" : "HH:mm", at).toString();
         if (DateUtils.isToday(at)) return clock;
         return DateFormat.format("EEE", at) + " " + clock;
     }

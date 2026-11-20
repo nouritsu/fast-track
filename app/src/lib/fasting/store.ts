@@ -5,7 +5,7 @@
 import { Preferences } from '@capacitor/preferences'
 import { DEFAULT_COLORS, toColors, type Colors } from '../colors'
 import { ALERT_CHOICES, type AlertChoice } from './alerts'
-import { SWITCHABLE, TEXT_SIZES, type Switchable, type TextSize } from '../display'
+import { CLOCKS, SWITCHABLE, TEXT_SIZES, type Clock, type Switchable, type TextSize } from '../display'
 import { PAGE_IDS, STATS_PANES, toOrder, toSubset, type PageId, type StatsPane } from '../layout'
 import { WEEK_STARTS, type WeekStart } from './calendar'
 import { DEFAULT_GOAL, NEAR_MISS, toNearMiss, type Active, type Fast, type HeightUnit } from './fasts'
@@ -40,6 +40,7 @@ export interface Settings {
   textSize: TextSize // display.ts; System follows the phone's font size
   motion: Switchable // animations; System follows the phone and the browser
   haptics: Switchable // vibration; System follows the phone's touch feedback
+  clock: Clock // 24- or 12-hour times; System follows the phone
   nearMiss: number // the share of its goal a fast that falls short must reach to be a near miss (fasts.ts)
 }
 
@@ -72,6 +73,7 @@ export const DEFAULT_SETTINGS: Settings = {
   textSize: 'system',
   motion: 'system',
   haptics: 'system',
+  clock: 'system',
   nearMiss: NEAR_MISS,
 }
 
@@ -140,6 +142,7 @@ export function toSettings(v: unknown): Settings {
     textSize: TEXT_SIZES.includes(s.textSize as TextSize) ? (s.textSize as TextSize) : DEFAULT_SETTINGS.textSize,
     motion: SWITCHABLE.includes(s.motion as Switchable) ? (s.motion as Switchable) : DEFAULT_SETTINGS.motion,
     haptics: SWITCHABLE.includes(s.haptics as Switchable) ? (s.haptics as Switchable) : DEFAULT_SETTINGS.haptics,
+    clock: CLOCKS.includes(s.clock as Clock) ? (s.clock as Clock) : DEFAULT_SETTINGS.clock,
     nearMiss: toNearMiss(s.nearMiss),
   }
 }

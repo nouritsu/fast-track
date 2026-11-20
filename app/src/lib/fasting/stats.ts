@@ -8,7 +8,7 @@ import { deepestStage, fastLength, metGoal, NEAR_MISS, nearMiss, progressOf, typ
 import type { ScaleWeight } from './openscale'
 import { STAGES, stageIndex } from './stages'
 import { DAY, dayKey, HOUR, noonOf, stepDay } from './time'
-import { two } from '../ui/fields'
+import { clock } from '../ui/fields'
 
 /** The spans the Summary's corner offers: days up to today, 0 the whole history, and
  *  'range' the days picked (a DayRange). */
@@ -348,6 +348,5 @@ export function records(fasts: Fast[], weekStart: WeekStart): Records {
   }
 }
 
-/** Whole minutes after midnight as HH:MM. */
-export const clockOfDay = (minutes: number): string =>
-  `${two(Math.floor(minutes / 60) % 24)}:${two(minutes % 60)}`
+/** Whole minutes after midnight as a time of day: "06:30". */
+export const clockOfDay = (minutes: number): string => clock(new Date(2000, 0, 1, Math.floor(minutes / 60) % 24, minutes % 60))

@@ -2,7 +2,7 @@
   import { Capacitor } from '@capacitor/core'
   import { onMount } from 'svelte'
   import { applyColors, saveColors } from './lib/colors'
-  import { applyDisplay, buzzFor, reduceQuery, stillFor, systemPrefs, textScale, type SystemPrefs } from './lib/display'
+  import { applyDisplay, buzzFor, reduceQuery, stillFor, systemPrefs, textScale, twelveFor, type SystemPrefs } from './lib/display'
   import { askAlerts } from './lib/fasting/alerts'
   import {
     deepestStage,
@@ -41,6 +41,7 @@
   import { carries, drag, resist, type DragOptions } from './lib/ui/drag'
   import { dashes, duration, hm } from './lib/ui/fields'
   import { buzz, setHaptics } from './lib/ui/haptics'
+  import { hours } from './lib/ui/hours.svelte'
   import { stageCells } from './lib/ui/progress'
 
   // Fast Track: five pages side by side, switched by the tabs along the bottom or a
@@ -172,8 +173,8 @@
     saveColors(settings.colors)
   })
 
-  // Text size, motion and haptics, from the settings and, where they follow the system,
-  // what the phone says (read again whenever the app comes back to the front).
+  // Text size, motion, haptics and the clock, from the settings and, where they follow the
+  // system, what the phone says (read again whenever the app comes back to the front).
   let system = $state<SystemPrefs | null>(null)
   let reduce = $state(reduceQuery().matches)
   const readSystem = () => void systemPrefs().then((prefs) => (system = prefs))
@@ -181,6 +182,7 @@
     if (!tracker.loaded || !system) return
     applyDisplay(textScale(settings.textSize, system), stillFor(settings.motion, system, reduce))
     setHaptics(buzzFor(settings.haptics, system))
+    hours.twelve = twelveFor(settings.clock, system)
   })
 
   onMount(() => {

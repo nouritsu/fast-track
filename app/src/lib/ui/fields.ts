@@ -2,6 +2,8 @@
 // fields dashed at their normal width while there is nothing to show, block
 // characters for bars. Nothing on screen shifts when a value changes.
 
+import { hours } from './hours.svelte'
+
 /** `value` right-aligned in `width` characters. */
 export const pad = (value: number | string, width: number): string => String(value).padStart(width, ' ')
 
@@ -33,5 +35,8 @@ export function overGoal(ms: number): string {
   return minutes === 0 ? 'on goal' : `${hm(Math.abs(ms))} ${minutes > 0 ? 'over' : 'short'}`
 }
 
-/** A time of day as HH:MM. */
-export const clock = (at: Date): string => `${two(at.getHours())}:${two(at.getMinutes())}`
+/** A time of day as the clock reads it: "06:30", or "6:30 AM" on a 12-hour one (hours.svelte.ts). */
+export function clock(at: Date): string {
+  const [h, m] = [at.getHours(), at.getMinutes()]
+  return hours.twelve ? `${h % 12 || 12}:${two(m)} ${h < 12 ? 'AM' : 'PM'}` : `${two(h)}:${two(m)}`
+}

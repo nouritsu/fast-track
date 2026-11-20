@@ -1,7 +1,8 @@
-// Text size, motion and haptics. Each can follow the system, which on Android is the
-// phone's font size, its "Remove animations" and its touch feedback (SystemPrefs.java;
-// in a browser, the reduced-motion media query and nothing else). index.html applies the
-// last text scale and motion before the first paint, from the copy kept here.
+// Text size, motion, haptics and the clock. Each can follow the system, which on Android
+// is the phone's font size, its "Remove animations", its touch feedback and its 24-hour
+// time (SystemPrefs.java; in a browser, the reduced-motion media query and the locale's
+// clock). index.html applies the last text scale and motion before the first paint, from
+// the copy kept here.
 
 import { registerPlugin } from '@capacitor/core'
 
@@ -9,6 +10,8 @@ export type TextSize = 'system' | 'small' | 'normal' | 'large'
 export const TEXT_SIZES: TextSize[] = ['system', 'small', 'normal', 'large']
 export type Switchable = 'system' | 'on' | 'off'
 export const SWITCHABLE: Switchable[] = ['system', 'on', 'off']
+export type Clock = 'system' | '24h' | '12h'
+export const CLOCKS: Clock[] = ['system', '24h', '12h']
 
 const BASE_PX = 16
 const SCALES: Record<Exclude<TextSize, 'system'>, number> = { small: 0.875, normal: 1, large: 1.125 }
@@ -19,9 +22,15 @@ export interface SystemPrefs {
   fontScale: number
   animations: boolean
   haptics: boolean
+  clock24: boolean
 }
 
-const BROWSER: SystemPrefs = { fontScale: 1, animations: true, haptics: true }
+const BROWSER: SystemPrefs = {
+  fontScale: 1,
+  animations: true,
+  haptics: true,
+  clock24: !['h11', 'h12'].includes(new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hourCycle ?? ''),
+}
 const Plugin = registerPlugin<{ get(): Promise<SystemPrefs> }>('SystemPrefs', { web: { get: async () => BROWSER } })
 
 export async function systemPrefs(): Promise<SystemPrefs> {
@@ -57,3 +66,6 @@ export function applyDisplay(scale: number, still: boolean): void {
     // no storage: the next start paints at the normal size until the settings load
   }
 }
+
+/** Whether times read on a 12-hour clock: 12h, or System when the phone keeps one. */
+export const twelveFor = (clock: Clock, system: SystemPrefs): boolean => clock === '12h' || (clock === 'system' && !system.clock24)

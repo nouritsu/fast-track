@@ -1,6 +1,7 @@
 <script lang="ts">
   import { shortDate, stepDay, stepHour, stepMinute } from '../fasting/time'
   import { two } from './fields'
+  import { hourOf, hours } from './hours.svelte'
   import Stepper from './Stepper.svelte'
 
   // A time set by its day, hour and minute, side by side, each a stepper with its label
@@ -30,8 +31,8 @@
   <Stepper
     stacked
     label="Hour"
-    width={2}
-    value={two(date.getHours())}
+    width={hours.twelve ? 5 : 2}
+    value={hourOf(date.getHours())}
     onStep={step(stepHour)}
     atStart={stepHour(at, -1) < earliest}
     atEnd={stepHour(at, 1) > latest}
