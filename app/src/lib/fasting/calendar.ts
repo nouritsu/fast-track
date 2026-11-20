@@ -14,7 +14,10 @@ export const WEEK_STARTS: WeekStart[] = [1, 0, 6]
 const NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-export const weekStartName = (start: WeekStart): string => DAY_NAMES[start]
+/** A weekday's name, as Date.getDay counts them: "Sunday" for 0. */
+export const dayName = (day: number): string => DAY_NAMES[day]
+
+export const weekStartName = (start: WeekStart): string => dayName(start)
 
 /** The two-letter weekday heads, from the first day of the week. */
 export const weekdayHeads = (start: WeekStart): string[] => Array.from({ length: 7 }, (_, i) => NAMES[(start + i) % 7])

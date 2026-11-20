@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { weekdayHeads, type WeekStart } from '../fasting/calendar'
+  import { dayName, weekdayHeads, type WeekStart } from '../fasting/calendar'
   import {
     bmi,
     fastLength,
@@ -7,6 +7,7 @@
     KG_PER_LB,
     percentOf,
     showBmi,
+    showWeight,
     signedNumber,
     stageHours,
     streak,
@@ -25,6 +26,7 @@
     daysIn,
     dayStrip,
     eatingWindow,
+    fastedOn,
     goalStats,
     latestWeighing,
     lengthBands,
@@ -48,6 +50,8 @@
   } from '../fasting/stats'
   import { DAY, dayKey, dayMonth, dayRange, HOUR, MINUTE, noonOf, shortDate, stepDay } from '../fasting/time'
   import { hm, pad, two } from '../ui/fields'
+  import { tick } from '../ui/haptics'
+  import { pick } from '../ui/pick'
   import { apportion } from '../ui/progress'
   import Block from '../ui/Block.svelte'
   import { unfold } from '../motion/unfold'
@@ -62,6 +66,7 @@
   // Weight the weighings in it, and Records the whole history. The charts are drawn on
   // the text's grid: their labels in the app font, their marks in the stage colours.
   // A range, the last of the spans, unfolds a block below Summary to pick its days.
+  // A tap or a sideways drag on a chart reads out what is under the finger.
   // Arrange, in Summary's bottom edge, sets ˄ ˅ ✕ into each pane's top edge to move it
   // or put it away; put-away panes wait at the bottom to be brought back.
   let {
@@ -198,7 +203,6 @@
   const ROW = 10
   const stripDays = $derived(Math.min(14, daysIn(range)))
   const strip = $derived.by(() => {
-    const periods = active && active.start < minute ? [...fasts, { start: active.start, end: minute }] : fasts
     return Array.from({ length: stripDays }, (_, i) => {
       const day = startOfDay(stepDay(range.to, i - stripDays + 1))
       // Runs of one stage, so each is one rect.
@@ -254,6 +258,38 @@
 
   // Records: the whole history.
   const record = $derived(records(fasts, weekStart))
+
+  // Reading the charts: a tap or a sideways drag on one (pick.ts) singles out what is under
+  // the finger, dimming the rest, and the line under the chart reads it out. A second tap
+  // on it lets go, as do a new span and leaving the page.
+  type Chart = 'length' | 'goal' | 'rhythm' | 'weekday' | 'weight'
+  let chosen = $state<{ chart: Chart; at: number } | null>(null)
+  $effect(() => {
+    void [span, picked, visible]
+    chosen = null
+  })
+  const clamp = (i: number, length: number) => Math.min(length - 1, Math.max(0, i))
+  function choose(chart: Chart, at: number | null, tap: boolean) {
+    if (at === null) return
+    const same = chosen?.chart === chart && chosen.at === at
+    if (!tap && !same) tick()
+    chosen = tap && same ? null : { chart, at }
+  }
+  /** Whether `at` is the one picked on `chart`; null while nothing on it is. */
+  const isChosen = (chart: Chart, at: number) => (chosen?.chart === chart ? chosen.at === at : null)
+  const periods = $derived(active && active.start < minute ? [...fasts, { start: active.start, end: minute }] : fasts)
+  const barAt = (x: number) => (bars.length ? clamp(Math.floor((x - gutter) / barPitch), bars.length) : null)
+  function cellAt(x: number, y: number) {
+    const [w, d] = [Math.floor((x - gutter - cellsAt) / cellPitch), Math.floor(y / cellPitch)]
+    return grid[w]?.days[d] ? w * 7 + d : null
+  }
+  const rowAt = (y: number) => clamp(Math.floor(y / ROW), stripDays)
+  const columnAt = (x: number) => clamp(Math.floor((x / width) * days.length), days.length)
+  function pointAt(x: number) {
+    const gaps = points.map((p) => Math.abs(wx(p.at) - x))
+    return points.length ? gaps.indexOf(Math.min(...gaps)) : null
+  }
+  const pickedCell = $derived(chosen?.chart === 'goal' ? grid[Math.floor(chosen.at / 7)]?.days[chosen.at % 7] : null)
 </script>
 
 <!-- Diagonal lines in a colour: what fills a near miss's cell, within its outline. -->
@@ -327,6 +363,7 @@
         viewBox="0 0 {width} {LENGTH_H}"
         role="img"
         aria-label="The last {plural(bars.length, 'fast')} by length, each in the colours of the stages it went through"
+        use:pick={(x, _y, tap) => choose('length', barAt(x), tap)}
       >
         {#each ticks as h (h)}
           <line class="rule" x1={gutter} x2={width} y1={ly(h)} y2={ly(h)} />
@@ -335,7 +372,7 @@
         {#each bars as fast, i (fast.id)}
           {@const x = gutter + i * barPitch}
           {@const w = Math.max(1, barPitch - (barPitch > 6 ? 2 : 1))}
-          <g>
+          <g class:dim={isChosen('length', i) === false}>
             <title>{shortDate(fast.end)} · {hm(fastLength(fast))} · {percentOf(fastLength(fast), fast.goal)}% of {fast.goal}h</title>
             {#each segments(fast) as s (s.id)}
               <rect {x} y={ly(s.to)} width={w} height={ly(s.from) - ly(s.to)} style:fill="var(--{s.id})" />
@@ -347,9 +384,17 @@
         {/each}
         <line class="base" x1={gutter} x2={width} y1={ly(0)} y2={ly(0)} />
       </svg>
-      <p class="fields muted">
-        {bars.length < shown.length ? `last ${bars.length} of ${shown.length}` : plural(bars.length, 'fast')} · <span class="mark">━</span> goal missed
-      </p>
+      {#if chosen?.chart === 'length' && bars[chosen.at]}
+        {@const fast = bars[chosen.at]}
+        <p class="fields">
+          {shortDate(fast.end)} · <span class="value">{hm(fastLength(fast))}</span> · {percentOf(fastLength(fast), fast.goal)}% of {fast.goal}h
+        </p>
+      {:else}
+        <p class="fields muted">
+          {bars.length < shown.length ? `last ${bars.length} of ${shown.length}` : plural(bars.length, 'fast')} · <span class="mark">━</span
+          > goal missed
+        </p>
+      {/if}
       <p class="fields">avg {hm(sum.average)} · max {hm(sum.longest)} · min {hm(Math.min(...lengths))}</p>
       <div class="bands">
         {#each bands as band (band.name)}
@@ -375,7 +420,8 @@
         height={7 * cellPitch}
         viewBox="0 0 {width} {7 * cellPitch}"
         role="img"
-        aria-label="{plural(grid.length, 'week')} of days, each in the colour of the deepest stage reached, filled where the goal was met and hatched where it was nearly met"
+        aria-label="{plural(grid.length, 'week')} of days, each in the colour of the deepest stage reached, filled where the goal was met and striped where it was nearly met"
+        use:pick={(x, y, tap) => choose('goal', cellAt(x, y), tap)}
       >
         <defs>{#each STAGES as stage (stage.id)}{@render hatch(`near-${stage.id}`, `var(--${stage.id})`)}{/each}</defs>
         {#each [0, 2, 4, 6] as row (row)}
@@ -387,6 +433,7 @@
               {@const size = cellPitch - cellGap}
               {@const x = gutter + cellsAt + w * cellPitch}
               {@const y = d * cellPitch}
+              <g class:dim={isChosen('goal', w * 7 + d) === false}>
               {#if day.stage === null}
                 <rect class="empty" {x} {y} width={size} height={size} rx="2" />
               {:else if day.met}
@@ -403,13 +450,24 @@
                   style:fill={day.near ? `url(#near-${STAGES[day.stage].id})` : undefined}
                 />
               {/if}
+              </g>
             {/if}
           {/each}
         {/each}
       </svg>
-      <p class="fields muted">
-        {grid.length < weeks.length ? `last ${grid.length} weeks · ` : ''}{@render swatch('met')} met · {@render swatch('near')} near · {@render swatch('missed')} missed
-      </p>
+      {#if pickedCell}
+        <p class="fields">
+          {shortDate(noonOf(pickedCell.key))} · {#if pickedCell.stage === null}<span class="muted">no fast</span>{:else}<span
+              style:color="var(--{STAGES[pickedCell.stage].id})">{STAGES[pickedCell.stage].name}</span
+            > · {pickedCell.met ? 'goal met' : pickedCell.near ? 'near miss' : 'goal missed'}{/if}
+        </p>
+      {:else}
+        <p class="fields muted">
+          {grid.length < weeks.length ? `last ${grid.length} weeks · ` : ''}{@render swatch('met')} met · {@render swatch('near')} near · {@render swatch(
+            'missed',
+          )} missed
+        </p>
+      {/if}
       <p class="fields">best streak {plural(best.days, 'day')} · {perWeek.toFixed(1)} a week</p>
       <p class="fields">near misses {goals.near} · avg {percent(goals.progress)} of goal</p>
     </Block>
@@ -444,11 +502,13 @@
         viewBox="0 0 {width} {stripDays * ROW + 16}"
         role="img"
         aria-label="The last {plural(stripDays, 'day')} over 24 hours, filled while fasting, in the colour of the stage"
+        use:pick={(_x, y, tap) => choose('rhythm', rowAt(y), tap)}
       >
         {#each strip as row, r (row.day)}
           {#if row.weekday === weekStart}
             <text class="axis" x={gutter - ch} y={r * ROW + 3.5} text-anchor="end" dominant-baseline="central">{heads[0]}</text>
           {/if}
+          <g class:dim={isChosen('rhythm', r) === false}>
           <rect class="empty" x={gutter} y={r * ROW} width={plot} height={ROW - 3} />
           {#each row.runs as run (run.at)}
             <rect
@@ -459,6 +519,7 @@
               style:fill="var(--{STAGES[run.stage].id})"
             />
           {/each}
+          </g>
         {/each}
         {#each [0, 6, 12, 18, 24] as h (h)}
           <text
@@ -470,9 +531,14 @@
           >
         {/each}
       </svg>
-      <p class="fields muted">
-        last {plural(stripDays, 'day')}, {range.to === minute ? 'today' : dayMonth(range.to, minute)} at the bottom
-      </p>
+      {#if chosen?.chart === 'rhythm' && strip[chosen.at]}
+        {@const row = strip[chosen.at]}
+        <p class="fields">{shortDate(row.day)} · <span class="value">{hm(fastedOn(periods, row.day))}</span> fasting</p>
+      {:else}
+        <p class="fields muted">
+          last {plural(stripDays, 'day')}, {range.to === minute ? 'today' : dayMonth(range.to, minute)} at the bottom
+        </p>
+      {/if}
       {#if starts && ends}
         <p class="fields pair">
           <span>starts:</span>
@@ -493,6 +559,7 @@
         height={WEEKDAY_H}
         viewBox="0 0 {width} {WEEKDAY_H}"
         role="img"
+        use:pick={(x, _y, tap) => choose('weekday', columnAt(x), tap)}
         aria-label="Average hours by weekday: {days.map((d) => `${d.head} ${d.hours === null ? 'none' : Math.round(d.hours)}`).join(', ')}"
       >
         {#each days as day, i (day.head)}
@@ -500,14 +567,25 @@
           {@const w = Math.min(pitch - 6, 3 * ch)}
           {@const x = i * pitch + (pitch - w) / 2}
           {@const h = day.hours === null ? 0 : (day.hours / dayMost) * (WEEKDAY_H - 30)}
+          <g class:dim={isChosen('weekday', i) === false}>
           <text class="axis" x={x + w / 2} y={WEEKDAY_H - 21 - h} text-anchor="middle" dominant-baseline="central"
             >{day.hours === null ? '--' : Math.round(day.hours)}</text
           >
           <rect class="column" {x} y={WEEKDAY_H - 14 - h} width={w} height={h} />
           <text class="head" x={x + w / 2} y={WEEKDAY_H - 7} text-anchor="middle" dominant-baseline="central">{day.head}</text>
+          </g>
         {/each}
       </svg>
-      <p class="fields muted">average hours by weekday</p>
+      {#if chosen?.chart === 'weekday' && days[chosen.at]}
+        {@const day = days[chosen.at]}
+        <p class="fields">
+          {dayName((weekStart + chosen.at) % 7)}s: {#if day.hours === null}<span class="muted">no fasts</span>{:else}<span class="value"
+              >{hm(day.hours * HOUR)}</span
+            > on average · {plural(day.count, 'fast')}{/if}
+        </p>
+      {:else}
+        <p class="fields muted">average hours by weekday</p>
+      {/if}
     </Block>
   {/if}
 {/snippet}
@@ -523,6 +601,7 @@
         viewBox="0 0 {width} {WEIGHT_H}"
         role="img"
         aria-label="{plural(points.length, 'weighing')} as dots, and the trend through them"
+        use:pick={(x, _y, tap) => choose('weight', pointAt(x), tap)}
       >
         {#each scaleY.lines as value (value)}
           <line class="rule" x1={gutter} x2={width} y1={yOf(value)} y2={yOf(value)} />
@@ -540,16 +619,28 @@
         {#if trend.length > 1}
           <polyline class="trend" points={trend.map((t) => `${wx(t.at)},${wy(t.kg)}`).join(' ')} />
         {/if}
+        {#if chosen?.chart === 'weight' && points[chosen.at]}
+          {@const p = points[chosen.at]}
+          <line class="cursor" x1={wx(p.at)} x2={wx(p.at)} y1="0" y2={WEIGHT_H} />
+          <circle class="dot picked" cx={wx(p.at)} cy={wy(p.kg)} r="3.5" />
+        {/if}
       </svg>
       {#if rate !== null}
         <p class="fields">{signed(change)} {unit}{bmiChange} since {dayMonth(points[0].at, minute)} · {signed(rate)} {unit}/wk</p>
       {/if}
-      <p class="fields muted">
-        low {weightNumber(Math.min(...points.map((p) => p.kg)), unit)} · high {weightNumber(Math.max(...points.map((p) => p.kg)), unit)} · {plural(
-          points.length,
-          'weighing',
-        )}
-      </p>
+      {#if chosen?.chart === 'weight' && points[chosen.at]}
+        {@const p = points[chosen.at]}
+        <p class="fields">
+          {shortDate(p.at)} · <span class="value">{showWeight(p.kg, unit)}</span>{#if height !== null}{' · '}BMI {showBmi(bmi(p.kg, height))}{/if}
+        </p>
+      {:else}
+        <p class="fields muted">
+          low {weightNumber(Math.min(...points.map((p) => p.kg)), unit)} · high {weightNumber(Math.max(...points.map((p) => p.kg)), unit)} · {plural(
+            points.length,
+            'weighing',
+          )}
+        </p>
+      {/if}
     {:else if weighed}
       <p class="fields muted">No weighings in {span ? spanText : 'the history'}.</p>
     {:else}
@@ -708,11 +799,30 @@
     font-weight: 700;
   }
 
+  /* A chart takes taps and sideways drags to pick from it (pick.ts); up and down scroll. */
   .chart {
     display: block;
     margin: 0.3em 0 0.2em;
     overflow: visible;
     font-variant-ligatures: none;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* While one thing in a chart is picked, the rest steps back. */
+  .dim {
+    opacity: 0.3;
+  }
+
+  .cursor {
+    stroke: var(--muted);
+    stroke-width: 1;
+    stroke-dasharray: 2 2;
+  }
+
+  .dot.picked {
+    fill: var(--accent);
   }
 
   .axis {

@@ -217,6 +217,12 @@ export function dayStrip(fasts: Pick<Fast, 'start' | 'end'>[], day: number, slot
   })
 }
 
+/** How long the fasts spent fasting on the day from midnight `day`, in ms. */
+export function fastedOn(fasts: Pick<Fast, 'start' | 'end'>[], day: number): number {
+  const end = startOfDay(stepDay(day + 12 * HOUR, 1))
+  return fasts.reduce((sum, f) => sum + Math.max(0, Math.min(f.end, end) - Math.max(f.start, day)), 0)
+}
+
 /** A typical time of day, in minutes after midnight, and how far the times stray from it. */
 export interface Clock {
   minutes: number
@@ -255,6 +261,7 @@ export function eatingWindow(fasts: Fast[]): number | null {
 export interface Weekday {
   head: string // "Mo"
   hours: number | null // the average length of the fasts ending on it, or none
+  count: number // how many fasts ended on it
 }
 
 /** Each weekday's average fast, from the first day of the week. */
@@ -268,7 +275,7 @@ export function weekdays(fasts: Fast[], weekStart: WeekStart): Weekday[] {
   }
   return weekdayHeads(weekStart).map((head, i) => {
     const day = (weekStart + i) % 7
-    return { head, hours: counts[day] ? sums[day] / counts[day] : null }
+    return { head, hours: counts[day] ? sums[day] / counts[day] : null, count: counts[day] }
   })
 }
 
