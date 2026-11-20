@@ -374,6 +374,7 @@
         class="entry"
         style:transform="translateX({dx}px)"
         class:moving={swiping?.id === fast.id}
+        class:lifted={dx !== 0}
         class:leaving={leaving === fast.id}
       >
         <div class="title">
@@ -483,13 +484,32 @@
     position: relative;
     padding: 0.5em 1ch 0.2em;
     background: var(--bg);
-    /* Let go short of acting, it springs back, a little past its place. */
-    transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.6, 1);
+    border-radius: var(--radius);
+    /* Let go short of acting, it springs back, a little past its place, its outline
+       fading as it settles. */
+    transition:
+      transform 0.35s cubic-bezier(0.3, 1.4, 0.6, 1),
+      box-shadow 0.35s ease;
+  }
+
+  /* Off its place, the fast shows its edges, over the track it slides along. */
+  .entry.lifted {
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+
+  .row:has(.entry.lifted) {
+    background: var(--button);
+    border-radius: var(--radius);
   }
 
   /* Deleted, it slides on out to the right. */
   .entry.leaving {
     transition: transform 0.2s cubic-bezier(0.32, 0, 0.67, 0);
+  }
+
+  /* Under the finger it follows at once; only its outline eases in. */
+  .entry.moving {
+    transition: box-shadow 0.15s ease;
   }
 
   :global(:root[data-still]) .entry {
@@ -504,10 +524,6 @@
   /* The unfilled part of a progress line, as in Stats. */
   .shade {
     color: var(--button-border);
-  }
-
-  .entry.moving {
-    transition: none;
   }
 
   .month {
