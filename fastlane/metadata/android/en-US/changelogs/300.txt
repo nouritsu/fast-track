@@ -1,0 +1,6 @@
+* Swipe a past fast left to edit it, right to delete it.
+* Start a fast later than now; the timer counts down to it.
+* Plan fasts ahead in the list, or track one on the Fast page.
+* Note what broke each fast; past meals are offered as you type.
+* Near misses are hatched in Stats, the calendar and the list; set the share in Options.
+* Tidier Stats, and Weight shows your latest weighing.
