@@ -45,6 +45,26 @@ export function planName(goal: number): string {
 
 export const fastLength = (fast: Pick<Fast, 'start' | 'end'>): number => fast.end - fast.start
 export const metGoal = (fast: Fast): boolean => fastLength(fast) >= fast.goal * HOUR
+
+/** A near miss: `share` of the goal or more (Options' Near miss), but short of it. */
+export const NEAR_MISS = 0.9
+export const nearMiss = (fast: Fast, share = NEAR_MISS): boolean => !metGoal(fast) && fastLength(fast) >= share * fast.goal * HOUR
+
+/** The near-miss shares Options steps through: 50% to 95% by fives. */
+const NEAR_MISS_PERCENT = { min: 50, max: 95, step: 5 }
+
+export function stepNearMiss(share: number, direction: -1 | 1): number {
+  const { min, max, step } = NEAR_MISS_PERCENT
+  const percent = Math.round((share * 100) / step) * step + direction * step
+  return Math.min(max, Math.max(min, percent)) / 100
+}
+
+export const nearMissAtLimit = (share: number, direction: -1 | 1): boolean =>
+  direction < 0 ? share * 100 <= NEAR_MISS_PERCENT.min : share * 100 >= NEAR_MISS_PERCENT.max
+
+/** A stored share, or the default when it is not one Options could have set. */
+export const toNearMiss = (v: unknown): number =>
+  typeof v === 'number' && v >= NEAR_MISS_PERCENT.min / 100 && v <= NEAR_MISS_PERCENT.max / 100 ? v : NEAR_MISS
 export const deepestStage = (fast: Pick<Fast, 'start' | 'end'>): number => stageIndex(fastLength(fast) / HOUR)
 
 /** Share of the goal reached, from 0, unbounded above. */

@@ -4,7 +4,7 @@
 // the app. Weights are openScale's weighings and the weights typed in.
 
 import { weekdayHeads, type WeekStart } from './calendar'
-import { deepestStage, fastLength, metGoal, progressOf, type Fast } from './fasts'
+import { deepestStage, fastLength, metGoal, NEAR_MISS, nearMiss, progressOf, type Fast } from './fasts'
 import type { ScaleWeight } from './openscale'
 import { STAGES, stageIndex } from './stages'
 import { DAY, dayKey, HOUR, noonOf, stepDay } from './time'
@@ -108,24 +108,25 @@ export function bestStreak(fasts: Fast[]): Streak {
 }
 
 export interface GoalStats {
-  near: number // fasts that reached 90% of their goal but not all of it
+  near: number // near misses: fasts that reached the near-miss share of their goal but not all of it
   progress: number // the average share of the goal reached, from 0
 }
 
-export function goalStats(fasts: Fast[]): GoalStats {
+export function goalStats(fasts: Fast[], nearShare = NEAR_MISS): GoalStats {
   const shares = fasts.map((f) => progressOf(fastLength(f), f.goal))
   return {
-    near: shares.filter((s) => s >= 0.9 && s < 1).length,
+    near: fasts.filter((f) => nearMiss(f, nearShare)).length,
     progress: shares.length ? shares.reduce((a, b) => a + b, 0) / shares.length : 0,
   }
 }
 
-/** A day in the goal grid: the deepest stage its fasts reached and whether one met its
- *  goal, or a null stage without a fast. */
+/** A day in the goal grid: the deepest stage its fasts reached, whether one met its goal
+ *  and, if none did, whether one nearly did; a null stage without a fast. */
 export interface GridDay {
   key: string
   stage: number | null
   met: boolean
+  near: boolean
 }
 
 /** A column of the grid: a week from the first weekday, null for days outside the window. */
@@ -143,12 +144,17 @@ function weekOf(at: number, weekStart: WeekStart): Date {
 }
 
 /** The window's days as weeks from the first weekday, the latest `maxWeeks` of them. */
-export function dayGrid(fasts: Fast[], window: Window, weekStart: WeekStart, maxWeeks: number): GridWeek[] {
-  const days = new Map<string, { stage: number; met: boolean }>()
+export function dayGrid(fasts: Fast[], window: Window, weekStart: WeekStart, maxWeeks: number, nearShare = NEAR_MISS): GridWeek[] {
+  const days = new Map<string, { stage: number; met: boolean; near: boolean }>()
   for (const fast of fasts) {
     const key = dayKey(fast.end)
     const day = days.get(key)
-    days.set(key, { stage: Math.max(day?.stage ?? 0, deepestStage(fast)), met: (day?.met ?? false) || metGoal(fast) })
+    const met = (day?.met ?? false) || metGoal(fast)
+    days.set(key, {
+      stage: Math.max(day?.stage ?? 0, deepestStage(fast)),
+      met,
+      near: !met && ((day?.near ?? false) || nearMiss(fast, nearShare)),
+    })
   }
   const first = dayKey(window.from)
   const last = dayKey(window.to)
@@ -157,7 +163,7 @@ export function dayGrid(fasts: Fast[], window: Window, weekStart: WeekStart, max
     const week: GridWeek = { start: d.getTime(), days: [] }
     for (let i = 0; i < 7; i++, d.setDate(d.getDate() + 1)) {
       const key = dayKey(d)
-      week.days.push(key < first || key > last ? null : { key, stage: null, met: false, ...days.get(key) })
+      week.days.push(key < first || key > last ? null : { key, stage: null, met: false, near: false, ...days.get(key) })
     }
     weeks.push(week)
   }

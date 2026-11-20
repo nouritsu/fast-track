@@ -67,6 +67,7 @@
     unit,
     height,
     weekStart,
+    nearMiss,
     span,
     now,
     visible,
@@ -81,6 +82,7 @@
     unit: 'kg' | 'lb'
     height: number | null // in cm, when BMI is on and a height is set; else no BMI is shown
     weekStart: WeekStart
+    nearMiss: number // the share of the goal a near miss reaches (Options)
     span: Span
     now: number
     visible: boolean // the page is in view; leaving it ends arranging
@@ -154,14 +156,14 @@
 
   // Goal: the span's days in weeks, each in the colour of the deepest stage it reached,
   // filled when a fast met its goal and outlined when none did.
-  const weeks = $derived(dayGrid(fasts, range, weekStart, Infinity))
+  const weeks = $derived(dayGrid(fasts, range, weekStart, Infinity, nearMiss))
   const grid = $derived(weeks.slice(-Math.max(1, Math.floor(plot / 7))))
   const cellPitch = $derived(grid.length ? Math.min(18, plot / grid.length) : 18)
   const cellGap = $derived(cellPitch >= 9 ? 2 : 1)
   // A few weeks sit in the middle with their labels, not under the gutter at the left.
   const cellsAt = $derived(Math.max(0, (plot - (grid.length * cellPitch - cellGap)) / 2 - ch))
   const heads = $derived(weekdayHeads(weekStart))
-  const goals = $derived(goalStats(shown))
+  const goals = $derived(goalStats(shown, nearMiss))
   const best = $derived(bestStreak(shown))
   const perWeek = $derived((sum.count / daysIn(range)) * 7)
 
@@ -233,14 +235,22 @@
   const record = $derived(records(fasts, weekStart))
 </script>
 
-{#snippet swatch(filled: boolean)}<svg class="swatch" viewBox="0 0 10 10" aria-hidden="true"
-    >{#if filled}<rect class="key-met" width="10" height="10" rx="2" />{:else}<rect
+<!-- Diagonal lines in a colour: what fills a near miss's cell, within its outline. -->
+{#snippet hatch(id: string, color: string)}<pattern {id} width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"
+    ><rect width="1.2" height="3" style:fill={color} /></pattern
+  >{/snippet}
+
+{#snippet swatch(kind: 'met' | 'near' | 'missed')}<svg class="swatch" viewBox="0 0 10 10" aria-hidden="true"
+    >{#if kind === 'met'}<rect class="key-met" width="10" height="10" rx="2" />{:else}{#if kind === 'near'}<defs
+          >{@render hatch('near-key', 'var(--muted)')}</defs
+        >{/if}<rect
         class="key-missed"
         x="0.75"
         y="0.75"
         width="8.5"
         height="8.5"
         rx="2"
+        style:fill={kind === 'near' ? 'url(#near-key)' : undefined}
       />{/if}</svg
   >{/snippet}
 
@@ -344,8 +354,9 @@
         height={7 * cellPitch}
         viewBox="0 0 {width} {7 * cellPitch}"
         role="img"
-        aria-label="{plural(grid.length, 'week')} of days, each in the colour of the deepest stage reached, filled where the goal was met"
+        aria-label="{plural(grid.length, 'week')} of days, each in the colour of the deepest stage reached, filled where the goal was met and hatched where it was nearly met"
       >
+        <defs>{#each STAGES as stage (stage.id)}{@render hatch(`near-${stage.id}`, `var(--${stage.id})`)}{/each}</defs>
         {#each [0, 2, 4, 6] as row (row)}
           <text class="axis" x={gutter + cellsAt - ch} y={(row + 0.5) * cellPitch} text-anchor="end" dominant-baseline="central">{heads[row]}</text>
         {/each}
@@ -368,6 +379,7 @@
                   height={size - 1.5}
                   rx="2"
                   style:stroke="var(--{STAGES[day.stage].id})"
+                  style:fill={day.near ? `url(#near-${STAGES[day.stage].id})` : undefined}
                 />
               {/if}
             {/if}
@@ -375,7 +387,7 @@
         {/each}
       </svg>
       <p class="fields muted">
-        {grid.length < weeks.length ? `last ${grid.length} weeks · ` : ''}{@render swatch(true)} met · {@render swatch(false)} missed
+        {grid.length < weeks.length ? `last ${grid.length} weeks · ` : ''}{@render swatch('met')} met · {@render swatch('near')} near · {@render swatch('missed')} missed
       </p>
       <p class="fields">best streak {plural(best.days, 'day')} · {perWeek.toFixed(1)} a week</p>
       <p class="fields">near misses {goals.near} · avg {percent(goals.progress)} of goal</p>

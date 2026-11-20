@@ -20,6 +20,7 @@
     onStep,
     atStart = false,
     atEnd = false,
+    words = ['earlier', 'later'],
   }: {
     label: string
     value?: string
@@ -29,6 +30,7 @@
     onStep: (direction: -1 | 1, repeating: boolean) => void
     atStart?: boolean
     atEnd?: boolean
+    words?: [string, string] // what the < and > buttons do, for their names: "lower", "higher"
   } = $props()
 
   // A tapped step shuffles the value into place; a held or scrubbed one just shows it,
@@ -63,16 +65,16 @@
   <button
     type="button"
     class="glyph"
-    aria-label="{label} earlier"
-    title="{label} earlier"
+    aria-label="{label} {words[0]}"
+    title="{label} {words[0]}"
     disabled={atStart}
     use:hold={(repeating) => step(-1, repeating)}>&lt;</button
   >
   <button
     type="button"
     class="glyph"
-    aria-label="{label} later"
-    title="{label} later"
+    aria-label="{label} {words[1]}"
+    title="{label} {words[1]}"
     disabled={atEnd}
     use:hold={(repeating) => step(1, repeating)}>&gt;</button
   >

@@ -113,14 +113,16 @@ describe('lengths and goals', () => {
     const fasts = [
       fast('2026-11-04T20:00', '2026-11-05T13:00'), // Thu, 17h, ketosis, met
       fast('2026-11-09T20:00', '2026-11-10T06:00'), // Tue, 10h, fat burning, missed
+      fast('2026-11-11T20:00', '2026-11-12T11:00'), // Thu, 15h of 16h, a near miss
     ]
     const weeks = dayGrid(fasts, window, 1, 10)
     expect(weeks).toHaveLength(3)
     expect(dayKey(weeks[0].start)).toBe('2026-11-02') // a Monday
     expect(weeks[0].days.slice(0, 2)).toEqual([null, null])
-    expect(weeks[0].days[3]).toEqual({ key: '2026-11-05', stage: 2, met: true })
-    expect(weeks[1].days[1]).toEqual({ key: '2026-11-10', stage: 1, met: false })
-    expect(weeks[1].days[2]).toEqual({ key: '2026-11-11', stage: null, met: false })
+    expect(weeks[0].days[3]).toEqual({ key: '2026-11-05', stage: 2, met: true, near: false })
+    expect(weeks[1].days[1]).toEqual({ key: '2026-11-10', stage: 1, met: false, near: false })
+    expect(weeks[1].days[2]).toEqual({ key: '2026-11-11', stage: null, met: false, near: false })
+    expect(weeks[1].days[3]).toEqual({ key: '2026-11-12', stage: 2, met: false, near: true })
     expect(weeks[2].days.slice(3)).toEqual([null, null, null, null])
     expect(dayGrid(fasts, window, 1, 2)).toEqual(weeks.slice(1))
   })

@@ -19,6 +19,8 @@ import {
   heightAtLimit,
   invalidTimes,
   milestones,
+  nearMiss,
+  nearMissAtLimit,
   overlapping,
   parseWeight,
   pastGoal,
@@ -33,9 +35,11 @@ import {
   stageHours,
   stepGoal,
   stepHeight,
+  stepNearMiss,
   streak,
   summarize,
   timeInDeepest,
+  toNearMiss,
   type Fast,
 } from './fasts'
 import { stageIndex, stageSpan, STAGES } from './stages'
@@ -237,6 +241,22 @@ describe('checks', () => {
     expect(invalidTimes(now - HOUR, now)).toBeNull()
     expect(invalidTimes(now, now + HOUR)).toBeNull()
     expect(invalidTimes(now, now - HOUR)).toMatch(/after the start/)
+  })
+
+  it('calls a fast short of its goal a near miss from a share Options sets', () => {
+    const short = fast('2026-11-14T20:00', '2026-11-15T11:00') // 15h of 16h: 94%
+    expect(nearMiss(short)).toBe(true)
+    expect(nearMiss(short, 0.95)).toBe(false)
+    expect(nearMiss(fast('2026-11-14T20:00', '2026-11-15T13:00'))).toBe(false) // met
+    expect(stepNearMiss(0.9, 1)).toBe(0.95)
+    expect(stepNearMiss(0.95, 1)).toBe(0.95)
+    expect(stepNearMiss(0.5, -1)).toBe(0.5)
+    expect(stepNearMiss(0.87, -1)).toBe(0.8) // off the steps: from the nearest
+    expect(nearMissAtLimit(0.95, 1)).toBe(true)
+    expect(nearMissAtLimit(0.9, 1)).toBe(false)
+    expect(toNearMiss(0.75)).toBe(0.75)
+    expect(toNearMiss(1.2)).toBe(0.9)
+    expect(toNearMiss('high')).toBe(0.9)
   })
 
   it('remembers the meals fasts were broken with, and completes one being typed', () => {

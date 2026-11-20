@@ -7,7 +7,7 @@ import { DEFAULT_COLORS, toColors, type Colors } from '../colors'
 import { SWITCHABLE, TEXT_SIZES, type Switchable, type TextSize } from '../display'
 import { PAGE_IDS, STATS_PANES, toOrder, toSubset, type PageId, type StatsPane } from '../layout'
 import { WEEK_STARTS, type WeekStart } from './calendar'
-import { DEFAULT_GOAL, type Active, type Fast, type HeightUnit } from './fasts'
+import { DEFAULT_GOAL, NEAR_MISS, toNearMiss, type Active, type Fast, type HeightUnit } from './fasts'
 import { SPANS, type Span } from './stats'
 
 export interface Settings {
@@ -37,6 +37,7 @@ export interface Settings {
   textSize: TextSize // display.ts; System follows the phone's font size
   motion: Switchable // animations; System follows the phone and the browser
   haptics: Switchable // vibration; System follows the phone's touch feedback
+  nearMiss: number // the share of its goal a fast that falls short must reach to be a near miss (fasts.ts)
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -66,6 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   textSize: 'system',
   motion: 'system',
   haptics: 'system',
+  nearMiss: NEAR_MISS,
 }
 
 export interface Saved {
@@ -130,6 +132,7 @@ export function toSettings(v: unknown): Settings {
     textSize: TEXT_SIZES.includes(s.textSize as TextSize) ? (s.textSize as TextSize) : DEFAULT_SETTINGS.textSize,
     motion: SWITCHABLE.includes(s.motion as Switchable) ? (s.motion as Switchable) : DEFAULT_SETTINGS.motion,
     haptics: SWITCHABLE.includes(s.haptics as Switchable) ? (s.haptics as Switchable) : DEFAULT_SETTINGS.haptics,
+    nearMiss: toNearMiss(s.nearMiss),
   }
 }
 

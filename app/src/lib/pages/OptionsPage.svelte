@@ -6,7 +6,7 @@
   import { askScale, emptyReason, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
   import { backupName, makeBackup, parseBackup, saveExportFile } from '../fasting/backup'
   import { toIcs, WEEK_STARTS, weekStartName } from '../fasting/calendar'
-  import { bmiFormula } from '../fasting/fasts'
+  import { bmiFormula, nearMissAtLimit, stepNearMiss } from '../fasting/fasts'
   import { describeSchedule, listed, nextRun, parseSchedule, SCHEDULE_EXAMPLES, ScheduleError } from '../fasting/schedule'
   import { latestWeighing } from '../fasting/stats'
   import { dayClock, dayKey, shortDate } from '../fasting/time'
@@ -18,6 +18,7 @@
   import Block from '../ui/Block.svelte'
   import ShuffleText from '../ui/ShuffleText.svelte'
   import HeightStepper from '../ui/HeightStepper.svelte'
+  import Stepper from '../ui/Stepper.svelte'
   import Icon from '../ui/Icon.svelte'
   import type { ThemeChoice } from '../theme'
   import { unfold } from '../motion/unfold'
@@ -363,6 +364,20 @@
       <button type="button" class="word" onclick={nextStartPage}><ShuffleText text={PAGE_NAMES[startPage]} /></button>
     </div>
     <p class="muted">The tabs follow this order; Fast and Options always show.</p>
+  </Block>
+
+  <Block title="Goal" icon="flag">
+    <Stepper
+      label="Near miss"
+      labelWidth={10}
+      width={4}
+      value="{Math.round(settings.nearMiss * 100)}%"
+      onStep={(direction) => tracker.setSettings({ nearMiss: stepNearMiss(settings.nearMiss, direction) })}
+      atStart={nearMissAtLimit(settings.nearMiss, -1)}
+      atEnd={nearMissAtLimit(settings.nearMiss, 1)}
+      words={['lower', 'higher']}
+    />
+    <p class="muted">A fast that reaches this share of its goal, but not all of it, is a near miss: hatched in Stats.</p>
   </Block>
 
   <Block title="Body" icon="accessibility_new">

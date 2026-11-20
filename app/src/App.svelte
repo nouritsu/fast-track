@@ -725,6 +725,7 @@
           unit={settings.unit}
           height={settings.bmi ? settings.height : null}
           weekStart={settings.weekStart}
+          nearMiss={settings.nearMiss}
           span={settings.statsSpan}
           {now}
           visible={current === 'stats'}
