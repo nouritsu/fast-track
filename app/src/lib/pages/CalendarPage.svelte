@@ -536,9 +536,12 @@
     color: var(--button-border);
   }
 
-  /* A near miss's shortfall: diagonals in the colours it fell short of, a little faint. */
+  /* A near miss's shortfall: fine diagonals across its cells, as tall as the filled
+     blocks, in the colours it fell short of. The cells' own glyphs are hidden; they only
+     keep the width. */
   .shortfall {
-    opacity: 0.75;
+    -webkit-text-fill-color: transparent;
+    background: repeating-linear-gradient(-45deg, currentColor 0 1px, transparent 1px 3px);
   }
 
   .month {
@@ -630,7 +633,7 @@
   /* A near miss: faint diagonal lines behind the date in its stage's colour, as the
      hatched cells in Stats' goal grid; the legend's key in the muted colour. */
   button.day.near {
-    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--stage) 45%, transparent) 0 1.5px, transparent 1.5px 4.5px);
+    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--stage) 45%, transparent) 0 1px, transparent 1px 3px);
   }
 
   .near-key {
