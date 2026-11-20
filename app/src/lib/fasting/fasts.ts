@@ -5,7 +5,8 @@ import { STAGES, stageEnd, stageIndex } from './stages'
 import { dayKey, HOUR, MINUTE } from './time'
 
 /** A finished fast. Times are epoch ms; the goal is in hours; weight is in kg, typed in
- *  or, with fromScale, synced from openScale (openscale.ts), which a later sync may update. */
+ *  or, with fromScale, synced from openScale (openscale.ts), which a later sync may update.
+ *  brokeWith is the meal it ended with, when one is named. */
 export interface Fast {
   id: string
   start: number
@@ -14,6 +15,7 @@ export interface Fast {
   note: string
   weight: number | null
   fromScale?: boolean
+  brokeWith?: string
 }
 
 /** The fast in progress. */
@@ -148,6 +150,32 @@ export const earliestStart = (fasts: Fast[]): number => Math.max(-Infinity, ...f
  *  future: the fast is then planned (endedBy). */
 export const invalidTimes = (start: number, end: number): string | null =>
   end - start < MINUTE ? 'The end must come after the start.' : null
+
+/** The meals fasts were broken with, each once whatever its case: the most used first,
+ *  the latest of equals first, in the case it was last written. */
+export function pastMeals(fasts: Fast[]): string[] {
+  const meals = new Map<string, { text: string; count: number; at: number }>()
+  for (const fast of fasts) {
+    const text = fast.brokeWith?.trim()
+    if (!text) continue
+    const key = text.toLowerCase()
+    const meal = meals.get(key)
+    if (!meal) meals.set(key, { text, count: 1, at: fast.end })
+    else {
+      meal.count++
+      if (fast.end > meal.at) Object.assign(meal, { text, at: fast.end })
+    }
+  }
+  return [...meals.values()].sort((a, b) => b.count - a.count || b.at - a.at).map((m) => m.text)
+}
+
+/** The past meal that what is typed begins, ignoring case, or null: the first of `meals`
+ *  that is longer than it. */
+export function completeMeal(typed: string, meals: string[]): string | null {
+  if (!typed.trim()) return null
+  const start = typed.toLowerCase()
+  return meals.find((m) => m.length > typed.length && m.toLowerCase().startsWith(start)) ?? null
+}
 
 /** Weight in the unit the user reads: one decimal. */
 export const KG_PER_LB = 0.45359237

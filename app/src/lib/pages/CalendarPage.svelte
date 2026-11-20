@@ -407,6 +407,9 @@
                 class="muted">(scale)</span
               >{/if}{/if}
         </p>
+        {#if fast.brokeWith}<p class="note" title="Broke with">
+            <span class="icon" aria-hidden="true"><Icon name="restaurant" /></span><span class="hidden-label">{'Broke with: '}</span>{fast.brokeWith}
+          </p>{/if}
         {#if fast.note}<p class="note"><span class="icon" aria-hidden="true"><Icon name="notes" /></span>{fast.note}</p>{/if}
       </div>
       </div>
@@ -667,6 +670,16 @@
 
   .note {
     overflow-wrap: anywhere;
+  }
+
+  /* Said to a screen reader, which skips the icon; not drawn. */
+  .hidden-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   /* Inside the page's scrolling content, a split stays within it. */

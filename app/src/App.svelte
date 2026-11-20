@@ -11,6 +11,7 @@
     fastLength,
     eatingLeft,
     milestones,
+    pastMeals,
     percentOf,
     progressOf,
     type Fast,
@@ -534,6 +535,7 @@
         fast={editing.fast}
         others={tracker.fasts}
         {active}
+        meals={pastMeals(tracker.fasts)}
         scale={tracker.scale}
         isNew={editing.isNew}
         unit={settings.unit}

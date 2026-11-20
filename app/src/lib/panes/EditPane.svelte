@@ -1,20 +1,22 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { invalidTimes, overlapping, parseWeight, weightNumber, type Active, type Fast } from '../fasting/fasts'
+  import { completeMeal, invalidTimes, overlapping, parseWeight, weightNumber, type Active, type Fast } from '../fasting/fasts'
   import { scaleWeightFor, type ScaleWeight } from '../fasting/openscale'
   import { dayClock, longDate } from '../fasting/time'
+  import CompleteInput from '../ui/CompleteInput.svelte'
   import { duration } from '../ui/fields'
   import GoalStepper from '../ui/GoalStepper.svelte'
   import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
   import TimeSteppers from '../ui/TimeSteppers.svelte'
 
-  // A finished fast, a new one logged afterwards, or one planned ahead: its note, the
-  // weight at its end, when it begins and ends, and its goal.
+  // A finished fast, a new one logged afterwards, or one planned ahead: the meal that
+  // broke it, its note, the weight at its end, when it begins and ends, and its goal.
   let {
     fast,
     others,
     active,
+    meals,
     scale,
     isNew,
     unit,
@@ -25,6 +27,7 @@
     fast: Fast
     others: Fast[] // the rest of the history, which it must not overlap
     active: Active | null // the fast in progress, which it must end before
+    meals: string[] // the meals fasts were broken with, for completing the one typed (pastMeals)
     scale: ScaleWeight[] // openScale's weighings: the fast's own (scaleWeightFor) fills an empty weight
     isNew: boolean
     unit: 'kg' | 'lb'
@@ -38,6 +41,7 @@
   let end = $state(initial.end)
   let goal = $state(initial.goal)
   let note = $state(initial.note)
+  let brokeWith = $state(initial.brokeWith ?? '')
   const initialWeightText = initial.weight === null ? '' : weightNumber(initial.weight, untrack(() => unit))
   let weightText = $state(initialWeightText)
 
@@ -56,11 +60,16 @@
     if (problem) return
     // A weight synced from the scale stays marked so while it is left as it was.
     const fromScale = initial.fromScale === true && weight !== null && weightText === initialWeightText
-    onSave({ ...initial, start, end, goal, note: note.trim(), weight, fromScale: fromScale || undefined })
+    const meal = brokeWith.trim()
+    onSave({ ...initial, start, end, goal, note: note.trim(), weight, fromScale: fromScale || undefined, brokeWith: meal || undefined })
   }
 </script>
 
 <Pane title={isNew ? 'Add fast' : 'Edit fast'} icon={isNew ? 'add' : 'edit'} {onClose}>
+  <label class="field">
+    <span class="muted">Broke with</span>
+    <CompleteInput bind:value={brokeWith} suggest={(typed) => completeMeal(typed, meals)} placeholder="First meal" />
+  </label>
   <label class="field">
     <span class="muted">Note</span>
     <input type="text" bind:value={note} maxlength="80" placeholder="How it went" />
@@ -113,7 +122,7 @@
   }
 
   .field > .muted {
-    width: 7ch;
+    width: 10ch;
     flex: none;
   }
 

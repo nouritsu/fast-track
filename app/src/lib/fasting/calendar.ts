@@ -115,7 +115,7 @@ export function foldLine(line: string): string {
 }
 
 /** The fasts as an iCalendar file: one event each, from start to end, named for its
- *  length and deepest stage, with the goal, weight and note in the description. */
+ *  length and deepest stage, with the goal, weight, meal and note in the description. */
 export function toIcs(fasts: Fast[], unit: 'kg' | 'lb', now = Date.now()): string {
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Fast Track//Fasts//EN', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:Fasts']
   for (const fast of [...fasts].sort((a, b) => a.start - b.start)) {
@@ -123,6 +123,7 @@ export function toIcs(fasts: Fast[], unit: 'kg' | 'lb', now = Date.now()): strin
     const about = [
       `${percentOf(length, fast.goal)}% of a ${fast.goal}h goal`,
       fast.weight !== null && `Weight ${showWeight(fast.weight, unit)}`,
+      fast.brokeWith && `Broke with: ${fast.brokeWith}`,
       fast.note && `Note: ${fast.note}`,
     ].filter(Boolean)
     lines.push(

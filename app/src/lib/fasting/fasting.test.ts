@@ -11,6 +11,7 @@ import { emptyReason, scaleWeightFor, syncWeights, weightOf } from './openscale'
 import {
   bmi,
   bmiFormula,
+  completeMeal,
   earliestStart,
   eatingLeft,
   endedBy,
@@ -21,6 +22,7 @@ import {
   overlapping,
   parseWeight,
   pastGoal,
+  pastMeals,
   percentOf,
   planName,
   showBmi,
@@ -237,6 +239,24 @@ describe('checks', () => {
     expect(invalidTimes(now, now - HOUR)).toMatch(/after the start/)
   })
 
+  it('remembers the meals fasts were broken with, and completes one being typed', () => {
+    const meals = pastMeals([
+      fast('2026-11-10T20:00', '2026-11-11T12:00', 16, { brokeWith: 'Eggs and toast' }),
+      fast('2026-11-11T20:00', '2026-11-12T12:00', 16, { brokeWith: 'Chicken salad' }),
+      fast('2026-11-12T20:00', '2026-11-13T12:00', 16, { brokeWith: 'eggs and toast ' }),
+      fast('2026-11-13T20:00', '2026-11-14T12:00', 16, { brokeWith: 'Cheese omelette' }),
+      fast('2026-11-14T20:00', '2026-11-15T12:00'),
+    ])
+    // Eggs twice, written last in lower case; then the later of the two used once.
+    expect(meals).toEqual(['eggs and toast', 'Cheese omelette', 'Chicken salad'])
+    expect(completeMeal('EGG', meals)).toBe('eggs and toast')
+    expect(completeMeal('ch', meals)).toBe('Cheese omelette')
+    expect(completeMeal('chi', meals)).toBe('Chicken salad')
+    expect(completeMeal('Chicken salad', meals)).toBeNull()
+    expect(completeMeal(' ', meals)).toBeNull()
+    expect(completeMeal('soup', meals)).toBeNull()
+  })
+
   it('counts only the fasts that have ended, and tracks a planned one so far', () => {
     const done = fast('2026-11-16T20:00', '2026-11-17T11:00')
     const planned = fast('2026-11-17T11:30', '2026-11-18T04:00')
@@ -336,6 +356,9 @@ describe('storage and backup', () => {
     expect(toFast({ id: 'x' })).toBeNull()
     expect(toFast({ ...f, fromScale: true })).toEqual({ ...f, fromScale: true })
     expect(toFast({ ...f, weight: null, fromScale: true })).not.toHaveProperty('fromScale')
+    expect(toFast({ ...f, brokeWith: 'Eggs' })).toEqual({ ...f, brokeWith: 'Eggs' })
+    expect(toFast({ ...f, brokeWith: ' ' })).not.toHaveProperty('brokeWith')
+    expect(toFast({ ...f, brokeWith: 3 })).not.toHaveProperty('brokeWith')
     expect(toSettings(null)).toEqual(DEFAULT_SETTINGS)
     expect(toSettings({ unit: 'lb', goal: 18 })).toMatchObject({ unit: 'lb', goal: 18, alerts: true, status: true })
     expect(toSettings({ status: false }).status).toBe(false)

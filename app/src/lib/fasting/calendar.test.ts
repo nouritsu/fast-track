@@ -72,14 +72,14 @@ describe('iCalendar export', () => {
     expect(folded.replace(/\r\n /g, '')).toBe(`DESCRIPTION:${'é'.repeat(60)}`)
   })
 
-  it('writes one event per fast with its times, stage, goal and note', () => {
-    const ics = toIcs([fast('2026-11-16T20:00Z', '2026-11-17T12:30Z', 16, { note: 'eggs, then coffee', weight: 72.6 })], 'kg', at('2026-11-18T09:00Z'))
+  it('writes one event per fast with its times, stage, goal, meal and note', () => {
+    const ics = toIcs([fast('2026-11-16T20:00Z', '2026-11-17T12:30Z', 16, { note: 'eggs, then coffee', weight: 72.6, brokeWith: 'Omelette' })], 'kg', at('2026-11-18T09:00Z'))
     const lines = ics.split('\r\n')
     expect(lines[0]).toBe('BEGIN:VCALENDAR')
     expect(lines).toContain('DTSTART:20261116T200000Z')
     expect(lines).toContain('DTEND:20261117T123000Z')
     expect(lines).toContain('SUMMARY:Fast 16:30 · Ketosis')
-    expect(ics).toContain('DESCRIPTION:103% of a 16h goal\\nWeight 72.6 kg\\nNote: eggs\\, then coffee')
+    expect(ics.replace(/\r\n /g, '')).toContain('DESCRIPTION:103% of a 16h goal\\nWeight 72.6 kg\\nBroke with: Omelette\\nNote: eggs\\, then coffee')
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
   })
 })
