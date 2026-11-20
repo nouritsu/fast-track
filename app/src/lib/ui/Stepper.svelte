@@ -5,11 +5,12 @@
   import { hold } from './hold'
   import ShuffleText from './ShuffleText.svelte'
 
-  // A field set with < > instead of typing, TUI style: a muted label, the value at a
+  // A field set with < > instead of typing, TUI style: a label, the value at a
   // fixed width (or `children`, when it needs markup), and the two glyph buttons, which
   // repeat while held. A sideways swipe across the row scrubs it: a step every STEP_PX,
   // right for later, with a tick. `onStep` is told when a step is one of a repeat or a
-  // scrub, not a tap.
+  // scrub, not a tap. `stacked`, it is one of a row of them (TimeSteppers): its label over
+  // < value >.
   const STEP_PX = 28
   let {
     label,
@@ -21,6 +22,7 @@
     atStart = false,
     atEnd = false,
     words = ['earlier', 'later'],
+    stacked = false,
   }: {
     label: string
     value?: string
@@ -31,6 +33,7 @@
     atStart?: boolean
     atEnd?: boolean
     words?: [string, string] // what the < and > buttons do, for their names: "lower", "higher"
+    stacked?: boolean
   } = $props()
 
   // A tapped step shuffles the value into place; a held or scrubbed one just shows it,
@@ -59,26 +62,38 @@
   }
 </script>
 
-<div class="stepper" use:drag={scrub}>
-  <span class="label" style:width="{labelWidth}ch">{label}</span>
-  <span class="setting" style:min-width="{width}ch">{#if children}{@render children()}{:else}<ShuffleText text={value} plain={quick} />{/if}</span>
-  <button
+{#snippet shown()}<span class="setting" style:min-width="{width}ch"
+    >{#if children}{@render children()}{:else}<ShuffleText text={value} plain={quick} />{/if}</span
+  >{/snippet}
+
+{#snippet earlier()}<button
     type="button"
     class="glyph"
     aria-label="{label} {words[0]}"
     title="{label} {words[0]}"
     disabled={atStart}
     use:hold={(repeating) => step(-1, repeating)}>&lt;</button
-  >
-  <button
+  >{/snippet}
+
+{#snippet later()}<button
     type="button"
     class="glyph"
     aria-label="{label} {words[1]}"
     title="{label} {words[1]}"
     disabled={atEnd}
     use:hold={(repeating) => step(1, repeating)}>&gt;</button
-  >
-</div>
+  >{/snippet}
+
+{#if stacked}
+  <div class="stepper stacked" use:drag={scrub}>
+    <span class="label">{label}</span>
+    <span class="dial">{@render earlier()}{@render shown()}{@render later()}</span>
+  </div>
+{:else}
+  <div class="stepper" use:drag={scrub}>
+    <span class="label" style:width="{labelWidth}ch">{label}</span>{@render shown()}{@render earlier()}{@render later()}
+  </div>
+{/if}
 
 <style>
   .stepper {
@@ -95,4 +110,24 @@
     color: var(--accent);
   }
 
+  /* Stacked, one of a row (Steppers): the label over < value >, all centred. */
+  .stacked {
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+  }
+
+  .dial {
+    display: flex;
+    align-items: center;
+  }
+
+  .stacked .setting {
+    flex: none;
+    text-align: center;
+  }
+
+  .stacked .glyph {
+    min-width: 1.8em;
+  }
 </style>
