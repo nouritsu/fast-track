@@ -5,7 +5,7 @@ vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: {} }))
 vi.mock('@capacitor/filesystem', () => ({ Directory: {}, Encoding: {}, Filesystem: {} }))
 vi.mock('@capacitor/core', () => ({ registerPlugin: () => ({}), Capacitor: { isNativePlatform: () => false } }))
 
-import { plannedAlerts } from './alerts'
+import { plannedAlerts, plannedReminder } from './alerts'
 import { backupName, BackupError, makeBackup, mergeFasts, parseBackup, writeFailure } from './backup'
 import { emptyReason, scaleWeightFor, syncWeights, weightOf } from './openscale'
 import {
@@ -139,6 +139,21 @@ describe('alerts', () => {
   it('announces a stage that begins at the goal once, as the goal', () => {
     const start = at('2026-11-17T06:00')
     expect(plannedAlerts({ start, goal: 24 }, start).map((a) => a.title)).toEqual(['Fat burning', 'Ketosis', 'Goal reached'])
+  })
+
+  it('plans the goal alone, or nothing', () => {
+    const start = at('2026-11-17T06:00')
+    expect(plannedAlerts({ start, goal: 16 }, start, 'goal').map((a) => a.title)).toEqual(['Goal reached'])
+    expect(plannedAlerts({ start, goal: 16 }, start, 'off')).toEqual([])
+  })
+
+  it('reminds when the eating window after the latest fast closes', () => {
+    const fasts = [fast('2026-11-16T20:00', '2026-11-17T12:00'), fast('2026-11-15T20:00', '2026-11-16T12:00')]
+    const now = at('2026-11-17T13:00')
+    expect(plannedReminder(fasts, null, now)?.at).toBe(at('2026-11-17T20:00'))
+    expect(plannedReminder(fasts, { start: now, goal: 16 }, now)).toBeNull()
+    expect(plannedReminder(fasts, null, at('2026-11-17T21:00'))).toBeNull()
+    expect(plannedReminder([fast('2026-11-16T12:00', '2026-11-17T12:00', 24)], null, now)).toBeNull()
   })
 })
 
@@ -390,8 +405,9 @@ describe('storage and backup', () => {
     expect(toFast({ ...f, brokeWith: ' ' })).not.toHaveProperty('brokeWith')
     expect(toFast({ ...f, brokeWith: 3 })).not.toHaveProperty('brokeWith')
     expect(toSettings(null)).toEqual(DEFAULT_SETTINGS)
-    expect(toSettings({ unit: 'lb', goal: 18 })).toMatchObject({ unit: 'lb', goal: 18, alerts: true, status: true })
+    expect(toSettings({ unit: 'lb', goal: 18 })).toMatchObject({ unit: 'lb', goal: 18, alerts: 'all', status: true })
     expect(toSettings({ status: false }).status).toBe(false)
+    expect([false, true, 'goal'].map((alerts) => toSettings({ alerts }).alerts)).toEqual(['off', 'all', 'goal'])
     expect(toSettings({ exportOn: true, exportEvery: ' ' })).toMatchObject({ exportOn: true, exportEvery: 'daily' })
     expect(toSettings({}).cloudBackup).toBe(false)
     expect(toSettings({ cloudBackup: true }).cloudBackup).toBe(true)

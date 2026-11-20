@@ -4,6 +4,7 @@
 
 import { Preferences } from '@capacitor/preferences'
 import { DEFAULT_COLORS, toColors, type Colors } from '../colors'
+import { ALERT_CHOICES, type AlertChoice } from './alerts'
 import { SWITCHABLE, TEXT_SIZES, type Switchable, type TextSize } from '../display'
 import { PAGE_IDS, STATS_PANES, toOrder, toSubset, type PageId, type StatsPane } from '../layout'
 import { WEEK_STARTS, type WeekStart } from './calendar'
@@ -12,7 +13,8 @@ import { SPANS, toDayRange, type DayRange, type Span } from './stats'
 
 export interface Settings {
   goal: number // the next fast's goal, in hours
-  alerts: boolean // notify when a stage begins and at the goal
+  alerts: AlertChoice // notify when a stage begins and at the goal, or at the goal only (alerts.ts)
+  reminder: boolean // notify when the eating window closes
   status: boolean // keep a notification showing the fast or eating window and the stage
   unit: 'kg' | 'lb'
   lastExport: string | null // ISO time of the last backup
@@ -43,7 +45,8 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   goal: DEFAULT_GOAL,
-  alerts: true,
+  alerts: 'all',
+  reminder: false,
   status: true,
   unit: 'kg',
   lastExport: null,
@@ -108,7 +111,9 @@ export function toSettings(v: unknown): Settings {
   const s = (v ?? {}) as Partial<Settings>
   return {
     goal: isNumber(s.goal) && s.goal > 0 ? s.goal : DEFAULT_SETTINGS.goal,
-    alerts: typeof s.alerts === 'boolean' ? s.alerts : DEFAULT_SETTINGS.alerts,
+    // Before goal-only alerts, they were on or off.
+    alerts: ALERT_CHOICES.includes(s.alerts as AlertChoice) ? (s.alerts as AlertChoice) : (s.alerts as unknown) === false ? 'off' : 'all',
+    reminder: s.reminder === true,
     status: typeof s.status === 'boolean' ? s.status : DEFAULT_SETTINGS.status,
     unit: s.unit === 'lb' ? 'lb' : 'kg',
     lastExport: typeof s.lastExport === 'string' ? s.lastExport : null,

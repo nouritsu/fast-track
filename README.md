@@ -11,7 +11,7 @@ An offline intermittent-fasting tracker for Android, drawn like a terminal.
 - **Fasts**: start one now or from an earlier time, with a goal of 12 to 24 hours by the hour, or 30, 36, 42, 48, 60 or 72.
 - **Timer**: shows the time left or elapsed (tap to switch), and counts on past the goal.
 - **Stages**: Glucose, Fat burning, Ketosis and Autophagy, on a progress line in their colours, with when the next one comes.
-- **Notifications**: an alert when a stage begins and at the goal, and an ongoing status notification with a running timer and the stages as a bar, a Live Update on Android 16. Both work with the app closed.
+- **Notifications**: an alert when a stage begins and at the goal (or at the goal only), a reminder when the eating window closes, and an ongoing status notification with a running timer and the stages as a bar, a Live Update on Android 16. Both work with the app closed.
 - **Calendar**: each day coloured by the deepest stage its fast reached, with ISO week numbers and weekly totals. Each fast shows its progress to the goal, its time in the deepest stage and how far past the goal it went. Log, edit or delete fasts, with undo.
 - **Stats**: over 30 days, 90 days, a year, all time or any range of days. Covers fast lengths, goal streaks, time in each stage, your daily rhythm, weight trend and records, in the order you choose.
 - **Weight**: in kg or lb, typed in or taken from [openScale](https://github.com/oliexdev/openScale), with BMI once you add your height.

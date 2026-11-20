@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Capacitor } from '@capacitor/core'
   import { untrack } from 'svelte'
-  import { askAlerts } from '../fasting/alerts'
+  import { ALERT_CHOICES, askAlerts } from '../fasting/alerts'
   import { lastResult, type ExportResult } from '../fasting/autoexport'
   import { askScale, emptyReason, scaleStatus, scaleUsers, WINDOW_HOURS, type ScaleStatus, type ScaleUser } from '../fasting/openscale'
   import { backupName, makeBackup, parseBackup, saveExportFile } from '../fasting/backup'
@@ -10,6 +10,7 @@
   import { describeSchedule, listed, nextRun, parseSchedule, SCHEDULE_EXAMPLES, ScheduleError } from '../fasting/schedule'
   import { latestWeighing } from '../fasting/stats'
   import { dayClock, dayKey, shortDate } from '../fasting/time'
+  import type { Settings } from '../fasting/store'
   import type { Tracker } from '../fasting/tracker.svelte'
   import { COLOR_KEYS } from '../colors'
   import { SWITCHABLE, TEXT_SIZES } from '../display'
@@ -204,23 +205,29 @@
     }
   }
 
-  // Settings that are on or off. Alerts and the status notification ask Android for
-  // permission to notify before they turn on, and say what they did.
-  type Switch = 'alerts' | 'status' | 'weekNumbers' | 'weekTotals' | 'exportOn' | 'keepOneFile' | 'bmi' | 'cloudBackup'
-  const NOTICES: Partial<Record<Switch, string>> = { alerts: 'Alerts', status: 'Status notification' }
+  // Settings that are on or off. The notifications ask Android for permission to notify
+  // before they turn on, and say so if it is refused.
+  type Switch = 'status' | 'reminder' | 'weekNumbers' | 'weekTotals' | 'exportOn' | 'keepOneFile' | 'bmi' | 'cloudBackup'
+  const NOTICES: Switch[] = ['status', 'reminder']
 
   function flip(key: Switch) {
-    const notice = NOTICES[key]
-    if (!notice) return void tracker.setSettings({ [key]: !settings[key] })
+    notice({ [key]: !settings[key] }, !settings[key])
+  }
+
+  /** Changes a notification setting, first asking to notify when it turns one on. */
+  function notice(patch: Partial<Settings>, on: boolean) {
+    if (!Object.keys(patch).some((key) => key === 'alerts' || NOTICES.includes(key as Switch))) return void tracker.setSettings(patch)
     run(async () => {
-      if (settings[key]) {
-        await tracker.setSettings({ [key]: false })
-        return `${notice} off.`
-      }
-      if (Capacitor.isNativePlatform() && !(await askAlerts())) return 'Notifications are blocked in Android settings.'
-      await tracker.setSettings({ [key]: true })
-      return `${notice} on.`
+      if (on && Capacitor.isNativePlatform() && !(await askAlerts())) return 'Notifications are blocked in Android settings.'
+      await tracker.setSettings(patch)
+      return ''
     }, 'notify')
+  }
+
+  /** Alerts step through each stage and the goal, the goal alone, and none. */
+  function nextAlerts() {
+    const next = ALERT_CHOICES[(ALERT_CHOICES.indexOf(settings.alerts) + 1) % ALERT_CHOICES.length]
+    notice({ alerts: next }, settings.alerts === 'off')
   }
 
   function exportNow() {
@@ -285,7 +292,7 @@
 {#snippet toggle(key: Switch, name: string, first = false)}
   <div class="row" class:first>
     <span>{name}</span>
-    <button type="button" class="word" disabled={key in NOTICES && busy} aria-pressed={settings[key]} onclick={() => flip(key)}
+    <button type="button" class="word" disabled={NOTICES.includes(key) && busy} aria-pressed={settings[key]} onclick={() => flip(key)}
       ><ShuffleText text={settings[key] ? 'on' : 'off'} /></button
     >
   </div>
@@ -409,8 +416,20 @@
   </Block>
 
   <Block title="Notifications" icon="notifications">
-    {@render toggle('alerts', 'Alerts', true)}
-    <p class="muted">When a stage begins and at the goal.</p>
+    <div class="row first">
+      <span>Alerts</span>
+      <button
+        type="button"
+        class="word"
+        disabled={busy}
+        aria-label="Alerts: {settings.alerts}"
+        aria-pressed={settings.alerts !== 'off'}
+        onclick={nextAlerts}><ShuffleText text={settings.alerts} /></button
+      >
+    </div>
+    <p class="muted">When a stage begins and at the goal (all), or at the goal only.</p>
+    {@render toggle('reminder', 'Reminder')}
+    <p class="muted">When the eating window closes.</p>
     {@render toggle('status', 'Status')}
     <p class="muted">An ongoing notification with the timer and stage.</p>
     {#if message && messageAt === 'notify'}<p class="message" role="status">{message}</p>{/if}

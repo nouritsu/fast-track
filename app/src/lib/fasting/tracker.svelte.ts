@@ -83,7 +83,7 @@ export class Tracker {
   async save(fast: Fast): Promise<void> {
     this.fasts = newestFirst([...this.fasts.filter((f) => f.id !== fast.id), fast])
     await saveFasts(this.fasts)
-    await refreshStatus()
+    await this.#notify()
   }
 
   /** Writes openScale's weights into the fasts without a typed one (openscale.ts). */
@@ -101,7 +101,7 @@ export class Tracker {
   async remove(id: string): Promise<void> {
     this.fasts = this.fasts.filter((f) => f.id !== id)
     await saveFasts(this.fasts)
-    await refreshStatus()
+    await this.#notify()
   }
 
   /** Merges imported fasts by id; returns how many were new. */
@@ -109,15 +109,15 @@ export class Tracker {
     const { fasts, added } = mergeFasts(this.fasts, incoming)
     this.fasts = newestFirst(fasts)
     await saveFasts(this.fasts)
-    await refreshStatus()
+    await this.#notify()
     return added
   }
 
   async setSettings(patch: Partial<Settings>): Promise<void> {
-    const alertsChanged = 'alerts' in patch && patch.alerts !== this.settings.alerts
+    const alertsChanged = ('alerts' in patch && patch.alerts !== this.settings.alerts) || ('reminder' in patch && patch.reminder !== this.settings.reminder)
     this.settings = { ...this.settings, ...patch }
     await saveSettings(this.settings)
-    if (alertsChanged) await syncAlerts(this.active, this.settings.alerts)
+    if (alertsChanged) await syncAlerts(this.active, this.fasts, this.settings)
     if ('exportOn' in patch || 'exportEvery' in patch) await this.#planExports()
     else if ('status' in patch || 'colors' in patch) await refreshStatus()
     if ('scaleUser' in patch) await this.loadScale()
@@ -129,9 +129,15 @@ export class Tracker {
     await refreshStatus()
   }
 
+  /** Plans the alerts and the reminder again, and redraws the status notification, after
+   *  a fast changed. */
+  async #notify(): Promise<void> {
+    await syncAlerts(this.active, this.fasts, this.settings)
+    await refreshStatus()
+  }
+
   async #saveActive(): Promise<void> {
     await saveActive(this.active)
-    await syncAlerts(this.active, this.settings.alerts)
-    await refreshStatus()
+    await this.#notify()
   }
 }

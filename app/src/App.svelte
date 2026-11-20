@@ -385,7 +385,7 @@
   }
 
   async function allowAlerts() {
-    if (settings.alerts && Capacitor.isNativePlatform() && !(await askAlerts())) await tracker.setSettings({ alerts: false })
+    if (settings.alerts !== 'off' && Capacitor.isNativePlatform() && !(await askAlerts())) await tracker.setSettings({ alerts: 'off' })
   }
 
   /** The hero has locked: a fast started at the gate starts now. */
