@@ -8,17 +8,17 @@ An offline intermittent-fasting tracker for Android, drawn like a terminal.
 
 ## About
 
-- **Fasts**: start one now or from an earlier time, with a goal of 12 to 24 hours by the hour, or 30, 36, 42, 48, 60 or 72.
-- **Timer**: shows the time left or elapsed (tap to switch), and counts on past the goal.
+- **Fasts**: start one now, earlier or later, with a goal of 12 to 24 hours by the hour, or 30, 36, 42, 48, 60 or 72.
+- **Timer**: shows the time left or elapsed (tap to switch), and counts on past the goal. Resume a fast ended by mistake, or discard one started by mistake.
 - **Stages**: Glucose, Fat burning, Ketosis and Autophagy, on a progress line in their colours, with when the next one comes.
-- **Notifications**: an alert when a stage begins and at the goal (or at the goal only), a reminder when the eating window closes, and an ongoing status notification with a running timer and the stages as a bar, a Live Update on Android 16. Both work with the app closed.
-- **Calendar**: each day coloured by the deepest stage its fast reached, with ISO week numbers and weekly totals. Each fast shows its progress to the goal, its time in the deepest stage and how far past the goal it went. Log, edit or delete fasts, with undo.
+- **Notifications**: an alert when a stage begins and at the goal (or at the goal only), a reminder when the eating window closes, and an ongoing status notification with a running timer and the stages as a bar, a Live Update on Android 16 that a swipe can't clear. They all work with the app closed.
+- **Calendar**: each day coloured by the deepest stage its fast reached, with ISO week numbers and weekly totals. Each fast shows its progress to the goal, its time in the deepest stage and how far past the goal it went. Tap any day to log or plan a fast on it; edit or delete fasts, with undo.
 - **Stats**: over 30 days, 90 days, a year, all time or any range of days. Covers fast lengths, goal streaks, time in each stage, your daily rhythm, weight trend and records, in the order you choose. Tap or drag across a chart to read its exact values.
 - **Weight**: in kg or lb, typed in or taken from [openScale](https://github.com/oliexdev/openScale), with BMI once you add your height.
 - **Your data**: export and import JSON backups (a file a day, or one file kept up to date), export an `.ics` calendar, and schedule regular exports.
 - **Info**: what happens in each stage, with the papers to read. Not medical advice.
 - **Looks**: [Catppuccin](https://catppuccin.com) Mocha or Latte, or whichever your phone is in, with the accent and stage colours you pick; the Iosevka font, boxes drawn with lines, Material icons.
-- **Your way**: reorder or hide the tabs and pick the one the app opens on; set the text size, motion and haptics, or let them follow the phone.
+- **Your way**: reorder or hide the tabs and pick the one the app opens on; set the text size, motion, haptics and a 12- or 24-hour clock, or let them follow the phone.
 - **Private**: no network permission, no account, no ads, no analytics.
 
 ## Showcase
@@ -76,7 +76,7 @@ To work on the app:
 
 ## Privacy and permissions
 
-Your fasts stay on the phone. The app can't go online, and nothing leaves the phone unless you export it. Android's cloud backup skips the app's data unless you turn it on in **Options → Privacy**. A direct transfer to a new phone carries the data either way (Android 9 and newer). On the lock screen, the status notification follows your phone's setting for sensitive content.
+Your fasts stay on the phone. The app can't go online, and nothing leaves the phone unless you export it. Android's cloud backup skips the app's data unless you turn it on in **Options → Privacy**. A direct transfer to a new phone carries the data either way (needs Android 9+). On the lock screen, the status notification follows your phone's setting for sensitive content.
 
 | Permission | Why |
 | --- | --- |

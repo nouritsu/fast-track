@@ -1,29 +1,31 @@
 Fast Track times intermittent fasts and keeps their history on your phone. It looks like a terminal: text in the Iosevka font and boxes drawn with lines, in Catppuccin Mocha (dark) or Latte (light), or whichever your phone is in.
 
 Fasting
-* Start a fast now, or from an earlier time.
+* Start a fast now, from an earlier time, or at a later one.
 * Set a goal from 12 to 24 hours by the hour, or 30, 36, 42, 48, 60 or 72 hours.
 * The timer shows the time left or the time elapsed, in the colour of the stage you are in; tap it to switch. Past the goal it counts on.
 * A progress line in the colours of the four stages: Glucose, Fat burning, Ketosis and Autophagy.
 * See the stage you are in, and when the next stage or the goal comes.
 * While fasting, move the start or change the goal. Cancel asks first.
-* At the end, add a note and your weight.
+* At the end, add a note, the meal you broke it with and your weight. Resume a fast ended by mistake, or discard one started by mistake.
 * Between fasts, the eating window counts down.
 
 Notifications
-* Stage alerts: a notification when a stage begins and when the goal is reached.
-* Status notification: one that stays, saying whether you are fasting or eating, the stage, and a running timer, over a bar of the stages. On Android 16 it is a Live Update, with the time left in the status bar.
-* Both work with the app closed, and both can be turned off.
+* Stage alerts: a notification when a stage begins and when the goal is reached, or at the goal only.
+* A reminder when the eating window closes.
+* Status notification: one that stays, even after a swipe, saying whether you are fasting or eating, the stage, and a running timer, over a bar of the stages. On Android 16 it is a Live Update, with the time left in the status bar.
+* They work with the app closed, and each can be turned off.
 
 Calendar
 * A month at a time; each day that ended a fast is in the colour of the deepest stage it reached.
 * ISO week numbers and weekly totals if you want them; weeks start on Monday, Sunday or Saturday.
 * Each fast shows its progress to the goal in the stage colours, its time in the deepest stage, how far past the goal it went, and its weight.
-* Tap a day to see its fasts. Log a fast afterwards, edit one (note, weight, start, end, goal), or delete one, with undo.
+* Tap any day to see its fasts or log one on it. Plan a fast ahead, edit one (note, weight, start, end, goal), or delete one, with undo.
 
 Stats
-* Over 30 days, 90 days, a year or all time, set against the same span before, with arrows for what rose or fell.
+* Over 30 days, 90 days, a year, all time or any range of days, set against the same span before, with arrows for what rose or fell.
 * Arrange the panes in the order you like, or put some away.
+* Tap or drag across a chart to read its exact values.
 * Length: each fast as a bar in its stages' colours, and how long fasts tend to be.
 * Goal: how often you met it, your best streak, and near misses.
 * Stages: the hours spent in each, and how often each was reached.
@@ -33,22 +35,22 @@ Stats
 
 Weight
 * In kg or lb.
-* Type it in, or take it from openScale. With your permission the app reads openScale's weighings and gives each fast the one during it, else the closest to its end within 12 hours. A weight you type in wins.
+* Type it in, or take it from openScale. With your permission the app reads openScale's weighings and gives each fast the one during it, else the closest to its end within 12 hours. A weight you type in comes first.
 * BMI from your height, with the formula worked out under it.
 
 Your data
 * Export every fast and the settings to a JSON file in Documents/FastTrack/, a file a day or one kept up to date, and import it again. Import only adds fasts the app does not have.
 * Export the fasts as an .ics file for any calendar app.
-* Regular exports on a schedule (daily, weekly, Mon..Fri 08:00), said back in plain words. They run with the app closed.
+* Regular exports on a schedule (daily, weekly, Sun 21:00), said back in plain words. They run with the app closed.
 
 Your way
 * Pick the accent and the stage colours from Catppuccin's palette.
 * Reorder or hide the tabs, and pick the one the app opens on.
-* Set the text size, motion and haptics, or let them follow your phone.
+* Set the text size, motion, haptics and a 12- or 24-hour clock, or let them follow your phone.
 
 Privacy
 * No network permission: the app cannot go online. No account, no ads, no analytics.
-* Your fasts stay on the phone unless you export them. Android's cloud backup leaves them out unless you turn it on in Options; a direct transfer to a new phone carries them either way (Android 9 and newer).
+* Your fasts stay on the phone unless you export them. Android's cloud backup leaves them out unless you turn it on in Options; a direct transfer to a new phone carries them either way (needs Android 9+).
 * On the lock screen, the status notification follows your phone's setting for sensitive content.
 
 Info
