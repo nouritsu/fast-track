@@ -26,6 +26,7 @@
     dayStrip,
     eatingWindow,
     goalStats,
+    latestWeighing,
     lengthBands,
     median,
     priorWindow,
@@ -218,13 +219,13 @@
   /** A change in kg in the unit, signed: "-1.6", "+0.4", "±0.0". */
   const signed = (kg: number) => signedNumber(inUnit(kg))
   const change = $derived(rate === null ? 0 : (rate * (points[points.length - 1].at - points[0].at)) / (7 * DAY))
-  // BMI beside the weight, once there is a height: the trend's in the top edge, and the
-  // change in it beside the change in weight.
-  const edge = $derived.by(() => {
-    if (!trend.length) return ''
-    const kg = trend[trend.length - 1].kg
-    return `${weightNumber(kg, unit)} ${unit}${height === null ? '' : ` ◆ ${showBmi(bmi(kg, height))}`}`
-  })
+  // The top edge: the latest weighing, whichever span is shown, and its BMI once there is
+  // a height (the trend, which lags it by days, is the line). The change in BMI sits
+  // beside the change in weight.
+  const latest = $derived(latestWeighing(fasts, scale))
+  const edge = $derived(
+    latest ? `${weightNumber(latest.kg, unit)} ${unit}${height === null ? '' : ` ◆ ${showBmi(bmi(latest.kg, height))}`}` : '',
+  )
   const bmiChange = $derived(height === null ? '' : ` ◆ ${signedNumber(bmi(change, height))}`)
   const weighed = $derived(scale.length > 0 || fasts.some((f) => f.weight !== null))
 
