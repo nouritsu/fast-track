@@ -28,7 +28,6 @@
     "U+25B2" # ▲ up on the span before (Stats)
     "U+25BC" # ▼ down on it
     "U+2192" # → in a path to an Android setting
-    "U+25C6" # ◆ BMI
   ];
   # Android density buckets and their scale over mdpi.
   densities = {

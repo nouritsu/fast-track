@@ -385,13 +385,11 @@ button.gate {
   border: none;
 }
 
-
-/* Icons are Unicode symbols from the app font, in the accent colour. */
+/* A Material icon before a button's words (Icon.svelte), in the accent colour. */
 .icon {
   color: var(--accent);
   margin-right: 0.6ch;
 }
-
 
 /* A block that fills its page's height (the Fast page). */
 .page-block {
@@ -563,7 +561,6 @@ td {
 th {
   color: var(--muted);
 }
-
 
 /* A failure that must be seen: pinned above the bottom edge. */
 .alert {
