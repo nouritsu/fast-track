@@ -83,7 +83,7 @@
   const days = $derived(dayTotals(history, settings.nearMiss))
   const heads = $derived(weekdayHeads(settings.weekStart))
   const key = (y: number, m: number, day: number) => dayKey(new Date(y, m, day))
-  const todayKey = $derived(dayKey(now))
+  const todayKey = $derived(dayKey(minute))
   const monthKey = $derived(key(year, month, 1).slice(0, 7))
   const summary = $derived(monthSummary(history, year, month))
 
@@ -366,8 +366,8 @@
       </div>
     {:else}
       <!-- A planned fast, ending later, is tracked as far as it has got. -->
-      {@const planned = fast.end > now}
-      {@const reached = soFar(fast, now)}
+      {@const planned = fast.end > minute}
+      {@const reached = soFar(fast, minute)}
       {@const stage = STAGES[deepestStage(reached)]}
       {@const weight = planned && fast.weight === null ? null : weightOf(fast, scale)}
       {@const percent = percentOf(fastLength(reached), fast.goal)}
@@ -405,9 +405,9 @@
           <span style:color={planned && percent < 100 ? undefined : `var(--${goalTone(percent / 100)})`}>{pad(percent, 3)}%</span> of {fast.goal}h
         </p>
         <p class="fields detail">
-          {#if planned && now < fast.start}<span class="muted">planned</span> · starts in <span class="value">{hm(fast.start - now)}</span
+          {#if planned && minute < fast.start}<span class="muted">planned</span> · starts in <span class="value">{hm(fast.start - minute)}</span
             >{:else if planned}<span style:color="var(--{stage.id})">{stage.name}</span>
-            {hm(timeInDeepest(reached))} · <span class="muted">under way</span> · <span class="value">{hm(fast.end - now)}</span> left{:else}<span
+            {hm(timeInDeepest(reached))} · <span class="muted">under way</span> · <span class="value">{hm(fast.end - minute)}</span> left{:else}<span
               style:color="var(--{stage.id})">{stage.name}</span
             >
             {hm(timeInDeepest(fast))} · {signedHm(pastGoal(fast))}{/if}{#if weight}{' · '}{showWeight(weight.kg, unit)}{#if height !== null}{' '}◆ {showBmi(bmi(weight.kg, height))}{/if}{#if weight.scale}{' '}<span

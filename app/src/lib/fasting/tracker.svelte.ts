@@ -55,13 +55,14 @@ export class Tracker {
     await this.setSettings({ goal })
   }
 
-  /** Ends the fast in progress and returns it as saved. */
+  /** Ends the fast in progress and returns it as saved. The fast is saved before the one
+   *  in progress is cleared, so the app closing between the two loses nothing. */
   async end(at: number): Promise<Fast | null> {
     if (!this.active) return null
     const fast: Fast = { id: crypto.randomUUID(), start: this.active.start, end: at, goal: this.active.goal, note: '', weight: null }
     this.active = null
-    await this.#saveActive()
     await this.save(fast)
+    await this.#saveActive()
     return fast
   }
 
