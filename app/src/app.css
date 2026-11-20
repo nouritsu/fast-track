@@ -273,6 +273,12 @@ button.flash {
   color: var(--bad);
 }
 
+/* What closes, cancels, discards or deletes (Close, Cancel, Discard, ✕): its icon in red. */
+button.quit .icon,
+button.glyph.quit {
+  color: var(--bad);
+}
+
 /* Buttons set into a block's bottom edge (Block's `actions`): words on the border
    line, cut out of it by the page's background like a title, with a tap area
    reaching above and below the line. The primary one is bold in the accent. */

@@ -39,7 +39,7 @@
 <svelte:window onkeydown={keydown} />
 
 {#snippet close()}
-  <button type="button" class="edge" onclick={onClose}><span class="icon" aria-hidden="true"><Icon name="close" /></span>Close</button>
+  <button type="button" class="edge quit" onclick={onClose}><span class="icon" aria-hidden="true"><Icon name="close" /></span>Close</button>
 {/snippet}
 
 <!-- The pane's own button, at the right of the bottom edge. -->

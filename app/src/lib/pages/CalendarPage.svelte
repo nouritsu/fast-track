@@ -383,7 +383,7 @@
         <div class="title">
           <h3>{longDate(fast.end)}</h3>
           <button type="button" class="glyph" aria-label="Edit" title="Edit" onclick={() => onEdit(fast)}><Icon name="edit" /></button>
-          <button type="button" class="glyph" aria-label="Delete" title="Delete" onclick={() => remove(fast)}><Icon name="close" /></button>
+          <button type="button" class="glyph quit" aria-label="Delete" title="Delete" onclick={() => remove(fast)}><Icon name="close" /></button>
         </div>
         <p class="fields">
           <span class="muted">from</span>

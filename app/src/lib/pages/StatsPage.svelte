@@ -300,7 +300,7 @@
     <button type="button" class="glyph" aria-label="Move {STATS_NAMES[id]} down" disabled={at === order.length - 1} onclick={() => movePane(id, 1)}
       ><Icon name="keyboard_arrow_down" /></button
     >
-    <button type="button" class="glyph" aria-label="Put {STATS_NAMES[id]} away" onclick={() => putAway(id)}><Icon name="close" /></button>
+    <button type="button" class="glyph quit" aria-label="Put {STATS_NAMES[id]} away" onclick={() => putAway(id)}><Icon name="close" /></button>
   </span>
 {/snippet}
 

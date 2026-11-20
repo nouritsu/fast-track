@@ -28,7 +28,7 @@
 </script>
 
 {#snippet close()}
-  <button type="button" class="edge" onclick={onClose}><span class="icon" aria-hidden="true"><Icon name="close" /></span>Close</button>
+  <button type="button" class="edge quit" onclick={onClose}><span class="icon" aria-hidden="true"><Icon name="close" /></span>Close</button>
 {/snippet}
 
 <Block title="Range" icon="event" headingRight={close}>
