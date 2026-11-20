@@ -1,0 +1,6 @@
+* The status notification comes back when swiped away.
+* Resume a fast ended by mistake, or discard one, from the Done screen.
+* Stats cover any range of days; tap or drag across a chart to read its values.
+* Tap any day in the calendar to log a fast on it.
+* Alerts at the goal only, a reminder when eating ends, and a 12- or 24-hour clock.
+* Lengths read as 18h 13m, days and times are set side by side, and clearer wording.
