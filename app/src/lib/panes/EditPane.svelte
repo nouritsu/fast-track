@@ -1,19 +1,20 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { invalidTimes, overlapping, parseWeight, weightNumber, type Fast } from '../fasting/fasts'
+  import { invalidTimes, overlapping, parseWeight, weightNumber, type Active, type Fast } from '../fasting/fasts'
   import { scaleWeightFor, type ScaleWeight } from '../fasting/openscale'
-  import { dayClock, floorMinute, longDate } from '../fasting/time'
+  import { dayClock, longDate } from '../fasting/time'
   import { duration } from '../ui/fields'
   import GoalStepper from '../ui/GoalStepper.svelte'
   import Icon from '../ui/Icon.svelte'
   import Pane from '../ui/Pane.svelte'
   import TimeSteppers from '../ui/TimeSteppers.svelte'
 
-  // A finished fast, or a new one logged afterwards: its note, the weight at its end,
-  // when it began and ended, and its goal.
+  // A finished fast, a new one logged afterwards, or one planned ahead: its note, the
+  // weight at its end, when it begins and ends, and its goal.
   let {
     fast,
     others,
+    active,
     scale,
     isNew,
     unit,
@@ -23,6 +24,7 @@
   }: {
     fast: Fast
     others: Fast[] // the rest of the history, which it must not overlap
+    active: Active | null // the fast in progress, which it must end before
     scale: ScaleWeight[] // openScale's weighings: the fast's own (scaleWeightFor) fills an empty weight
     isNew: boolean
     unit: 'kg' | 'lb'
@@ -39,14 +41,14 @@
   const initialWeightText = initial.weight === null ? '' : weightNumber(initial.weight, untrack(() => unit))
   let weightText = $state(initialWeightText)
 
-  const latest = $derived(floorMinute(now))
   const weight = $derived(parseWeight(weightText, unit))
   const weightBad = $derived(weightText.trim() !== '' && weight === null)
   const fromScale = $derived(scaleWeightFor({ start, end }, scale))
   const clash = $derived(overlapping(others, start, end, initial.id))
   const problem = $derived(
-    invalidTimes(start, end, now) ??
-      (clash ? `It overlaps the fast that ended ${longDate(clash.end)}.` : null) ??
+    invalidTimes(start, end) ??
+      (clash ? `It overlaps the fast ${clash.end > now ? 'planned for' : 'that ended'} ${longDate(clash.end)}.` : null) ??
+      (active && end > active.start ? 'It overlaps the fast in progress.' : null) ??
       (weightBad ? `That is not a weight in ${unit}.` : null),
   )
 
@@ -81,10 +83,10 @@
   {/if}
 
   <h3>Start</h3>
-  <TimeSteppers at={start} {latest} onChange={(t) => (start = t)} />
+  <TimeSteppers at={start} latest={Infinity} onChange={(t) => (start = t)} />
 
   <h3>End</h3>
-  <TimeSteppers at={end} {latest} onChange={(t) => (end = t)} />
+  <TimeSteppers at={end} latest={Infinity} onChange={(t) => (end = t)} />
 
   <h3>Goal</h3>
   <GoalStepper {goal} onChange={(g) => (goal = g)} />

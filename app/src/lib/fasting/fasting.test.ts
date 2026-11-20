@@ -13,6 +13,7 @@ import {
   bmiFormula,
   earliestStart,
   eatingLeft,
+  endedBy,
   goalTone,
   heightAtLimit,
   invalidTimes,
@@ -26,6 +27,7 @@ import {
   showHeight,
   showWeight,
   signedNumber,
+  soFar,
   stageHours,
   stepGoal,
   stepHeight,
@@ -229,10 +231,22 @@ describe('checks', () => {
     expect(earliestStart([])).toBe(-Infinity)
   })
 
-  it('refuses times that cannot be', () => {
-    expect(invalidTimes(now - HOUR, now, now)).toBeNull()
-    expect(invalidTimes(now, now + HOUR, now)).toMatch(/future/)
-    expect(invalidTimes(now, now - HOUR, now)).toMatch(/after the start/)
+  it('refuses times that cannot be, and plans the ones still to come', () => {
+    expect(invalidTimes(now - HOUR, now)).toBeNull()
+    expect(invalidTimes(now, now + HOUR)).toBeNull()
+    expect(invalidTimes(now, now - HOUR)).toMatch(/after the start/)
+  })
+
+  it('counts only the fasts that have ended, and tracks a planned one so far', () => {
+    const done = fast('2026-11-16T20:00', '2026-11-17T11:00')
+    const planned = fast('2026-11-17T11:30', '2026-11-18T04:00')
+    const all = [planned, done]
+    expect(endedBy(all, now)).toEqual([done])
+    const history = [done]
+    expect(endedBy(history, now)).toBe(history)
+    expect(soFar(planned, now)).toEqual({ start: planned.start, end: now })
+    expect(soFar(planned, at('2026-11-17T10:00'))).toEqual({ start: planned.start, end: planned.start })
+    expect(soFar(done, now)).toEqual({ start: done.start, end: done.end })
   })
 
   it('reads weights in either unit and shows them in one decimal', () => {

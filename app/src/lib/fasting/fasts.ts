@@ -64,6 +64,18 @@ export const pastGoal = (fast: Fast): number => fastLength(fast) - fast.goal * H
 /** Newest first, by end. */
 export const newestFirst = (fasts: Fast[]): Fast[] => [...fasts].sort((a, b) => b.end - a.end)
 
+/** The fasts that have ended by `now`: what the stats, the calendar's colours and the
+ *  eating window count. One that ends later is planned, and only tracked in the list.
+ *  The same array when every fast has ended. */
+export const endedBy = (fasts: Fast[], now: number): Fast[] =>
+  fasts.every((f) => f.end <= now) ? fasts : fasts.filter((f) => f.end <= now)
+
+/** A planned fast as far as it has got by `now`: its start to now, within its times. */
+export const soFar = (fast: Fast, now: number): Pick<Fast, 'start' | 'end'> => ({
+  start: fast.start,
+  end: Math.max(fast.start, Math.min(now, fast.end)),
+})
+
 /** The time a fast reaches each stage after the first, and its goal: what alerts and the
  *  "next" line announce. */
 export function milestones(active: Active): { at: number; stage: number | null }[] {
@@ -132,12 +144,10 @@ export function overlapping(fasts: Fast[], start: number, end: number, id = ''):
 /** The earliest a new fast can start: when the last one ended. */
 export const earliestStart = (fasts: Fast[]): number => Math.max(-Infinity, ...fasts.map((f) => f.end))
 
-/** Why a fast's times cannot be saved, or null when they can. */
-export function invalidTimes(start: number, end: number, now: number): string | null {
-  if (end > now + MINUTE) return 'The end is in the future.'
-  if (end - start < MINUTE) return 'The end must come after the start.'
-  return null
-}
+/** Why a fast's times cannot be saved, or null when they can. Either may be in the
+ *  future: the fast is then planned (endedBy). */
+export const invalidTimes = (start: number, end: number): string | null =>
+  end - start < MINUTE ? 'The end must come after the start.' : null
 
 /** Weight in the unit the user reads: one decimal. */
 export const KG_PER_LB = 0.45359237

@@ -83,8 +83,8 @@ final class FastStatus {
             // A fast set to start later: the eating window until then, its bar from the last
             // fast's end, or none before the first fast.
             long start = active.optLong("start");
-            JSONObject last = lastFast(prefs.getString("fasts", null));
-            long from = last != null ? Math.min(last.optLong("end"), now) : start;
+            JSONObject last = lastFast(prefs.getString("fasts", null), now);
+            long from = last != null ? last.optLong("end") : start;
             span = minutes(start - from);
             builder
                 .setContentTitle("Eating window")
@@ -116,9 +116,13 @@ final class FastStatus {
                 .setStyle(fastBar(context, settings, span, minutes(now - start), minutes(goalAt - start)));
             next = earliest(earliest(ahead ? goalAt : 0, stageEnd), ahead ? 0 : barEnd);
         } else {
-            JSONObject last = lastFast(prefs.getString("fasts", null));
+            String fasts = prefs.getString("fasts", null);
+            JSONObject last = lastFast(fasts, now);
+            // A planned fast's end starts a new eating window: the notification changes then.
+            long planned = nextEnd(fasts, now);
             if (last == null) {
-                manager.cancel(ID); // nothing to say before the first fast
+                manager.cancel(ID); // nothing to say before the first fast ends
+                if (planned > 0) FastStatusReceiver.setAlarm(context, planned + 1000, alarmIntent(context, CHANGE));
                 return;
             }
             long end = last.optLong("end");
@@ -133,14 +137,14 @@ final class FastStatus {
                     .setUsesChronometer(true)
                     .setChronometerCountDown(true)
                     .setStyle(windowBar(context, settings, span, minutes(windowEnd - now)));
-                next = windowEnd;
+                next = earliest(windowEnd, planned);
             } else {
                 builder
                     .setContentTitle("Not fasting")
                     .setContentText("Eating window closed " + time(context, windowEnd))
                     .setWhen(windowEnd)
                     .setUsesChronometer(true);
-                next = 0;
+                next = planned;
             }
         }
 
@@ -293,18 +297,35 @@ final class FastStatus {
         return Math.min(a, b);
     }
 
-    private static JSONObject lastFast(String json) {
+    /** The latest fast that has ended by `now`, or null; a planned one, ending later, is not yet. */
+    private static JSONObject lastFast(String json, long now) {
         try {
             JSONArray fasts = new JSONArray(json);
             JSONObject last = null;
             for (int i = 0; i < fasts.length(); i++) {
                 JSONObject fast = fasts.getJSONObject(i);
-                if (last == null || fast.optLong("end") > last.optLong("end")) last = fast;
+                long end = fast.optLong("end");
+                if (end <= now && (last == null || end > last.optLong("end"))) last = fast;
             }
             return last;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** When the next planned fast ends after `now`, its eating window then beginning, or 0 for none. */
+    private static long nextEnd(String json, long now) {
+        long next = 0;
+        try {
+            JSONArray fasts = new JSONArray(json);
+            for (int i = 0; i < fasts.length(); i++) {
+                long end = fasts.getJSONObject(i).optLong("end");
+                if (end > now) next = earliest(next, end);
+            }
+        } catch (Exception e) {
+            return 0;
+        }
+        return next;
     }
 
     private static JSONObject parseObject(String json) {

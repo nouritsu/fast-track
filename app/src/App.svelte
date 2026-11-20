@@ -7,6 +7,7 @@
   import {
     deepestStage,
     earliestStart,
+    endedBy,
     fastLength,
     eatingLeft,
     milestones,
@@ -17,7 +18,7 @@
   import { NAME_WIDTH, STAGES, stageIndex } from './lib/fasting/stages'
   import { Tracker } from './lib/fasting/tracker.svelte'
   import { PAGE_NAMES, shownPages, startPageOf, type PageId } from './lib/layout'
-  import { dayClock, floorMinute, HOUR, nearClock, noonOf } from './lib/fasting/time'
+  import { dayClock, dayKey, floorMinute, HOUR, nearClock, noonOf } from './lib/fasting/time'
   import { reducedMotion } from './lib/motion/shuffle'
   import CalendarPage from './lib/pages/CalendarPage.svelte'
   import InfoPage from './lib/pages/InfoPage.svelte'
@@ -96,6 +97,9 @@
 
   const active = $derived(tracker.active)
   const settings = $derived(tracker.settings)
+  // The fasts that have ended, to the minute; planned ones wait in the Fasts list.
+  const minuteNow = $derived(floorMinute(now))
+  const history = $derived(endedBy(tracker.fasts, minuteNow))
   // The pages along the tabs, in the user's order (Options' Pages); `page` is where the
   // current one sits among them.
   const order = $derived(shownPages(settings.pages, settings.hiddenPages))
@@ -114,7 +118,7 @@
   const tone = $derived<Tone>(phase === 'running' || phase === 'done' ? (progress >= 1 ? 'ok' : progress >= 0.5 ? 'warn' : '') : '')
   const stage = $derived(stageIndex(elapsed / HOUR))
   const left = $derived(goal * HOUR - elapsed)
-  const eating = $derived(phase === 'ready' ? eatingLeft(tracker.fasts, now) : 0)
+  const eating = $derived(phase === 'ready' ? eatingLeft(history, now) : 0)
 
   // Counting down to a start, the second it shows is the one still to come.
   const heroText = $derived(
@@ -434,9 +438,11 @@
     openPane('edit')
   }
 
-  /** A blank fast to log afterwards: ending at noon on `day` (or now), as long as the goal. */
+  /** A blank fast to log, as long as the goal: ending now, or at noon on `day` (by now, on
+   *  today), or to plan, on a day still to come. */
   function newFast(day: string | null): Fast {
-    const end = Math.min(floorMinute(now), day ? noonOf(day) : Infinity)
+    const noon = day ? noonOf(day) : Infinity
+    const end = day && day > dayKey(now) ? noon : Math.min(floorMinute(now), noon)
     const goalHours = settings.goal
     return { id: crypto.randomUUID(), start: end - goalHours * HOUR, end, goal: goalHours, note: '', weight: null }
   }
@@ -505,7 +511,7 @@
     {#if shownPane === 'start'}
       <StartPane
         initial={active?.start ?? now}
-        earliest={earliestStart(tracker.fasts)}
+        earliest={earliestStart(history)}
         goal={active?.goal ?? settings.goal}
         {now}
         moving={active !== null}
@@ -527,6 +533,7 @@
       <EditPane
         fast={editing.fast}
         others={tracker.fasts}
+        {active}
         scale={tracker.scale}
         isNew={editing.isNew}
         unit={settings.unit}
@@ -698,7 +705,7 @@
         inert={current !== 'stats'}
       >
         <StatsPage
-          fasts={tracker.fasts}
+          fasts={history}
           active={tracker.active}
           scale={tracker.scale}
           unit={settings.unit}

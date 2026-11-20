@@ -3,6 +3,7 @@
   import {
     bmi,
     deepestStage,
+    endedBy,
     fastLength,
     goalTone,
     pastGoal,
@@ -10,13 +11,14 @@
     progressOf,
     showBmi,
     showWeight,
+    soFar,
     timeInDeepest,
     type Fast,
   } from '../fasting/fasts'
   import { weightOf, type ScaleWeight } from '../fasting/openscale'
   import { STAGES } from '../fasting/stages'
   import type { Settings } from '../fasting/store'
-  import { dayKey, longDate, MONTHS, nearClock, noonOf } from '../fasting/time'
+  import { dayKey, floorMinute, longDate, MONTHS, nearClock, noonOf } from '../fasting/time'
   import { reducedMotion } from '../motion/shuffle'
   import { carries, drag, type DragOptions } from '../ui/drag'
   import { tick } from '../ui/haptics'
@@ -31,8 +33,9 @@
   // colour of the deepest stage it reached, and week numbers
   // and weekly totals as the settings say; tapping the month or the year opens a pane
   // to pick another (App), and the stage legend sits in its bottom edge. The Fasts:
-  // the month's summary and its fasts (or a tapped day's), newest first. Delete takes
-  // effect at once; the entry turns into an Undo line until the page is left.
+  // the month's summary and its fasts (or a tapped day's), newest first, planned ones
+  // tracked as they go. Delete takes effect at once; the entry turns into an Undo line
+  // until the page is left.
   let {
     fasts,
     scale,
@@ -72,12 +75,16 @@
     if (!visible) removed = []
   })
 
-  const days = $derived(dayTotals(fasts))
+  // The grid and the month's numbers count the fasts that have ended; the list also
+  // tracks the planned ones, ending later.
+  const minute = $derived(floorMinute(now))
+  const history = $derived(endedBy(fasts, minute))
+  const days = $derived(dayTotals(history))
   const heads = $derived(weekdayHeads(settings.weekStart))
   const key = (y: number, m: number, day: number) => dayKey(new Date(y, m, day))
   const todayKey = $derived(dayKey(now))
   const monthKey = $derived(key(year, month, 1).slice(0, 7))
-  const summary = $derived(monthSummary(fasts, year, month))
+  const summary = $derived(monthSummary(history, year, month))
 
   // The month or the year changed elsewhere (its pane): no day stays picked.
   $effect(() => {
@@ -100,11 +107,11 @@
   const SUFFIX = 15 // " 103% of 16h", the entry's left bar and its room, and a spare cell
   const lineCells = $derived(Math.max(8, Math.floor(listWidth / (measured || 8)) - SUFFIX))
   const STAGE_IDS = STAGES.map((s) => s.id)
-  const lineOf = (fast: Fast) =>
+  const lineOf = (fast: Fast, length: number) =>
     stageCells(
       STAGES.map((s) => s.from / fast.goal),
       STAGE_IDS,
-      progressOf(fastLength(fast), fast.goal),
+      progressOf(length, fast.goal),
       lineCells,
     )
   const height = $derived(settings.bmi ? settings.height : null)
@@ -250,7 +257,7 @@
     <tbody>
       {#each rows as row, w (w)}
         {@const inMonth = row.days.some((d) => d !== null)}
-        {@const ms = settings.weekTotals && inMonth ? weekTotal(fasts, row) : 0}
+        {@const ms = settings.weekTotals && inMonth ? weekTotal(history, row) : 0}
         <tr>
           <th scope="row" class="side muted" aria-hidden={!settings.weekNumbers}>{settings.weekNumbers && inMonth ? rowWeek(row) : ''}</th>
           {#each row.days as day, d (d)}
@@ -352,9 +359,12 @@
         <button type="button" class="word" onclick={() => restore(fast)}><span class="icon" aria-hidden="true"><Icon name="undo" /></span>undo</button>
       </div>
     {:else}
-      {@const stage = STAGES[deepestStage(fast)]}
-      {@const weight = weightOf(fast, scale)}
-      {@const percent = percentOf(fastLength(fast), fast.goal)}
+      <!-- A planned fast, ending later, is tracked as far as it has got. -->
+      {@const planned = fast.end > now}
+      {@const reached = soFar(fast, now)}
+      {@const stage = STAGES[deepestStage(reached)]}
+      {@const weight = planned && fast.weight === null ? null : weightOf(fast, scale)}
+      {@const percent = percentOf(fastLength(reached), fast.goal)}
       {@const dx = offset(fast.id)}
       <div class="swipe row" use:drag={entryDrag(fast)}>
       <!-- Behind the fast: Delete uncovered at the left by a swipe right, Edit at the right by a swipe left. -->
@@ -379,15 +389,21 @@
         </p>
         <p class="fields" aria-label="{percent}% of {fast.goal}h">
           <span aria-hidden="true"
-            >{#each lineOf(fast) as run, i (i)}<span style:color={run.color ? `var(--${run.color})` : undefined} class:shade={!run.color}
-                >{run.text}</span
+            >{#each lineOf(fast, fastLength(reached)) as run, i (i)}<span
+                style:color={run.color ? `var(--${run.color})` : undefined}
+                class:shade={!run.color}>{run.text}</span
               >{/each}</span
           >
-          <span style:color="var(--{goalTone(percent / 100)})">{pad(percent, 3)}%</span> of {fast.goal}h
+          <!-- Under way, the share takes a colour only once the goal is met. -->
+          <span style:color={planned && percent < 100 ? undefined : `var(--${goalTone(percent / 100)})`}>{pad(percent, 3)}%</span> of {fast.goal}h
         </p>
         <p class="fields detail">
-          <span style:color="var(--{stage.id})">{stage.name}</span>
-          {hm(timeInDeepest(fast))} · {signedHm(pastGoal(fast))}{#if weight}{' · '}{showWeight(weight.kg, unit)}{#if height !== null}{' '}◆ {showBmi(bmi(weight.kg, height))}{/if}{#if weight.scale}{' '}<span
+          {#if planned && now < fast.start}<span class="muted">planned</span> · starts in <span class="value">{hm(fast.start - now)}</span
+            >{:else if planned}<span style:color="var(--{stage.id})">{stage.name}</span>
+            {hm(timeInDeepest(reached))} · <span class="muted">under way</span> · <span class="value">{hm(fast.end - now)}</span> left{:else}<span
+              style:color="var(--{stage.id})">{stage.name}</span
+            >
+            {hm(timeInDeepest(fast))} · {signedHm(pastGoal(fast))}{/if}{#if weight}{' · '}{showWeight(weight.kg, unit)}{#if height !== null}{' '}◆ {showBmi(bmi(weight.kg, height))}{/if}{#if weight.scale}{' '}<span
                 class="muted">(scale)</span
               >{/if}{/if}
         </p>
