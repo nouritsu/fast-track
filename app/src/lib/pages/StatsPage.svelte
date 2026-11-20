@@ -173,7 +173,7 @@
   const ROW = 10
   const stripDays = $derived(Math.min(14, daysIn(range)))
   const strip = $derived.by(() => {
-    const periods = active ? [...fasts, { start: active.start, end: minute }] : fasts
+    const periods = active && active.start < minute ? [...fasts, { start: active.start, end: minute }] : fasts
     return Array.from({ length: stripDays }, (_, i) => {
       const day = startOfDay(stepDay(minute, i - stripDays + 1))
       // Runs of one stage, so each is one rect.

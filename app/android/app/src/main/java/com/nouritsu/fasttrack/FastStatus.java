@@ -27,8 +27,9 @@ import org.json.JSONObject;
 
 /**
  * The status notification: an ongoing, silent notification that says whether a fast or an
- * eating window is running, and the fast's stage, with a live timer and a progress bar. Android
- * draws it in the system's own (Material You) colours, except the bar's stage segments.
+ * eating window is running (also before a fast set to start later), and the fast's stage, with
+ * a live timer and a progress bar. Android draws it in the system's own (Material You) colours,
+ * except the bar's stage segments.
  *
  * <p>It reads what the web app saves through Capacitor Preferences (the SharedPreferences file
  * "CapacitorStorage", keys "active", "fasts" and "settings"), so the app only has to say that
@@ -78,7 +79,22 @@ final class FastStatus {
         long next; // when the notification next changes, or 0 for never
         int span = 0; // the bar's length in minutes, or 0 for no bar
         JSONObject active = parseObject(prefs.getString("active", null));
-        if (active != null) {
+        if (active != null && now < active.optLong("start")) {
+            // A fast set to start later: the eating window until then, its bar from the last
+            // fast's end, or none before the first fast.
+            long start = active.optLong("start");
+            JSONObject last = lastFast(prefs.getString("fasts", null));
+            long from = last != null ? Math.min(last.optLong("end"), now) : start;
+            span = minutes(start - from);
+            builder
+                .setContentTitle("Eating window")
+                .setContentText("Fast starts " + time(context, start))
+                .setWhen(start)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true);
+            if (span > 0) builder.setStyle(windowBar(context, settings, span, minutes(start - now)));
+            next = start;
+        } else if (active != null) {
             long start = active.optLong("start");
             double goal = active.optDouble("goal", 16);
             long goalAt = start + Math.round(goal * HOUR);

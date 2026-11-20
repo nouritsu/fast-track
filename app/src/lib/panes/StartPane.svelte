@@ -6,8 +6,8 @@
   import Pane from '../ui/Pane.svelte'
   import TimeSteppers from '../ui/TimeSteppers.svelte'
 
-  // When the fast began: to start one that began earlier, or to move the start of the
-  // one in progress. Never later than now, nor before the last fast ended.
+  // When the fast begins: to start one that began earlier or begins later, or to move
+  // the start of the one in progress. Never before the last fast ended.
   let {
     initial,
     earliest,
@@ -27,14 +27,14 @@
   } = $props()
 
   let at = $state(untrack(() => floorMinute(initial)))
-  const latest = $derived(floorMinute(now))
-  const first = $derived(Math.min(latest, Math.ceil(earliest / MINUTE) * MINUTE)) // the next whole minute
-  const shown = $derived(Math.max(first, Math.min(at, latest)))
+  const first = $derived(Math.ceil(earliest / MINUTE) * MINUTE) // the next whole minute
+  const shown = $derived(Math.max(first, at))
+  const when = $derived(shown > now ? `in ${duration(shown - now)}` : `${duration(now - shown)} ago`)
 </script>
 
 <Pane title="Start time" icon="schedule" {onClose}>
-  <TimeSteppers at={shown} earliest={first} {latest} onChange={(t) => (at = t)} />
-  <p class="fields">{duration(now - shown)} ago · ends {dayClock(shown + goal * HOUR)}</p>
+  <TimeSteppers at={shown} earliest={first} latest={Infinity} onChange={(t) => (at = t)} />
+  <p class="fields">{when} · ends {dayClock(shown + goal * HOUR)}</p>
   {#snippet action()}
     <button type="button" class="edge primary" onclick={() => onConfirm(shown)}
       ><span class="icon" aria-hidden="true"><Icon name={moving ? 'check' : 'play_arrow'} /></span>{moving ? 'Save' : 'Start'}</button

@@ -44,8 +44,8 @@
   // Fast Track: five pages side by side, switched by the tabs along the bottom or a
   // swipe. The Fast page is one panel: the fast's status at its top, the goal's share
   // in its top edge, a coloured progress line under the timer, and its buttons in its
-  // bottom edge. A fast starts at the gate (now) or from Start at (earlier), runs until
-  // End fast, and ends on "Done!". Start time, Goal, Edit fast and Info's licences open
+  // bottom edge. A fast starts at the gate (now) or from Start at (earlier or later),
+  // runs until End fast, and ends on "Done!". Start time, Goal, Edit fast and Info's licences open
   // as panes hung below the page, which slides up and off the top, pushed by the pane;
   // the calendar's month and year panes hang above it and push it down.
   type Phase = 'loading' | 'ready' | 'running' | 'done'
@@ -106,6 +106,9 @@
   const elapsed = $derived(
     phase === 'running' ? (active ? Math.max(0, now - active.start) : 0) : phase === 'done' && ended ? fastLength(ended) : 0,
   )
+  // A fast set to start later: until then the timer counts down to its start, in the
+  // text's colour, and the stage and goal wait as dashes.
+  const pending = $derived(phase === 'running' && active !== null && active.start > now)
   const progress = $derived(progressOf(elapsed, goal))
   const percent = $derived(percentOf(elapsed, goal))
   const tone = $derived<Tone>(phase === 'running' || phase === 'done' ? (progress >= 1 ? 'ok' : progress >= 0.5 ? 'warn' : '') : '')
@@ -113,7 +116,16 @@
   const left = $derived(goal * HOUR - elapsed)
   const eating = $derived(phase === 'ready' ? eatingLeft(tracker.fasts, now) : 0)
 
-  const heroText = $derived(heroMode === 'elapsed' ? duration(elapsed) : left > 0 ? duration(left) : `+${duration(-left)}`)
+  // Counting down to a start, the second it shows is the one still to come.
+  const heroText = $derived(
+    pending && active
+      ? `-${duration(active.start - now + 999)}`
+      : heroMode === 'elapsed'
+        ? duration(elapsed)
+        : left > 0
+          ? duration(left)
+          : `+${duration(-left)}`,
+  )
   // The goal's progress as coloured text under the timer, each cell in its stage's colour.
   const cellsFor = (goalHours: number, reached: number) =>
     stageCells(
@@ -123,11 +135,14 @@
     )
   const toneColor = (t: Tone) => (t ? `var(--${t})` : undefined)
 
-  const heroDetail = $derived(heroMode === 'elapsed' ? `of ${goal}h` : left > 0 ? `left of ${goal}h` : `past ${goal}h`)
+  const heroDetail = $derived(
+    pending ? 'eating window' : heroMode === 'elapsed' ? `of ${goal}h` : left > 0 ? `left of ${goal}h` : `past ${goal}h`,
+  )
 
-  // What comes next: the next stage or the goal, else the stage the fast is in.
+  // What comes next: the start, the next stage or the goal, else the stage the fast is in.
   const nextLine = $derived.by(() => {
     if (!active) return ''
+    if (pending) return `Starts at ${nearClock(active.start, now)}.`
     const next = milestones(active).find((m) => m.at > now)
     if (!next) return `${STAGES[stage].name} since ${nearClock(active.start + STAGES[stage].from * HOUR, now)}.`
     return `${next.stage === null ? 'Goal' : STAGES[next.stage].name} at ${nearClock(next.at, now)}.`
@@ -137,6 +152,9 @@
   // Waiting at the gate, every status field shows dashes at its normal width.
   const dashed = $derived(phase === 'ready' || phase === 'loading')
   const show = (text: string, keep?: string) => (dashed ? dashes(text, keep) : text)
+  // Before a later start, the times are known but the stage and the goal's share are not.
+  const unstaged = $derived(dashed || pending)
+  const showStage = (text: string, keep?: string) => (unstaged ? dashes(text, keep) : text)
   const shownStart = $derived(phase === 'done' && ended ? ended.start : (active?.start ?? now))
   const shownEnd = $derived(phase === 'done' && ended ? ended.end : shownStart + goal * HOUR)
 
@@ -544,13 +562,13 @@
         <div class="page-main" inert={pane !== null && paneHost === 'fast'}>
         <Block title="Fast" icon="timer" class="page-block">
           {#snippet headingRight()}Goal <span class="value" style:--block-border={tone ? `var(--${tone})` : undefined}
-              ><ShuffleText text={dashed ? '--' : `${percent}%`} staggerMs={120} /></span
+              ><ShuffleText text={unstaged ? '--' : `${percent}%`} staggerMs={120} /></span
             >{/snippet}
 
           <div class="summary">
-            <p class="fields">Stage <ShuffleText text={show(`${stage + 1}/${STAGES.length}`, '/')} /> <span
-                style:color={dashed ? undefined : `var(--${STAGES[stage].id})`}
-                ><ShuffleText text={show(STAGES[stage].name.padEnd(NAME_WIDTH))} /></span
+            <p class="fields">Stage <ShuffleText text={showStage(`${stage + 1}/${STAGES.length}`, '/')} /> <span
+                style:color={unstaged ? undefined : `var(--${STAGES[stage].id})`}
+                ><ShuffleText text={showStage(STAGES[stage].name.padEnd(NAME_WIDTH))} /></span
               ></p>
             <p class="fields">Start <ShuffleText text={show(dayClock(shownStart), DATE_FRAME)} /> · {phase === 'done' ? 'Ended' : 'Ends'} <ShuffleText
                 text={show(dayClock(shownEnd), DATE_FRAME)}
@@ -574,7 +592,7 @@
                   class="bare"
                   aria-label={heroMode === 'left' ? 'Show time elapsed' : 'Show time left'}
                   onclick={toggleHero}
-                  style:color="var(--{STAGES[stage].id})"
+                  style:color={pending ? 'var(--fg)' : `var(--${STAGES[stage].id})`}
                 >
                   <!-- The timer in the colour of the stage the fast is in; its detail stays muted. -->
                   <Hero text={heroText} animate onDone={onRevealed} />
@@ -619,7 +637,7 @@
               <button type="button" class="edge" data-pane="goal" aria-label="Goal: {goal} hours" onclick={() => openPane('goal')}>
                 <span class="icon" aria-hidden="true"><Icon name="hourglass_bottom" /></span>{goal}h
               </button>
-              <button type="button" class="edge primary" disabled={!active} onclick={end}>
+              <button type="button" class="edge primary" disabled={!active || pending} onclick={end}>
                 <span class="icon" aria-hidden="true"><Icon name="stop" /></span>End fast
               </button>
             {:else if phase === 'ready'}
@@ -729,7 +747,7 @@
         inert={current !== 'info'}
       >
         <div class="page-main" inert={pane !== null && paneHost === 'info'}>
-        <InfoPage current={phase === 'running' && active ? stage : null} onLicences={() => openPane('licences')} />
+        <InfoPage current={phase === 'running' && active && !pending ? stage : null} onLicences={() => openPane('licences')} />
         </div>
         {@render hangingPane('info')}
       </div>
