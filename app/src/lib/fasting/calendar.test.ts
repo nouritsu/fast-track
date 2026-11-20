@@ -50,10 +50,15 @@ describe('calendar totals', () => {
     fast('2026-11-18T20:00', '2026-11-19T15:00'), // 19h, met
   ]
 
-  it('adds up each day and its deepest stage', () => {
+  it('adds up each day and its deepest stage, and marks a near miss', () => {
     const days = dayTotals(fasts)
-    expect(days.get('2026-11-17')).toEqual({ ms: 23 * 3_600_000, stage: 2 })
-    expect(days.get('2026-11-19')).toEqual({ ms: 19 * 3_600_000, stage: 2 })
+    expect(days.get('2026-11-17')).toEqual({ ms: 23 * 3_600_000, stage: 2, near: false })
+    expect(days.get('2026-11-19')).toEqual({ ms: 19 * 3_600_000, stage: 2, near: false })
+    const short = [fast('2026-11-20T20:00', '2026-11-21T11:00')] // 15h of 16h: 94%
+    expect(dayTotals(short).get('2026-11-21')?.near).toBe(true)
+    expect(dayTotals(short, 0.95).get('2026-11-21')?.near).toBe(false)
+    // A day with a met goal is no near miss, whatever else ended on it.
+    expect(dayTotals([...short, fast('2026-11-21T00:00', '2026-11-21T18:00')]).get('2026-11-21')?.near).toBe(false)
   })
 
   it('adds up a week row and sums up a month', () => {

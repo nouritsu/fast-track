@@ -4,12 +4,14 @@
 export interface Run {
   text: string
   color: string | null // a stage's colour token, or null for the part still to come
+  hatched?: boolean // a near miss's shortfall: diagonals in the stage's colour
 }
 
 /** The goal's progress in `cells` blocks under the timer: each filled one in the colour
  *  of the stage it falls in, the rest light shade, grouped into runs of one colour so
- *  each run is one span. */
-export function stageCells(starts: number[], colors: string[], progress: number, cells = 24): Run[] {
+ *  each run is one span. With `hatchRest` (a near miss), the rest is diagonals in the
+ *  colours of the stages it would have reached instead. */
+export function stageCells(starts: number[], colors: string[], progress: number, cells = 24, hatchRest = false): Run[] {
   const filled = Math.round(Math.min(1, Math.max(0, progress)) * cells)
   const runs: Run[] = []
   for (let i = 0; i < cells; i++) {
@@ -18,11 +20,12 @@ export function stageCells(starts: number[], colors: string[], progress: number,
     starts.forEach((from, s) => {
       if (at >= from) stage = s
     })
-    const color = i < filled ? colors[stage] : null
-    const text = i < filled ? '█' : '░'
+    const hatched = i >= filled && hatchRest
+    const color = i < filled || hatched ? colors[stage] : null
+    const text = i < filled ? '█' : hatched ? '╱' : '░'
     const last = runs.at(-1)
-    if (last && last.color === color) last.text += text
-    else runs.push({ text, color })
+    if (last && last.color === color && (last.hatched ?? false) === hatched) last.text += text
+    else runs.push(hatched ? { text, color, hatched } : { text, color })
   }
   return runs
 }

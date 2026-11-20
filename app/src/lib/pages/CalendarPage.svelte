@@ -6,6 +6,7 @@
     endedBy,
     fastLength,
     goalTone,
+    nearMiss,
     pastGoal,
     percentOf,
     progressOf,
@@ -79,7 +80,7 @@
   // tracks the planned ones, ending later.
   const minute = $derived(floorMinute(now))
   const history = $derived(endedBy(fasts, minute))
-  const days = $derived(dayTotals(history))
+  const days = $derived(dayTotals(history, settings.nearMiss))
   const heads = $derived(weekdayHeads(settings.weekStart))
   const key = (y: number, m: number, day: number) => dayKey(new Date(y, m, day))
   const todayKey = $derived(dayKey(now))
@@ -107,12 +108,14 @@
   const SUFFIX = 15 // " 103% of 16h", the entry's inset each side, and a spare cell
   const lineCells = $derived(Math.max(8, Math.floor(listWidth / (measured || 8)) - SUFFIX))
   const STAGE_IDS = STAGES.map((s) => s.id)
-  const lineOf = (fast: Fast, length: number) =>
+  // A near miss's line shows what it fell short by, hatched.
+  const lineOf = (fast: Fast, length: number, near: boolean) =>
     stageCells(
       STAGES.map((s) => s.from / fast.goal),
       STAGE_IDS,
       progressOf(length, fast.goal),
       lineCells,
+      near,
     )
   const height = $derived(settings.bmi ? settings.height : null)
 
@@ -233,10 +236,11 @@
 </script>
 
 {#snippet legend()}
-  <!-- The stage colours, set into the edge between the calendar and the fasts. -->
-  <span class="legend" aria-label="Stage colours"
+  <!-- The stage colours, set into the edge between the calendar and the fasts, and the
+       hatching of a near miss. -->
+  <span class="legend" aria-label="Stage colours and near misses"
     >{#each STAGES as stage (stage.id)}<span><span style:color="var(--{stage.id})">■</span> {stage.name.slice(0, 3).toLowerCase()}</span
-      >{/each}</span
+      >{/each}<span><span class="near-key" aria-hidden="true"></span> near</span></span
   >
 {/snippet}
 
@@ -271,8 +275,10 @@
                     class="day"
                     class:selected={selected === k}
                     class:today={todayKey === k}
+                    class:near={total.near}
                     style:--stage="var(--{STAGES[total.stage].id})"
-                    aria-label="{longDate(new Date(y, m, day).getTime())}: {hoursOf(total.ms)} hours, {STAGES[total.stage].name}"
+                    aria-label="{longDate(new Date(y, m, day).getTime())}: {hoursOf(total.ms)} hours, {STAGES[total.stage]
+                      .name}{total.near ? ', a near miss' : ''}"
                     aria-pressed={selected === k}
                     onclick={() => (selected = selected === k ? null : k)}
                   >
@@ -387,11 +393,12 @@
           {nearClock(fast.start, fast.end)} <span class="muted">to</span>
           {clock(new Date(fast.end))} · {duration(fastLength(fast))}
         </p>
-        <p class="fields" aria-label="{percent}% of {fast.goal}h">
+        <p class="fields" aria-label="{percent}% of {fast.goal}h{!planned && nearMiss(fast, settings.nearMiss) ? ', a near miss' : ''}">
           <span aria-hidden="true"
-            >{#each lineOf(fast, fastLength(reached)) as run, i (i)}<span
+            >{#each lineOf(fast, fastLength(reached), !planned && nearMiss(fast, settings.nearMiss)) as run, i (i)}<span
                 style:color={run.color ? `var(--${run.color})` : undefined}
-                class:shade={!run.color}>{run.text}</span
+                class:shade={!run.color}
+                class:shortfall={run.hatched}>{run.text}</span
               >{/each}</span
           >
           <!-- Under way, the share takes a colour only once the goal is met. -->
@@ -529,6 +536,11 @@
     color: var(--button-border);
   }
 
+  /* A near miss's shortfall: diagonals in the colours it fell short of, a little faint. */
+  .shortfall {
+    opacity: 0.75;
+  }
+
   .month {
     display: flex;
     align-items: center;
@@ -613,6 +625,23 @@
 
   button.day.selected {
     border-color: var(--accent);
+  }
+
+  /* A near miss: faint diagonal lines behind the date in its stage's colour, as the
+     hatched cells in Stats' goal grid; the legend's key in the muted colour. */
+  button.day.near {
+    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--stage) 45%, transparent) 0 1.5px, transparent 1.5px 4.5px);
+  }
+
+  .near-key {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 0.75em;
+    height: 0.75em;
+    vertical-align: -0.05em;
+    border: 1px solid var(--muted);
+    border-radius: 2px;
+    background: repeating-linear-gradient(-45deg, var(--muted) 0 1px, transparent 1px 3px);
   }
 
   /* Today is underlined in the accent; without a fast it is in the accent too, and a day

@@ -3,7 +3,7 @@
 // the fasts as an iCalendar (.ics) file for other calendar apps. A fast belongs to the
 // day it ended on, as everywhere in the app.
 
-import { deepestStage, fastLength, percentOf, showWeight, summarize, type Fast, type Summary } from './fasts'
+import { deepestStage, fastLength, metGoal, NEAR_MISS, nearMiss, percentOf, showWeight, summarize, type Fast, type Summary } from './fasts'
 import { STAGES } from './stages'
 import { DAY, dayKey, HOUR } from './time'
 import { hm } from '../ui/fields'
@@ -57,16 +57,23 @@ export function rowWeek(row: WeekRow): number {
 export interface DayTotal {
   ms: number // fasting time of the fasts ending that day
   stage: number // the deepest stage they reached
+  near: boolean // none met its goal, but one was a near miss at `nearShare` (fasts.ts)
 }
 
-export function dayTotals(fasts: Fast[]): Map<string, DayTotal> {
-  const days = new Map<string, DayTotal>()
+export function dayTotals(fasts: Fast[], nearShare = NEAR_MISS): Map<string, DayTotal> {
+  const days = new Map<string, DayTotal & { met: boolean }>()
   for (const fast of fasts) {
     const key = dayKey(fast.end)
-    const day = days.get(key) ?? { ms: 0, stage: 0 }
-    days.set(key, { ms: day.ms + fastLength(fast), stage: Math.max(day.stage, deepestStage(fast)) })
+    const day = days.get(key) ?? { ms: 0, stage: 0, near: false, met: false }
+    const met = day.met || metGoal(fast)
+    days.set(key, {
+      ms: day.ms + fastLength(fast),
+      stage: Math.max(day.stage, deepestStage(fast)),
+      met,
+      near: !met && (day.near || nearMiss(fast, nearShare)),
+    })
   }
-  return days
+  return new Map([...days].map(([key, { met: _, ...day }]) => [key, day]))
 }
 
 /** Whole hours, as a day's cell or a week's total shows them. */

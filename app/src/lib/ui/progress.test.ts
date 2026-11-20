@@ -17,6 +17,15 @@ describe('progress line', () => {
     expect(stageCells(STARTS, COLORS, 0, 12)).toEqual([{ text: '░'.repeat(12), color: null }])
   })
 
+  it('hatches the shortfall of a near miss in the colours of the stages it would have reached', () => {
+    // 16h goal at 75%: 9 of 12 cells filled, the last 3 (12–16h, ketosis) hatched.
+    expect(stageCells(STARTS, COLORS, 0.75, 12, true)).toEqual([
+      { text: '███', color: 'glucose' },
+      { text: '██████', color: 'fat' },
+      { text: '╱╱╱', color: 'ketosis', hatched: true },
+    ])
+  })
+
   it('spreads cells over runs by their spans, exactly and at least one each', () => {
     expect(spread([4, 8, 12, 12], 36)).toEqual([4, 8, 12, 12])
     const wide = spread([4, 8, 12, 12], 42)
