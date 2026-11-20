@@ -39,7 +39,7 @@ const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'satur
 export class ScheduleError extends Error {}
 
 /** Schedules Options offers to tap, simplest first. */
-export const SCHEDULE_EXAMPLES = ['daily', 'weekly', 'Sun 21:00', 'Mon..Fri 08:00', '*:0/30']
+export const SCHEDULE_EXAMPLES = ['daily', 'weekly', 'Sun 21:00']
 
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i)
 

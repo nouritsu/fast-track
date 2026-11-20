@@ -5,13 +5,8 @@ const say = (expression: string) => describeSchedule(parseSchedule(expression))
 
 describe('schedule', () => {
   it('reads every example Options offers', () => {
-    expect(SCHEDULE_EXAMPLES.map(say)).toEqual([
-      'Every day at 00:00',
-      'On Mondays at 00:00',
-      'On Sundays at 21:00',
-      'On weekdays at 08:00',
-      'Every 30 minutes',
-    ])
+    expect(SCHEDULE_EXAMPLES.map(say)).toEqual(['Every day at 00:00', 'On Mondays at 00:00', 'On Sundays at 21:00'])
+    expect(['Mon..Fri 08:00', '*:0/30'].map(say)).toEqual(['On weekdays at 08:00', 'Every 30 minutes'])
   })
 
   it('describes the shorthands', () => {
