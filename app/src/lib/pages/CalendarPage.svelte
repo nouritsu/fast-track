@@ -104,7 +104,7 @@
   // the colour of the stage it falls in, as under the Fast page's timer.
   let listWidth = $state(0)
   let measured = $state(0)
-  const SUFFIX = 15 // " 103% of 16h", the entry's left bar and its room, and a spare cell
+  const SUFFIX = 15 // " 103% of 16h", the entry's inset each side, and a spare cell
   const lineCells = $derived(Math.max(8, Math.floor(listWidth / (measured || 8)) - SUFFIX))
   const STAGE_IDS = STAGES.map((s) => s.id)
   const lineOf = (fast: Fast, length: number) =>
@@ -372,7 +372,6 @@
       <span class="reveal edit" class:armed={dx < 0 && armed(dx)} aria-hidden="true">Edit <Icon name="edit" /></span>
       <div
         class="entry"
-        style:--stage="var(--{stage.id})"
         style:transform="translateX({dx}px)"
         class:moving={swiping?.id === fast.id}
         class:leaving={leaving === fast.id}
@@ -479,12 +478,10 @@
     color: var(--accent);
   }
 
-  /* A thin bar down a fast's left edge in its deepest stage's colour; the Undo line keeps
-     the same room, uncoloured. */
+  /* A fast, inset a character each side; the Undo line keeps the same room. */
   .entry {
     position: relative;
-    padding: 0.5em 0 0.2em 1ch;
-    border-left: 2px solid var(--stage, transparent);
+    padding: 0.5em 1ch 0.2em;
     background: var(--bg);
     /* Let go short of acting, it springs back, a little past its place. */
     transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.6, 1);
