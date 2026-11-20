@@ -19,6 +19,7 @@
   import { dayKey, longDate, MONTHS, nearClock, noonOf } from '../fasting/time'
   import { reducedMotion } from '../motion/shuffle'
   import { carries, drag, type DragOptions } from '../ui/drag'
+  import { tick } from '../ui/haptics'
   import { clock, duration, hm, pad, signedHm } from '../ui/fields'
   import { stageCells } from '../ui/progress'
   import Icon from '../ui/Icon.svelte'
@@ -175,8 +176,8 @@
     if (!sliding && !shift) glide(by)
   }
 
-  // Swipes: sideways on the month slides it; left on a fast deletes it (with Undo).
-  // Both keep the press from the page swipe.
+  // Swipes: sideways on the month slides it; on a fast, left edits it and right deletes
+  // it (with Undo). Both keep the press from the page swipe.
   let width = $state(1)
   const monthDrag: DragOptions = {
     axis: 'x',
@@ -186,16 +187,42 @@
     onEnd: (dx, velocity) => glide(carries(dx, width, velocity, 0.2) ? (dx < 0 ? 1 : -1) : 0),
   }
 
+  // A fast follows the finger at RESIST of its pace. Pulled past ARM of the width, or
+  // flung once past half of that, it acts: the word behind it lights up and the phone
+  // ticks as it crosses. Short of that, it springs back.
+  const RESIST = 0.75
+  const ARM = 0.3
+  const FLING = 0.8 // px per ms
+  const LEAVE_MS = 200 // a deleted fast sliding out (.entry.leaving)
   let swiping = $state<{ id: string; dx: number } | null>(null)
+  let leaving = $state<string | null>(null)
+  const armed = (dx: number) => Math.abs(dx) >= width * ARM
+  const acts = (dx: number, velocity: number) =>
+    armed(dx) || (Math.abs(dx) >= (width * ARM) / 2 && Math.abs(velocity) > FLING && Math.sign(velocity) === Math.sign(dx))
+
   const entryDrag = (fast: Fast): DragOptions => ({
     axis: 'x',
     claim: true,
-    onMove: (dx) => (swiping = { id: fast.id, dx: Math.min(0, dx) }),
+    enabled: () => leaving === null,
+    onMove: (dx) => {
+      const shown = dx * RESIST
+      if (armed(shown) !== armed(swiping?.dx ?? 0)) tick()
+      swiping = { id: fast.id, dx: shown }
+    },
     onEnd: (dx, velocity) => {
       swiping = null
-      if (dx < 0 && carries(dx, width, velocity, 0.35)) remove(fast)
+      const shown = dx * RESIST
+      if (!acts(shown, velocity * RESIST)) return
+      if (shown < 0) return onEdit(fast)
+      if (reducedMotion()) return remove(fast)
+      leaving = fast.id
+      setTimeout(() => {
+        leaving = null
+        remove(fast)
+      }, LEAVE_MS)
     },
   })
+  const offset = (id: string) => (leaving === id ? width : swiping?.id === id ? swiping.dx : 0)
 </script>
 
 {#snippet legend()}
@@ -328,13 +355,17 @@
       {@const stage = STAGES[deepestStage(fast)]}
       {@const weight = weightOf(fast, scale)}
       {@const percent = percentOf(fastLength(fast), fast.goal)}
+      {@const dx = offset(fast.id)}
       <div class="swipe row" use:drag={entryDrag(fast)}>
-      <span class="reveal" aria-hidden="true"><Icon name="delete" /> Delete</span>
+      <!-- Behind the fast: Delete uncovered at the left by a swipe right, Edit at the right by a swipe left. -->
+      <span class="reveal delete" class:armed={dx > 0 && armed(dx)} aria-hidden="true"><Icon name="delete" /> Delete</span>
+      <span class="reveal edit" class:armed={dx < 0 && armed(dx)} aria-hidden="true">Edit <Icon name="edit" /></span>
       <div
         class="entry"
         style:--stage="var(--{stage.id})"
-        style:transform="translateX({swiping?.id === fast.id ? swiping.dx : 0}px)"
+        style:transform="translateX({dx}px)"
         class:moving={swiping?.id === fast.id}
+        class:leaving={leaving === fast.id}
       >
         <div class="title">
           <h3>{longDate(fast.end)}</h3>
@@ -406,13 +437,30 @@
     overflow: hidden;
   }
 
-  /* Behind a fast, shown as it is swiped left. */
+  /* Behind a fast, uncovered as it is swiped: muted until the swipe would act, then in
+     its colour. */
   .reveal {
     position: absolute;
-    right: 1ch;
     top: 50%;
     transform: translateY(-50%);
+    color: var(--muted);
+    transition: color 0.15s ease;
+  }
+
+  .reveal.delete {
+    left: 1ch;
+  }
+
+  .reveal.edit {
+    right: 1ch;
+  }
+
+  .reveal.delete.armed {
     color: var(--bad);
+  }
+
+  .reveal.edit.armed {
+    color: var(--accent);
   }
 
   /* A thin bar down a fast's left edge in its deepest stage's colour; the Undo line keeps
@@ -422,7 +470,17 @@
     padding: 0.5em 0 0.2em 1ch;
     border-left: 2px solid var(--stage, transparent);
     background: var(--bg);
-    transition: transform 0.2s ease;
+    /* Let go short of acting, it springs back, a little past its place. */
+    transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.6, 1);
+  }
+
+  /* Deleted, it slides on out to the right. */
+  .entry.leaving {
+    transition: transform 0.2s cubic-bezier(0.32, 0, 0.67, 0);
+  }
+
+  :global(:root[data-still]) .entry {
+    transition: none;
   }
 
   /* The month's numbers stand out from their words. */
