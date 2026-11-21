@@ -14,7 +14,7 @@ jobs:
   release:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    # The fdroid job below checks that the repo it builds has this version.
+    # The fdroid job below tells the F-Droid repo which version came out.
     outputs:
       apk-name: ${{ steps.sign.outputs.apk-name }}
       version: ${{ steps.version.outputs.version }}
@@ -51,9 +51,10 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          FDROID_DISPATCH_TOKEN: ${{ secrets.FDROID_DISPATCH_TOKEN }}
         run: |
           missing=()
-          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD FDROID_DISPATCH_TOKEN; do
             if [ -z "${!name}" ]; then
               missing+=("$name")
             fi
@@ -157,21 +158,22 @@ jobs:
             "out/apk/$APK_NAME" out/apk/SHA256SUMS
 
   # Each of these follows the release on its own; neither waits for the other.
-  # Rebuilds the F-Droid repo with the new release and uploads it (fdroid.yml).
+  # The shared F-Droid repo (nouritsu/fdroid) rebuilds from every app's newest releases.
+  # A release made with GITHUB_TOKEN starts no workflows, so this asks it directly, with
+  # a fine-grained token that may only send it this event (Contents: write on that repo).
   fdroid:
     needs: release
-    uses: ./.github/workflows/fdroid.yml
-    permissions:
-      contents: read
-    with:
-      version: ${{ needs.release.outputs.version }}
-    secrets:
-      FDROID_KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
-      FDROID_KEYSTORE_PASSWORD: ${{ secrets.FDROID_KEYSTORE_PASSWORD }}
-      FDROID_KEY_ALIAS: ${{ secrets.FDROID_KEY_ALIAS }}
-      FDROID_KEY_PASSWORD: ${{ secrets.FDROID_KEY_PASSWORD }}
-      FDROID_SSH_KEY: ${{ secrets.FDROID_SSH_KEY }}
-      FDROID_SSH_KNOWN_HOSTS: ${{ secrets.FDROID_SSH_KNOWN_HOSTS }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Ask the F-Droid repo to rebuild
+        env:
+          GH_TOKEN: ${{ secrets.FDROID_DISPATCH_TOKEN }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          gh api repos/nouritsu/fdroid/dispatches -f event_type=release \
+            -f 'client_payload[app]=fast-track' -f "client_payload[version]=$VERSION"
 
   # Renders the screenshots again and opens a pull request if they changed (screenshots.yml).
   screenshots:
